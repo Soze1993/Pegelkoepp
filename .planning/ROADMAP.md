@@ -65,11 +65,11 @@ Plans:
   5. The user can undo the last entered throw and the correction is reflected on both the tablet and the TV immediately
   6. When no game is running, the TV shows an idle screen with the club name and last game winner
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 Plans:
 **Wave 0**
 
-- [ ] 02-01-PLAN.md — Test scaffolding (Nyquist gate): socket.io-client devDep + server/routes/socket.test.js RED stubs (ST01–ST05) + db.test.js (DB05/DB06) + games.test.js (GT19)
+- [x] 02-01-PLAN.md — Test scaffolding (Nyquist gate): socket.io-client devDep + server/routes/socket.test.js RED stubs (ST01–ST05) + db.test.js (DB05/DB06) + games.test.js (GT19)
 
 **Wave 1** *(blocked on Wave 0 completion)*
 
@@ -135,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
-| 2. Real-Time & TV | 0/4 | Planned (ready to execute) | - |
+| 2. Real-Time & TV | 1/4 | In Progress|  |
 | 3. Frontend Wiring | 0/? | Not started | - |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |
