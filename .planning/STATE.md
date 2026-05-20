@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-05-20T14:15:49.377Z"
+stopped_at: "Completed 02-02: Socket.io foundation + schema migrations"
+last_updated: "2026-05-20T14:21:21.031Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 20
 ---
 
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 ## Current Position
 
 Phase: 02 (real-time-tv) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Phase: 02 (real-time-tv) — PLANNED (ready to execute)
 Status: Ready to execute
 Last activity: 2026-05-20
 
-Progress: [██████░░░░] 63%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Progress: [██████░░░░] 63%
 | 01-backend-foundation | 4/4 | 153 | ~2.5h |
 
 *Updated after each plan completion*
+| Phase 02-real-time-tv P02 | 30 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,10 @@ Recent decisions affecting current work:
 - Init: SQLite WAL mode mandatory from day one (C5 from research — two-line fix, must not be skipped)
 - Init: TV display route `/tv` must be unauthenticated; all write routes require PIN session
 - Init: Every throw written to DB immediately — crash recovery is non-negotiable (C2 from research)
+- [Phase ?]: io guard pattern (if io) in all emit calls keeps Phase 1 tests green
+- [Phase ?]: Migration uses try/catch on duplicate column name — SQLite does not support ADD COLUMN IF NOT EXISTS (D-12)
+- [Phase ?]: undo route uses reconstructState not in-memory state — correct and crash-safe (D-08)
+- [Phase ?]: app.locals.io set BEFORE server.listen — safe for all route handlers in 02-03/02-04
 
 ### Pending Todos
 
@@ -83,7 +88,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T14:15:49.361Z
-Stopped at: Phase 2 context gathered
+Last session: 2026-05-20T14:21:21.017Z
+Stopped at: Completed 02-02: Socket.io foundation + schema migrations
 Next: Execute Phase 02 (Real-Time & TV) — run `/gsd:execute-phase 2`
 Resume file: None

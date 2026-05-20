@@ -65,7 +65,7 @@ Plans:
   5. The user can undo the last entered throw and the correction is reflected on both the tablet and the TV immediately
   6. When no game is running, the TV shows an idle screen with the club name and last game winner
 
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 Plans:
 **Wave 0**
 
@@ -73,7 +73,7 @@ Plans:
 
 **Wave 1** *(blocked on Wave 0 completion)*
 
-- [ ] 02-02-PLAN.md — Foundation slice: install socket.io + ALTER TABLE migrations (throws.meta, game_players.role) + Socket.io init on http.Server with app.locals.io + Helmet CSP allows ws:/wss:
+- [x] 02-02-PLAN.md — Foundation slice: install socket.io + ALTER TABLE migrations (throws.meta, game_players.role) + Socket.io init on http.Server with app.locals.io + Helmet CSP allows ws:/wss:
 
 **Wave 2** *(blocked on Wave 1 completion; 02-03 and 02-04 run in parallel — different parts of the stack)*
 
@@ -135,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
-| 2. Real-Time & TV | 1/4 | In Progress|  |
+| 2. Real-Time & TV | 2/4 | In Progress|  |
 | 3. Frontend Wiring | 0/? | Not started | - |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |
