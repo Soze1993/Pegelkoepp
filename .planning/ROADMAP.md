@@ -65,7 +65,20 @@ Plans:
   5. The user can undo the last entered throw and the correction is reflected on both the tablet and the TV immediately
   6. When no game is running, the TV shows an idle screen with the club name and last game winner
 
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+**Wave 0**
+
+- [ ] 02-01-PLAN.md — Test scaffolding (Nyquist gate): socket.io-client devDep + server/routes/socket.test.js RED stubs (ST01–ST05) + db.test.js (DB05/DB06) + games.test.js (GT19)
+
+**Wave 1** *(blocked on Wave 0 completion)*
+
+- [ ] 02-02-PLAN.md — Foundation slice: install socket.io + ALTER TABLE migrations (throws.meta, game_players.role) + Socket.io init on http.Server with app.locals.io + Helmet CSP allows ws:/wss:
+
+**Wave 2** *(blocked on Wave 1 completion; 02-03 and 02-04 run in parallel — different parts of the stack)*
+
+- [ ] 02-03-PLAN.md — Throw sync + undo vertical slice: meta persistence on INSERT, reconstructState id-ASC + meta + role parsing, POST /:id/undo (requireSession, DB-first DELETE), throw:applied / undo:applied / game:started / game:finished emits — covers RT-01, PLAY-01
+- [ ] 02-04-PLAN.md — TV display vertical slice: public/tv.html + public/tv.js (full-screen, gold active-row overlay, permanent Letzter Wurf column, 72px scores / 36px names, idle screen, top-right connection dot, textContent-only XSS guard) + lastWinner JOIN in server connection handler + human verification checkpoint — covers RT-02, RT-03, TV-01, TV-02, TV-03, TV-04
 **UI hint**: yes
 
 ### Phase 3: Frontend Wiring
@@ -122,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
-| 2. Real-Time & TV | 0/? | Not started | - |
+| 2. Real-Time & TV | 0/4 | Planned (ready to execute) | - |
 | 3. Frontend Wiring | 0/? | Not started | - |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |
