@@ -2,15 +2,138 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pegelköpp — TV</title>
   <style>
-    html, body { margin: 0; padding: 0; background: #111; color: #fff;
-      font-family: system-ui, sans-serif; height: 100vh; }
-    main { display: flex; align-items: center; justify-content: center;
-      height: 100vh; font-size: 8vw; }
+    :root {
+      --bg:   #0f0f14;
+      --bg2:  #17171f;
+      --bg3:  #1e1e28;
+      --card: #22222e;
+      --card2:#2a2a38;
+      --ac:   #e8b84b;
+      --ac2:  #f5d37a;
+      --txt:  #f0ede6;
+      --mut:  #8884a0;
+      --brd:  #2e2e3e;
+      --fh:   'Bebas Neue', sans-serif;
+      --fb:   'DM Sans', sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--txt);
+      font-family: var(--fb);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Idle screen (D-04) */
+    #idle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    #idle .club-name {
+      font-family: var(--fh);
+      font-size: 15vw;
+      color: var(--ac);
+    }
+    #idle .last-winner {
+      font-size: 3vw;
+      color: var(--mut);
+      margin-top: 1rem;
+    }
+
+    /* Game screen */
+    #game {
+      display: none;
+      padding: 2vw;
+    }
+    #game.active {
+      display: block;
+    }
+
+    /* Player rows (D-01 full-width rows) */
+    .player-row {
+      display: flex;
+      align-items: center;
+      padding: 1.5vw 2vw;
+      border-radius: 12px;
+      margin-bottom: 1vw;
+    }
+
+    /* D-02: active player highlight — gold at 15% opacity */
+    .player-row.active-player {
+      background: rgba(232, 184, 75, 0.15);
+    }
+
+    /* TV-03 hard requirement: player name min 36px */
+    .player-name {
+      flex: 1;
+      font-size: 36px;
+      font-family: var(--fh);
+      letter-spacing: .06em;
+    }
+
+    /* D-03: permanent "Letzter Wurf" column */
+    .last-throw {
+      width: 12vw;
+      text-align: center;
+      color: var(--mut);
+      font-size: 24px;
+    }
+    .last-throw .label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .last-throw .value {
+      font-family: var(--fh);
+      font-size: 36px;
+      color: var(--txt);
+    }
+
+    /* TV-03 hard requirement: score min 72px */
+    .player-score {
+      width: 12vw;
+      text-align: right;
+      font-family: var(--fh);
+      font-size: 72px;
+      color: var(--ac);
+    }
+
+    /* Connection dot (RT-03) */
+    .conn-dot {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #888;
+    }
+    .conn-dot.green { background: #4caf7d; }
+    .conn-dot.red   { background: #e05252; }
   </style>
 </head>
 <body>
-  <main>Pegelköpp</main>
+  <div class="conn-dot" id="connDot"></div>
+
+  <div id="idle">
+    <div class="club-name">Pegelköpp</div>
+    <div class="last-winner" id="lastWinnerText">Noch kein Spiel gespielt</div>
+  </div>
+
+  <div id="game">
+    <ul id="playerList" style="list-style:none;margin:0;padding:0;"></ul>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/tv.js"></script>
 </body>
 </html>
