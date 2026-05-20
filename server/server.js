@@ -12,12 +12,15 @@ const http = require('http');
 const app = require('./app');
 const db = require('./db');
 const seed = require('./db/seed');
+const { rebuildActiveGames } = require('./routes/games');
 
 seed(db);
+rebuildActiveGames(db);
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 server.listen(PORT, () => {
-  console.log(`Pegelköpp server listening on port ${PORT}`);
+  const active = require('./routes/games').activeGames.size;
+  console.log(`Pegelköpp server listening on port ${PORT} (${active} active game(s) recovered)`);
 });

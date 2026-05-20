@@ -164,13 +164,37 @@ function reconstructState(game) {
 // ---------------------------------------------------------------------------
 // rebuildActiveGames — called from server.js between seed() and listen()
 //
+// Queries all active games from DB and populates the activeGames Map by
+// replaying each game's throw history via reconstructState.
+//
 // NOTE: reconstructState queries the module-level `db`. Callers in tests must
 // set process.env.DB_PATH before requiring this module so the singleton points
 // at the test DB. This holds for our test setup (see games.test.js) and for
 // server.js where DB_PATH is read from .env at boot time.
 // ---------------------------------------------------------------------------
 function rebuildActiveGames(database) {
-  // Implemented in Task 2 (crash recovery wiring).
+  // Use the passed-in database param if provided (e.g., from tests with isolated DB).
+  // Fall back to the module-level `db` import otherwise.
+  const conn = database || db;
+  const activeRows = conn.prepare(
+    "SELECT id, type_key, status, started_at, finished_at FROM games WHERE status = 'active'"
+  ).all();
+  for (const game of activeRows) {
+    const gameModule = gameTypes[game.type_key];
+    if (!gameModule) {
+      console.warn(`rebuildActiveGames: skipping game ${game.id} — unknown type_key '${game.type_key}'`);
+      continue;
+    }
+    try {
+      const state = reconstructState(game);
+      activeGames.set(game.id, state);
+    } catch (err) {
+      // Some game types (e.g. fuchsjagd, viergewinnt) need metadata not stored in Phase 1.
+      // Skip them rather than crashing the startup. A Phase 2 schema migration (meta column)
+      // will resolve this. See SUMMARY.md "Known Stubs" section.
+      console.warn(`rebuildActiveGames: skipping game ${game.id} (${game.type_key}) — reconstruction failed: ${err.message}`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
