@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 02-02: Socket.io foundation + schema migrations"
-last_updated: "2026-05-20T14:27:11.170Z"
+stopped_at: "Completed 02-04: TV display vertical slice — human verification approved"
+last_updated: "2026-05-20T18:00:00.000Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 20
+  completed_plans: 8
+  percent: 40
 ---
 
 # Project State
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-05-19)
 
 ## Current Position
 
-Phase: 02 (real-time-tv) — EXECUTING
+Phase: 02 (real-time-tv) — COMPLETE
 Plan: 4 of 4
-Phase: 02 (real-time-tv) — PLANNED (ready to execute)
-Status: Ready to execute
+Phase: 03 (frontend-wiring) — PLANNED (next phase)
+Status: Phase 2 complete — ready to plan Phase 3
 Last activity: 2026-05-20
 
-Progress: [█████████░] 88%
+Progress: [████████░░] 40%
 
 ## Performance Metrics
 
@@ -68,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase ?]: undo route uses reconstructState not in-memory state — correct and crash-safe (D-08)
 - [Phase ?]: app.locals.io set BEFORE server.listen — safe for all route handlers in 02-03/02-04
 - [Phase ?]: game:started broadcast pattern
+- [02-04]: textContent-only rule ist eine harte Anforderung im TV-Client — kein innerHTML erlaubt (T-02-02)
+- [02-04]: Auto-Uebergang zu idle bei game:finished auf Phase 3 verschoben (Option A vom Nutzer akzeptiert)
+- [02-04]: lastWinner JOIN hat try/catch-Fallback auf null — Rekonstruktionsfehler bringen den Server nicht zum Absturz
 
 ### Pending Todos
 
@@ -90,7 +93,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-20T14:27:11.160Z
-Stopped at: Completed 02-02: Socket.io foundation + schema migrations
-Next: Execute Phase 02 (Real-Time & TV) — run `/gsd:execute-phase 2`
+Last session: 2026-05-20T18:00:00.000Z
+Stopped at: Completed 02-04: TV display vertical slice — human verification approved (166 tests passing)
+Next: Plan Phase 03 (Frontend Wiring) — connect kegelclub_12.html to backend API
 Resume file: None

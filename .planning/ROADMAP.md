@@ -14,7 +14,7 @@ The existing `kegelclub_12.html` single-file app already has working game logic,
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Backend Foundation** - Scaffold, SQLite schema, game-type modules extracted from HTML, REST API, PIN auth (completed 2026-05-20)
-- [ ] **Phase 2: Real-Time & TV** - Socket.io throw sync, TV display page, undo, reconnect, connection indicator
+- [x] **Phase 2: Real-Time & TV** - Socket.io throw sync, TV display page, undo, reconnect, connection indicator (completed 2026-05-20)
 - [ ] **Phase 3: Frontend Wiring** - Connect existing HTML app to backend API; replace in-memory state with API/socket calls
 - [ ] **Phase 4: Club Features** - Kegelabend sessions, statistics (wins/losses, personal records, Pudel%), custom game types
 - [ ] **Phase 5: Production Deployment** - PM2, Nginx + WebSocket headers, Certbot HTTPS, crash recovery
@@ -65,7 +65,7 @@ Plans:
   5. The user can undo the last entered throw and the correction is reflected on both the tablet and the TV immediately
   6. When no game is running, the TV shows an idle screen with the club name and last game winner
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 **Wave 0**
 
@@ -78,7 +78,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion; 02-03 and 02-04 run in parallel — different parts of the stack)*
 
 - [x] 02-03-PLAN.md — Throw sync + undo vertical slice: meta persistence on INSERT, reconstructState id-ASC + meta + role parsing, POST /:id/undo (requireSession, DB-first DELETE), throw:applied / undo:applied / game:started / game:finished emits — covers RT-01, PLAY-01
-- [ ] 02-04-PLAN.md — TV display vertical slice: public/tv.html + public/tv.js (full-screen, gold active-row overlay, permanent Letzter Wurf column, 72px scores / 36px names, idle screen, top-right connection dot, textContent-only XSS guard) + lastWinner JOIN in server connection handler + human verification checkpoint — covers RT-02, RT-03, TV-01, TV-02, TV-03, TV-04
+- [x] 02-04-PLAN.md — TV display vertical slice: public/tv.html + public/tv.js (full-screen, gold active-row overlay, permanent Letzter Wurf column, 72px scores / 36px names, idle screen, top-right connection dot, textContent-only XSS guard) + lastWinner JOIN in server connection handler + human verification checkpoint — covers RT-02, RT-03, TV-01, TV-02, TV-03, TV-04
 **UI hint**: yes
 
 ### Phase 3: Frontend Wiring
@@ -135,7 +135,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
-| 2. Real-Time & TV | 3/4 | In Progress|  |
+| 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
 | 3. Frontend Wiring | 0/? | Not started | - |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |

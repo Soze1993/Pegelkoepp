@@ -21,15 +21,15 @@
 ### Real-Time Sync
 
 - [x] **RT-01**: A throw entered on tablet appears on the TV display in under 2 seconds
-- [ ] **RT-02**: TV display auto-reconnects after connection drop and immediately restores the current game state (no manual refresh required)
-- [ ] **RT-03**: A connection status indicator (dot/icon) is visible on the input device showing WebSocket state
+- [x] **RT-02**: TV display auto-reconnects after connection drop and immediately restores the current game state (no manual refresh required)
+- [x] **RT-03**: A connection status indicator (dot/icon) is visible on the input device showing WebSocket state
 
 ### TV Display
 
-- [ ] **TV-01**: Dedicated `/tv` route serves a full-screen TV view with no authentication and no input elements
-- [ ] **TV-02**: TV shows live game state during an active game: all player scores, current player highlighted, last throw visible
-- [ ] **TV-03**: TV text sizes are readable at 3–5m distance (scores min 72px, player names min 36px)
-- [ ] **TV-04**: TV shows idle screen with club logo and last game winner when no game is running
+- [x] **TV-01**: Dedicated `/tv` route serves a full-screen TV view with no authentication and no input elements
+- [x] **TV-02**: TV shows live game state during an active game: all player scores, current player highlighted, last throw visible
+- [x] **TV-03**: TV text sizes are readable at 3–5m distance (scores min 72px, player names min 36px)
+- [x] **TV-04**: TV shows idle screen with club logo and last game winner when no game is running
 
 ### Gameplay
 
@@ -85,12 +85,12 @@
 | BACK-02 | Phase 1 | Complete |
 | BACK-03 | Phase 1 | Complete |
 | RT-01 | Phase 2 | Complete |
-| RT-02 | Phase 2 | Pending |
-| RT-03 | Phase 2 | Pending |
-| TV-01 | Phase 2 | Pending |
-| TV-02 | Phase 2 | Pending |
-| TV-03 | Phase 2 | Pending |
-| TV-04 | Phase 2 | Pending |
+| RT-02 | Phase 2 | Complete |
+| RT-03 | Phase 2 | Complete |
+| TV-01 | Phase 2 | Complete |
+| TV-02 | Phase 2 | Complete |
+| TV-03 | Phase 2 | Complete |
+| TV-04 | Phase 2 | Complete |
 | PLAY-01 | Phase 2 | Complete |
 | PLAY-02 | Phase 3 | Pending |
 | STAT-01 | Phase 4 | Pending |
