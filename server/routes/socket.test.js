@@ -1,0 +1,195 @@
+'use strict';
+
+const { test, before, after } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const http = require('node:http');
+const { Server } = require('socket.io');
+const { io: ioClient } = require('socket.io-client');
+const bcrypt = require('bcryptjs');
+
+// ---------------------------------------------------------------------------
+// PIN setup — must be set BEFORE requiring app (so db singleton uses test DB)
+// ---------------------------------------------------------------------------
+const PIN = '1234';
+const PIN_HASH = bcrypt.hashSync(PIN, 10);
+process.env.PIN_HASH = PIN_HASH;
+
+// ---------------------------------------------------------------------------
+// Setup: isolated DB + ephemeral HTTP server with Socket.io attached
+// ---------------------------------------------------------------------------
+let tmpDir;
+let server;
+let io;      // Socket.io server instance
+let socket;  // socket.io-client instance (TV-side primary)
+let baseUrl;
+let db;
+
+before(async () => {
+  // 1. Set up isolated DB path BEFORE requiring app
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pegel-socket-test-'));
+  process.env.DB_PATH = path.join(tmpDir, 'test.db');
+  process.env.SESSION_SECRET = 'test-secret-socket';
+  process.env.NODE_ENV = 'test';
+  process.env.SESSION_DIR = tmpDir;
+  process.env.PIN_HASH = PIN_HASH;
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  // 2. Clear module cache — same pattern as games.test.js lines 37–48
+  const clearCache = (mod) => {
+    try { delete require.cache[require.resolve(mod)]; } catch (_) {}
+  };
+  clearCache('../db/index');
+  clearCache('../db/seed');
+  clearCache('../app');
+  clearCache('./games');
+  clearCache('./players');
+  clearCache('./auth');
+  clearCache('../middleware/auth');
+  clearCache('../game-types/index');
+
+  // 3. Require fresh instances
+  db = require('../db/index');
+  const seed = require('../db/seed');
+  seed(db); // populate 12 players
+
+  const app = require('../app');
+
+  // 4. Start ephemeral server with Socket.io on random port
+  await new Promise((resolve) => {
+    server = http.createServer(app);
+
+    // Attach Socket.io to the test server (mirrors server.js production init)
+    io = new Server(server, { cors: { origin: false } });
+    app.locals.io = io;
+
+    // Register connection handler (mirrors server.js io.on('connection') logic — D-09, D-10)
+    io.on('connection', (connectedSocket) => {
+      const activeGame = db.prepare(
+        "SELECT id FROM games WHERE status = 'active' ORDER BY id DESC LIMIT 1"
+      ).get();
+
+      if (activeGame) {
+        const { activeGames, reconstructState } = require('./games');
+        const game = db.prepare('SELECT * FROM games WHERE id = ?').get(activeGame.id);
+        const state = activeGames.get(activeGame.id) || reconstructState(game);
+        connectedSocket.join(`game:${activeGame.id}`);
+        connectedSocket.emit('game:state', { gameId: activeGame.id, state, idle: false });
+      } else {
+        // Idle screen: no active game (D-04, D-09)
+        connectedSocket.emit('game:state', { idle: true, lastWinner: null });
+      }
+    });
+
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      baseUrl = `http://127.0.0.1:${port}`;
+
+      // Connect primary test client socket
+      socket = ioClient(baseUrl, { transports: ['websocket'] });
+      socket.on('connect', () => resolve());
+    });
+  });
+});
+
+after(async () => {
+  socket.disconnect();
+  io.close();
+  await new Promise((resolve) => server.close(resolve));
+
+  const clearCache = (mod) => {
+    try { delete require.cache[require.resolve(mod)]; } catch (_) {}
+  };
+  clearCache('../db/index');
+  clearCache('../db/seed');
+  clearCache('../app');
+  clearCache('./games');
+  clearCache('./players');
+  clearCache('./auth');
+  clearCache('../middleware/auth');
+  clearCache('../game-types/index');
+
+  try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+});
+
+// ---------------------------------------------------------------------------
+// Helper: await a socket event with a timeout
+// ---------------------------------------------------------------------------
+function waitForEvent(sock, eventName, timeoutMs = 2000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`Timeout waiting for '${eventName}'`)),
+      timeoutMs
+    );
+    sock.once(eventName, (data) => { clearTimeout(timer); resolve(data); });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Helper: login and get session cookie (same as games.test.js lines 89–100)
+// ---------------------------------------------------------------------------
+async function loginAndGetCookie() {
+  const { port } = server.address();
+  const r = await fetch(`http://127.0.0.1:${port}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ pin: PIN })
+  });
+  const raw = r.headers.get('set-cookie');
+  return raw.split(';')[0];
+}
+
+// ---------------------------------------------------------------------------
+// ST01: game:state { idle: true } emitted on connect when no active game
+//        Covers: RT-02 (auto-subscribe on connect), TV-04 (idle state)
+//        Status: RED stub — Wave 1 will implement server/server.js Socket.io init
+// ---------------------------------------------------------------------------
+test('ST01: game:state { idle: true } emitted on connect when no active game', async () => {
+  // No game exists in fresh DB — connect new socket, listen for game:state
+  const newSocket = ioClient(baseUrl, { transports: ['websocket'] });
+  try {
+    const data = await waitForEvent(newSocket, 'game:state', 2000);
+    // Wave 1/2 will implement this — assert idle:true when no active game exists
+    assert.equal(data.idle, true, `TODO: implemented in Wave 1/2 — expected idle:true, got ${JSON.stringify(data)}`);
+  } finally {
+    newSocket.disconnect();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ST02: throw:applied event emitted after POST /api/games/:id/throws
+//        Covers: RT-01 (throw on tablet emits event to TV room)
+//        Status: RED stub — Wave 1 will wire io.emit in games.js POST /:id/throws
+// ---------------------------------------------------------------------------
+test('ST02: throw:applied event emitted after submitting a throw', async (t) => {
+  t.todo('Wave 1/2: implement Socket.io emit in POST /:id/throws handler (games.js)');
+});
+
+// ---------------------------------------------------------------------------
+// ST03: game:state event contains players array with id, name, last throw
+//        Covers: TV-02 (state event has player scores + last throw per player)
+//        Status: RED stub — Wave 1/2 will verify state shape
+// ---------------------------------------------------------------------------
+test('ST03: game:state contains players array with id, name, last throw', async (t) => {
+  t.todo('Wave 1/2: verify game:state payload includes players[].id, .name, .wuerfe');
+});
+
+// ---------------------------------------------------------------------------
+// ST04: undo:applied event emitted after POST /api/games/:id/undo
+//        Covers: PLAY-01 (undo emits event; TV shows corrected state silently)
+//        Status: RED stub — Wave 1 will add POST /:id/undo route + emit
+// ---------------------------------------------------------------------------
+test('ST04: undo:applied event emitted after POST /:id/undo', async (t) => {
+  t.todo('Wave 1/2: implement POST /api/games/:id/undo route with Socket.io emit');
+});
+
+// ---------------------------------------------------------------------------
+// ST05: reconnecting client receives current game:state on connect event
+//        Covers: RT-02 (game:state emitted on every connect — reconnect sync)
+//        Status: RED stub — Wave 1 will implement io.on('connection') in server.js
+// ---------------------------------------------------------------------------
+test('ST05: reconnecting client receives current game:state on reconnect', async (t) => {
+  t.todo('Wave 1/2: verify that a reconnecting socket receives game:state with current game data');
+});
