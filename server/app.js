@@ -46,6 +46,7 @@ app.get('/tv', (req, res) => res.sendFile(path.join(__dirname, '../public/tv.htm
 app.use(express.static(path.join(__dirname, '../public')));
 
 // API routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/players', require('./routes/players'));
 
 // --- Error middleware — LAST (Express 5: async errors auto-forwarded, no express-async-errors needed) ---
