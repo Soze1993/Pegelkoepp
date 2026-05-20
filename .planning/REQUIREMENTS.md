@@ -20,7 +20,7 @@
 
 ### Real-Time Sync
 
-- [ ] **RT-01**: A throw entered on tablet appears on the TV display in under 2 seconds
+- [x] **RT-01**: A throw entered on tablet appears on the TV display in under 2 seconds
 - [ ] **RT-02**: TV display auto-reconnects after connection drop and immediately restores the current game state (no manual refresh required)
 - [ ] **RT-03**: A connection status indicator (dot/icon) is visible on the input device showing WebSocket state
 
@@ -33,7 +33,7 @@
 
 ### Gameplay
 
-- [ ] **PLAY-01**: User can undo the last entered throw during any active game (single-step undo)
+- [x] **PLAY-01**: User can undo the last entered throw during any active game (single-step undo)
 - [ ] **PLAY-02**: All 9 built-in game types (Vier Gewinnt, Fuchsjagd, Drei in die Vollen, Große Hausnummer, Kleine Hausnummer, Plus/Minus/Mal/Geteilt, Anker, Kegler des Abends, Bilderkegel) work with backend-connected state
 
 ### Statistics
@@ -84,14 +84,14 @@
 | BACK-01 | Phase 1 | Pending |
 | BACK-02 | Phase 1 | Complete |
 | BACK-03 | Phase 1 | Complete |
-| RT-01 | Phase 2 | Pending |
+| RT-01 | Phase 2 | Complete |
 | RT-02 | Phase 2 | Pending |
 | RT-03 | Phase 2 | Pending |
 | TV-01 | Phase 2 | Pending |
 | TV-02 | Phase 2 | Pending |
 | TV-03 | Phase 2 | Pending |
 | TV-04 | Phase 2 | Pending |
-| PLAY-01 | Phase 2 | Pending |
+| PLAY-01 | Phase 2 | Complete |
 | PLAY-02 | Phase 3 | Pending |
 | STAT-01 | Phase 4 | Pending |
 | STAT-02 | Phase 4 | Pending |
