@@ -48,6 +48,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/players', require('./routes/players'));
+app.use('/api/games', require('./routes/games'));
 
 // --- Error middleware — LAST (Express 5: async errors auto-forwarded, no express-async-errors needed) ---
 // eslint-disable-next-line no-unused-vars
