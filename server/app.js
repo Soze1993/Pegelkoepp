@@ -14,7 +14,17 @@ const app = express();
 
 // --- Middleware (order matters) ---
 
-app.use(helmet());
+// Update Helmet CSP to allow WebSocket upgrades (ws: and wss:) in connect-src
+// Default Helmet 8 connect-src 'self' does NOT cover ws:/wss: — Socket.io upgrades are silently blocked without this.
+// All other Helmet defaults remain unchanged via spread of getDefaultDirectives().
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'connect-src': ["'self'", 'ws:', 'wss:']
+    }
+  }
+}));
 app.use(morgan('dev'));
 app.use(cors({ origin: process.env.CORS_ORIGIN || false, credentials: true }));
 app.use(express.json());
