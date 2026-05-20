@@ -15,7 +15,7 @@ const activeGames = new Map();
 // POST /api/games — start a new game (requires session)
 // ---------------------------------------------------------------------------
 router.post('/', requireSession, (req, res) => {
-  const { type_key, player_ids, config } = req.body;
+  const { type_key, player_ids, config, roles } = req.body;
 
   // Validate type_key
   const gameModule = gameTypes[type_key];
@@ -36,21 +36,35 @@ router.post('/', requireSession, (req, res) => {
   }
 
   // Insert game row + game_players in a single transaction
+  // roles: optional { '<playerId>': 'fuchs' } map for fuchsjagd (D-13)
   const insertGame = db.prepare('INSERT INTO games (type_key) VALUES (?)');
-  const insertGamePlayer = db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)');
+  const insertGamePlayer = db.prepare(
+    'INSERT INTO game_players (game_id, player_id, seat, role) VALUES (?, ?, ?, ?)'
+  );
 
   const txn = db.transaction(() => {
     const gameResult = insertGame.run(type_key);
     const gameId = gameResult.lastInsertRowid;
-    players.forEach((p, i) => insertGamePlayer.run(gameId, p.id, i));
+    players.forEach((p, i) => {
+      const role = (roles && roles[String(p.id)]) || null;
+      insertGamePlayer.run(gameId, p.id, i, role);
+    });
     return gameId;
   });
 
   const gameId = txn();
 
-  // Initialise in-memory state
-  const state = gameModule.initState(players, config);
+  // Initialise in-memory state (pass players with role for fuchsjagd)
+  const playersWithRole = players.map(p => ({
+    ...p,
+    role: (roles && roles[String(p.id)]) || null
+  }));
+  const state = gameModule.initState(playersWithRole, config);
   activeGames.set(gameId, state);
+
+  // Broadcast to all connected TVs so they auto-switch to the new game (D-11, D-10)
+  const io = req.app.locals.io;
+  if (io) io.emit('game:started', { gameId, state, type_key });
 
   res.status(201).json({ id: gameId, type_key, status: 'active' });
 });
