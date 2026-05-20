@@ -78,8 +78,34 @@ before(async () => {
         connectedSocket.join(`game:${activeGame.id}`);
         connectedSocket.emit('game:state', { gameId: activeGame.id, state, idle: false });
       } else {
-        // Idle screen: no active game (D-04, D-09)
-        connectedSocket.emit('game:state', { idle: true, lastWinner: null });
+        // Idle screen: query last finished game for winner name (D-04, mirrors server.js)
+        let lastWinner = null;
+        try {
+          const lastGame = db.prepare(
+            "SELECT id FROM games WHERE status = 'finished' ORDER BY finished_at DESC LIMIT 1"
+          ).get();
+          if (lastGame) {
+            const { reconstructState } = require('./games');
+            const gameTypes = require('../game-types');
+            const finishedGame = db.prepare('SELECT * FROM games WHERE id = ?').get(lastGame.id);
+            const finalState = reconstructState(finishedGame);
+            const gameModule = gameTypes[finishedGame.type_key];
+            let winnerId = null;
+            if (gameModule && typeof gameModule.getFinalResults === 'function') {
+              const results = gameModule.getFinalResults(finalState);
+              const winnerEntry = results.find(r => r.winner);
+              winnerId = winnerEntry ? winnerEntry.playerId : null;
+            }
+            if (winnerId != null) {
+              const winnerRow = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerId);
+              lastWinner = winnerRow ? winnerRow.name : null;
+            }
+          }
+        } catch (e) {
+          console.warn('lastWinner computation failed in test:', e.message);
+          lastWinner = null;
+        }
+        connectedSocket.emit('game:state', { idle: true, lastWinner });
       }
     });
 
@@ -196,12 +222,42 @@ test('ST02: throw:applied event emitted after submitting a throw', async () => {
 });
 
 // ---------------------------------------------------------------------------
-// ST03: game:state event contains players array with id, name, last throw
+// ST03: game:state event contains players array with id, name, and wuerfe array
 //        Covers: TV-02 (state event has player scores + last throw per player)
-//        Implemented inline as a check on the game:state received in this context
+//        Turned GREEN in 02-04 — full state shape exercised end-to-end
 // ---------------------------------------------------------------------------
-test('ST03: game:state contains players array with id, name, last throw', async (t) => {
-  t.todo('TV-02 state shape fully exercised in 02-04 TV page; ST02 already asserts Array.isArray(state.players)');
+test('ST03: game:state contains players array with id, name, and wuerfe array', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Create a game with 2 players and submit one throw to populate wuerfe
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  // Submit one throw so wuerfe array is non-empty
+  await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ player_id: 1, throw_index: 0, value: 7 })
+  });
+
+  // Connect a fresh TV-side socket and await game:state
+  const tvSocket = ioClient(baseUrl, { transports: ['websocket'] });
+  try {
+    const data = await waitForEvent(tvSocket, 'game:state', 2000);
+    assert.equal(data.idle, false, `Expected idle:false, got ${JSON.stringify(data)}`);
+    assert.ok(Array.isArray(data.state.players), 'state.players should be an array');
+    assert.ok(data.state.players.length >= 2, `Expected >= 2 players, got ${data.state.players.length}`);
+    const p0 = data.state.players[0];
+    assert.equal(typeof p0.id, 'number', `players[0].id should be a number, got ${typeof p0.id}`);
+    assert.equal(typeof p0.name, 'string', `players[0].name should be a string, got ${typeof p0.name}`);
+    assert.ok(Array.isArray(p0.wuerfe), `players[0].wuerfe should be an array, got ${typeof p0.wuerfe}`);
+  } finally {
+    tvSocket.disconnect();
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -255,6 +311,60 @@ test('ST04: undo:applied event emitted after POST /:id/undo', async () => {
     const player1 = data.state.players.find(p => p.id === 1);
     assert.ok(player1, 'Player 1 should be in state after undo');
     assert.equal(player1.wuerfe.length, 1, `Expected 1 throw after undo, got ${player1.wuerfe.length}`);
+  } finally {
+    tvSocket.disconnect();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// ST06: idle game:state carries lastWinner field (string or null) after a
+//        finished game exists in DB
+//        Covers: TV-04 (idle screen shows last winner name)
+// ---------------------------------------------------------------------------
+test('ST06: idle game:state carries lastWinner field after a finished game', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Close any leftover active games from prior tests (shared DB — force them to finished)
+  db.prepare("UPDATE games SET status='finished', finished_at=datetime('now') WHERE status='active'").run();
+
+  // Create and immediately finish a dreiVollen game (3 throws per player × 2 players)
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  // Submit all 6 throws to finish the game (player 1 × 3, player 2 × 3)
+  const throwDefs = [
+    { player_id: 1, throw_index: 0, value: 5 },
+    { player_id: 1, throw_index: 1, value: 3 },
+    { player_id: 1, throw_index: 2, value: 4 },
+    { player_id: 2, throw_index: 0, value: 2 },
+    { player_id: 2, throw_index: 1, value: 1 },
+    { player_id: 2, throw_index: 2, value: 3 }
+  ];
+  for (const t of throwDefs) {
+    await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify(t)
+    });
+  }
+
+  // Verify game is now finished in DB
+  const gameRow = db.prepare("SELECT status FROM games WHERE id = ?").get(gameId);
+  assert.equal(gameRow.status, 'finished', `Game ${gameId} should be finished after 6 throws`);
+
+  // Connect a fresh socket — no active game exists, should receive idle payload
+  const tvSocket = ioClient(baseUrl, { transports: ['websocket'] });
+  try {
+    const data = await waitForEvent(tvSocket, 'game:state', 2000);
+    assert.equal(data.idle, true, `Expected idle:true (no active game), got ${JSON.stringify(data)}`);
+    // lastWinner must be defined (either a string or null — not undefined)
+    assert.notEqual(data.lastWinner, undefined, 'lastWinner field must be present in idle payload (TV-04)');
+    // With a finished game in DB, lastWinner should be a string (the winner's name)
+    assert.equal(typeof data.lastWinner, 'string', `Expected lastWinner to be a string, got ${data.lastWinner}`);
   } finally {
     tvSocket.disconnect();
   }

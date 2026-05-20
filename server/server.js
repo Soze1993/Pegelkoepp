@@ -41,8 +41,36 @@ io.on('connection', (socket) => {
     socket.emit('game:state', { gameId: activeGame.id, state, idle: false });
   } else {
     // Idle screen: no active game (D-04)
-    // lastWinner: null for now — proper winner query lands in plan 02-04 Task 2
-    socket.emit('game:state', { idle: true, lastWinner: null });
+    // Query the most recently finished game and derive the winner name (plan 02-04 Task 2)
+    let lastWinner = null;
+    try {
+      const lastGame = db.prepare(
+        "SELECT id FROM games WHERE status = 'finished' ORDER BY finished_at DESC LIMIT 1"
+      ).get();
+      if (lastGame) {
+        const { reconstructState } = require('./routes/games');
+        const gameTypes = require('./game-types');
+        const finishedGame = db.prepare('SELECT * FROM games WHERE id = ?').get(lastGame.id);
+        const finalState = reconstructState(finishedGame);
+        const gameModule = gameTypes[finishedGame.type_key];
+        let winnerId = null;
+        if (gameModule && typeof gameModule.getFinalResults === 'function') {
+          const results = gameModule.getFinalResults(finalState);
+          // results is an array of { playerId, winner, ... }; find first winner
+          const winnerEntry = results.find(r => r.winner);
+          winnerId = winnerEntry ? winnerEntry.playerId : null;
+        }
+        if (winnerId != null) {
+          const winnerRow = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerId);
+          lastWinner = winnerRow ? winnerRow.name : null;
+        }
+      }
+    } catch (e) {
+      // Fallback to null — do not crash on legacy data or reconstruction failure (T-02-Reconstruct)
+      console.warn('lastWinner computation failed:', e.message);
+      lastWinner = null;
+    }
+    socket.emit('game:state', { idle: true, lastWinner });
   }
 });
 
