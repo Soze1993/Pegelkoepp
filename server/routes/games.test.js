@@ -694,6 +694,59 @@ test('GT19: POST /throws persists meta JSON and reconstructState parses it back 
 });
 
 // ---------------------------------------------------------------------------
+// GT20: POST /:id/undo on non-existent or finished game → 404
+// ---------------------------------------------------------------------------
+test('GT20: POST /api/games/:id/undo on non-existent or finished game returns 404', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Case A: completely non-existent game id → 404
+  const resNonExistent = await fetch(`${baseUrl}/api/games/999999/undo`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie }
+  });
+  assert.equal(resNonExistent.status, 404, `Expected 404 for non-existent game, got ${resNonExistent.status}`);
+  const bodyNonExistent = await resNonExistent.json();
+  assert.ok(bodyNonExistent.error, 'Expected error field in 404 response');
+
+  // Case B: finished game (complete all throws) → 404 because status != 'active'
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  // Finish the game (3 throws per player)
+  for (let i = 0; i < 3; i++) {
+    await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: 1, throw_index: i, value: 5 })
+    });
+  }
+  for (let i = 0; i < 3; i++) {
+    await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: 2, throw_index: i, value: 7 })
+    });
+  }
+
+  // Verify game is finished
+  const gameRow = db.prepare('SELECT status FROM games WHERE id = ?').get(gameId);
+  assert.equal(gameRow.status, 'finished', 'Game should be finished before undo attempt');
+
+  // Undo on finished game → 404
+  const resFinished = await fetch(`${baseUrl}/api/games/${gameId}/undo`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie }
+  });
+  assert.equal(resFinished.status, 404, `Expected 404 for finished game undo, got ${resFinished.status}`);
+  const bodyFinished = await resFinished.json();
+  assert.ok(bodyFinished.error, 'Expected error field in 404 response for finished game');
+});
+
+// ---------------------------------------------------------------------------
 // GT15: Crash recovery — rebuildActiveGames restores state from DB
 // ---------------------------------------------------------------------------
 test('GT15: rebuildActiveGames rebuilds activeGames from DB after full Map teardown', async () => {
