@@ -20,4 +20,20 @@ db.pragma('foreign_keys = ON');
 const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
 db.exec(schema);
 
+// Phase 2 migrations (D-12, D-13): idempotent via try/catch on duplicate-column error
+// SQLite does not support ALTER TABLE ... ADD COLUMN IF NOT EXISTS — try/catch is the approved pattern.
+const migrations = [
+  'ALTER TABLE throws ADD COLUMN meta TEXT NULL',
+  'ALTER TABLE game_players ADD COLUMN role TEXT NULL'
+];
+
+for (const sql of migrations) {
+  try {
+    db.exec(sql);
+  } catch (e) {
+    if (!e.message.includes('duplicate column name')) throw e;
+    // Column already exists — idempotent, safe to continue
+  }
+}
+
 module.exports = db;
