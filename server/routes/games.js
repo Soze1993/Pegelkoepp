@@ -106,10 +106,11 @@ router.post('/:id/throws', requireSession, (req, res) => {
 
   // 3. INSERT into throws FIRST — synchronous + crash-safe (CONTEXT.md C2 + C3).
   //    If UNIQUE constraint fires → 409 (no state mutation).
+  //    meta column persisted as JSON string (D-13, Phase 2 migration adds the column).
   try {
     db.prepare(
-      'INSERT INTO throws (game_id, player_id, throw_index, value) VALUES (?, ?, ?, ?)'
-    ).run(game.id, player_id, throw_index, value);
+      'INSERT INTO throws (game_id, player_id, throw_index, value, meta) VALUES (?, ?, ?, ?, ?)'
+    ).run(game.id, player_id, throw_index, value, meta ? JSON.stringify(meta) : null);
   } catch (e) {
     if (e.message && e.message.includes('UNIQUE')) {
       return res.status(409).json({ error: 'Duplicate throw' });
@@ -130,7 +131,50 @@ router.post('/:id/throws', requireSession, (req, res) => {
     activeGames.delete(game.id);
   }
 
-  // 6. Respond
+  // 6. Emit throw event to TV (D-11: 'throw:applied') — guarded so tests without io pass (Pitfall 3)
+  const io = req.app.locals.io;
+  if (io) {
+    io.to(`game:${gameId}`).emit('throw:applied', { state: newState, finished });
+    if (finished) {
+      io.to(`game:${gameId}`).emit('game:finished', { state: newState });
+    }
+  }
+
+  // 7. Respond
+  res.json({ state: newState, finished });
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/games/:id/undo — delete last throw, recompute state (D-08)
+// Requires session (same auth boundary as throws). DB-first ordering.
+// ---------------------------------------------------------------------------
+router.post('/:id/undo', requireSession, (req, res) => {
+  const gameId = Number(req.params.id);
+
+  const game = db.prepare("SELECT * FROM games WHERE id = ? AND status = 'active'").get(gameId);
+  if (!game) return res.status(404).json({ error: 'Game not found or not active' });
+
+  // ORDER BY id DESC — id is AUTOINCREMENT so highest id = most recently inserted throw
+  const lastThrow = db.prepare(
+    'SELECT id FROM throws WHERE game_id = ? ORDER BY id DESC LIMIT 1'
+  ).get(gameId);
+
+  if (!lastThrow) return res.status(400).json({ error: 'No throws to undo' });
+
+  // DB-FIRST: delete before any in-memory mutation (CONTEXT.md C2)
+  db.prepare('DELETE FROM throws WHERE id = ?').run(lastThrow.id);
+
+  // Rebuild state from DB (correct — no stale in-memory state, includes meta)
+  const newState = reconstructState(game);
+  activeGames.set(gameId, newState);
+
+  const gameModule = gameTypes[game.type_key];
+  const finished = gameModule.isFinished(newState);
+
+  // Silent TV update (D-07) — guarded so tests without io pass (Pitfall 3)
+  const io = req.app.locals.io;
+  if (io) io.to(`game:${gameId}`).emit('undo:applied', { state: newState, finished });
+
   res.json({ state: newState, finished });
 });
 
@@ -145,18 +189,21 @@ router.post('/:id/throws', requireSession, (req, res) => {
 // ---------------------------------------------------------------------------
 function reconstructState(game) {
   const gameModule = gameTypes[game.type_key];
+  // Include gp.role for fuchsjagd game type (D-13)
   const players = db.prepare(
-    'SELECT p.id, p.name, p.emoji FROM players p ' +
+    'SELECT p.id, p.name, p.emoji, gp.role FROM players p ' +
     'JOIN game_players gp ON p.id = gp.player_id ' +
     'WHERE gp.game_id = ? ORDER BY gp.seat'
   ).all(game.id);
+  // Include meta; ORDER BY id ASC for undo correctness (D-13, Pitfall 2)
   const throws = db.prepare(
-    'SELECT player_id, throw_index, value FROM throws ' +
-    'WHERE game_id = ? ORDER BY throw_index ASC'
+    'SELECT player_id, throw_index, value, meta FROM throws ' +
+    'WHERE game_id = ? ORDER BY id ASC'
   ).all(game.id);
   let state = gameModule.initState(players);
   for (const t of throws) {
-    state = gameModule.applyThrow(state, t.player_id, t.value);
+    const parsedMeta = t.meta ? JSON.parse(t.meta) : undefined;
+    state = gameModule.applyThrow(state, t.player_id, t.value, parsedMeta);
   }
   return state;
 }
