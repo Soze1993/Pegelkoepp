@@ -174,3 +174,50 @@ test('Tests use isolated tmp DB path, not data/kegelclub.db', () => {
     `DB_PATH should be in tmp dir, got: ${dbPath}`
   );
 });
+
+// ---------------------------------------------------------------------------
+// DB05: throws table has meta column and game_players has role column after migration
+//        Status: RED — Wave 1 (plan 02-02) adds ALTER TABLE migration in db/index.js
+// ---------------------------------------------------------------------------
+test('DB05: throws table has meta column and game_players has role column after migration', () => {
+  const db = freshDb();
+
+  // Assert throws.meta column exists (added by Phase 2 migration — D-12, D-13)
+  const throwsCols = db.prepare('PRAGMA table_info(throws)').all();
+  const hasMeta = throwsCols.some(c => c.name === 'meta');
+  assert.ok(hasMeta, 'Wave 1 migration not yet implemented: throws table is missing meta column');
+
+  // Assert game_players.role column exists (added by Phase 2 migration — D-13)
+  const gpCols = db.prepare('PRAGMA table_info(game_players)').all();
+  const hasRole = gpCols.some(c => c.name === 'role');
+  assert.ok(hasRole, 'Wave 1 migration not yet implemented: game_players table is missing role column');
+});
+
+// ---------------------------------------------------------------------------
+// DB06: migrations are idempotent — re-requiring db/index.js (which runs migrations)
+//        twice does not throw, and the meta column exists after both requires.
+//        Status: RED — Wave 1 (plan 02-02) adds idempotent ALTER TABLE block in db/index.js.
+//        Until Wave 1: throws.meta column does not exist so the assertion fails (RED).
+// ---------------------------------------------------------------------------
+test('DB06: migrations are idempotent — re-requiring db/index does not throw and meta column persists', () => {
+  // Require db/index once — this runs schema + any migration block
+  dbCounter++;
+  const dbPath = path.join(tmpDir, `test-${dbCounter}.db`);
+  process.env.DB_PATH = dbPath;
+  delete require.cache[require.resolve('./index')];
+  const db1 = require('./index');
+
+  // Require again with the SAME DB_PATH — migrations must be idempotent (no throw)
+  delete require.cache[require.resolve('./index')];
+  let db2;
+  try {
+    db2 = require('./index');
+  } catch (e) {
+    assert.fail(`Wave 1 migration not yet implemented: second require of db/index threw: ${e.message}`);
+  }
+
+  // After Wave 1: throws.meta column must exist (migration ran on first require)
+  const throwsCols = db2.prepare('PRAGMA table_info(throws)').all();
+  const hasMeta = throwsCols.some(c => c.name === 'meta');
+  assert.ok(hasMeta, 'Wave 1 migration not yet implemented: throws.meta column missing after idempotent re-require');
+});

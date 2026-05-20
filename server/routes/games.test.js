@@ -582,6 +582,118 @@ test('GT14: Evicting activeGames forces reconstructState; GET matches inline rep
 });
 
 // ---------------------------------------------------------------------------
+// GT16: POST /api/games/:id/undo without session → 401
+//        Status: RED stub — Wave 1 (plan 02-02) adds POST /:id/undo route
+// ---------------------------------------------------------------------------
+test('GT16: POST /api/games/:id/undo without session returns 401', async () => {
+  const res = await fetch(`${baseUrl}/api/games/1/undo`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' }
+    // no cookie
+  });
+  assert.equal(res.status, 401, `Expected 401, got ${res.status}`);
+});
+
+// ---------------------------------------------------------------------------
+// GT17: POST /api/games/:id/undo with no throws → 400
+//        Status: RED stub — Wave 1 (plan 02-02) adds POST /:id/undo route
+// ---------------------------------------------------------------------------
+test('GT17: POST /api/games/:id/undo on game with no throws returns 400', async () => {
+  const cookie = await loginAndGetCookie();
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  const res = await fetch(`${baseUrl}/api/games/${gameId}/undo`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie }
+  });
+  assert.equal(res.status, 400, `Expected 400, got ${res.status}`);
+});
+
+// ---------------------------------------------------------------------------
+// GT18: POST /:id/undo deletes last throw row from DB, returns corrected state
+//        Status: RED stub — Wave 1 (plan 02-02) adds POST /:id/undo route
+// ---------------------------------------------------------------------------
+test('GT18: POST /api/games/:id/undo removes last throw and returns corrected state', async () => {
+  const cookie = await loginAndGetCookie();
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  // Submit 2 throws
+  await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ player_id: 1, throw_index: 0, value: 5 })
+  });
+  await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ player_id: 1, throw_index: 1, value: 3 })
+  });
+
+  // Undo
+  const undoRes = await fetch(`${baseUrl}/api/games/${gameId}/undo`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie }
+  });
+  assert.equal(undoRes.status, 200, `Expected 200 from undo, got ${undoRes.status}`);
+  const undoBody = await undoRes.json();
+
+  // State should reflect only the first throw (wuerfe: [5], not [5, 3])
+  const player = undoBody.state.players.find(p => p.id === 1);
+  assert.deepEqual(player.wuerfe, [5], `Expected wuerfe [5] after undo, got ${JSON.stringify(player.wuerfe)}`);
+
+  // DB: only 1 throw row remains for this game
+  const throwCount = db.prepare('SELECT COUNT(*) as n FROM throws WHERE game_id = ?').get(gameId).n;
+  assert.equal(throwCount, 1, `Expected 1 throw in DB after undo, got ${throwCount}`);
+});
+
+// ---------------------------------------------------------------------------
+// GT19: POST /throws persists meta JSON and reconstructState parses it back
+//        (grosseHaus game type, meta: { slot: 'h' })
+//        Status: RED stub — Wave 1 (plan 02-02) adds throws.meta column + INSERT meta
+// ---------------------------------------------------------------------------
+test('GT19: POST /throws persists meta JSON and reconstructState parses it back (grosseHaus)', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Create a grosseHaus game
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'grosseHaus', player_ids: [1, 2] })
+  });
+  assert.equal(createRes.status, 201, `Expected 201, got ${createRes.status}`);
+  const { id: gameId } = await createRes.json();
+
+  // Submit a throw with meta
+  const throwRes = await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ player_id: 1, throw_index: 0, value: 5, meta: { slot: 'h' } })
+  });
+  assert.equal(throwRes.status, 200, `Expected 200, got ${throwRes.status}`);
+
+  // DB: meta column must be non-null and parseable
+  const throwRow = db.prepare(
+    'SELECT meta FROM throws WHERE game_id = ? ORDER BY id DESC LIMIT 1'
+  ).get(gameId);
+  assert.ok(throwRow.meta, 'Wave 1 migration not yet implemented: meta column should be non-null after throw with meta');
+  assert.deepEqual(
+    JSON.parse(throwRow.meta),
+    { slot: 'h' },
+    `Expected meta to be { slot: 'h' }, got ${throwRow.meta}`
+  );
+});
+
+// ---------------------------------------------------------------------------
 // GT15: Crash recovery — rebuildActiveGames restores state from DB
 // ---------------------------------------------------------------------------
 test('GT15: rebuildActiveGames rebuilds activeGames from DB after full Map teardown', async () => {
