@@ -10,13 +10,13 @@
 ### Backend & Persistence
 
 - [ ] **PERS-01**: Player profiles (name, emoji) are saved permanently in the database
-- [ ] **PERS-02**: All game sessions, throws, and results are stored in the database
+- [x] **PERS-02**: All game sessions, throws, and results are stored in the database
 - [ ] **PERS-03**: Custom game types created by users are saved persistently across restarts
 - [ ] **PERS-04**: Games played on the same evening are grouped into a Kegelabend session
 
 - [ ] **BACK-01**: User can manage players via API (create, edit, archive — no hard delete)
 - [x] **BACK-02**: All 9 built-in game type scoring rules run on the server as pure-function modules
-- [ ] **BACK-03**: Every throw is written to the database immediately (active game survives server restart)
+- [x] **BACK-03**: Every throw is written to the database immediately (active game survives server restart)
 
 ### Real-Time Sync
 
@@ -78,12 +78,12 @@
 | AUTH-01 | Phase 1 | Pending |
 | AUTH-02 | Phase 1 | Pending |
 | PERS-01 | Phase 1 | Pending |
-| PERS-02 | Phase 1 | Pending |
+| PERS-02 | Phase 1 | Complete |
 | PERS-03 | Phase 4 | Pending |
 | PERS-04 | Phase 4 | Pending |
 | BACK-01 | Phase 1 | Pending |
 | BACK-02 | Phase 1 | Complete |
-| BACK-03 | Phase 1 | Pending |
+| BACK-03 | Phase 1 | Complete |
 | RT-01 | Phase 2 | Pending |
 | RT-02 | Phase 2 | Pending |
 | RT-03 | Phase 2 | Pending |
