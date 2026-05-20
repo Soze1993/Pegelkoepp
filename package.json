@@ -1,0 +1,33 @@
+{
+  "name": "pegelkoepp",
+  "version": "0.1.0",
+  "description": "Pegelköpp Kegelclub App — Backend",
+  "main": "server/server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js",
+    "test": "node --test",
+    "test:games": "node --test server/game-types/*.test.js",
+    "seed": "node -e \"require('./server/db/seed')(require('./server/db'))\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "3.0.3",
+    "better-sqlite3": "12.10.0",
+    "connect-sqlite3": "0.9.16",
+    "cors": "2.8.6",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "express-session": "1.19.0",
+    "helmet": "8.1.0",
+    "morgan": "1.10.1"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.14"
+  }
+}
