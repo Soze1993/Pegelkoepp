@@ -12,6 +12,18 @@ const router = Router();
 const activeGames = new Map();
 
 // ---------------------------------------------------------------------------
+// GET /api/games — list games (NO auth — read-only; ?status filter optional)
+// Must appear BEFORE router.get('/:id', ...) — Express route ordering (Pitfall 1)
+// ---------------------------------------------------------------------------
+router.get('/', (req, res) => {
+  const { status } = req.query;
+  const games = status
+    ? db.prepare('SELECT id, type_key, status, started_at, finished_at FROM games WHERE status = ? ORDER BY id DESC').all(status)
+    : db.prepare('SELECT id, type_key, status, started_at, finished_at FROM games ORDER BY id DESC').all();
+  res.json(games);
+});
+
+// ---------------------------------------------------------------------------
 // POST /api/games — start a new game (requires session)
 // ---------------------------------------------------------------------------
 router.post('/', requireSession, (req, res) => {

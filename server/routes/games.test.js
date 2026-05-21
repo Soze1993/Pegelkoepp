@@ -747,6 +747,154 @@ test('GT20: POST /api/games/:id/undo on non-existent or finished game returns 40
 });
 
 // ---------------------------------------------------------------------------
+// GT21: GET /api/games (no filter) returns 200 JSON array of all games ordered by id DESC
+// ---------------------------------------------------------------------------
+test('GT21: GET /api/games returns 200 array of all games sorted by id DESC', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Create two games
+  const r1 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  assert.equal(r1.status, 201);
+  const { id: id1 } = await r1.json();
+
+  const r2 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  assert.equal(r2.status, 201);
+  const { id: id2 } = await r2.json();
+
+  // GET /api/games without session (unauthenticated)
+  const res = await fetch(`${baseUrl}/api/games`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+
+  assert.ok(Array.isArray(body), `Expected array, got ${typeof body}`);
+  assert.ok(body.length >= 2, `Expected at least 2 games, got ${body.length}`);
+
+  // Sorted by id DESC: id2 should appear before id1
+  const idx1 = body.findIndex(g => g.id === id1);
+  const idx2 = body.findIndex(g => g.id === id2);
+  assert.ok(idx2 < idx1, `Expected id2 (${id2}) before id1 (${id1}) in DESC order`);
+
+  // Each game has expected fields
+  assert.ok('type_key' in body[0], 'Each game should have type_key');
+  assert.ok('status' in body[0], 'Each game should have status');
+});
+
+// ---------------------------------------------------------------------------
+// GT22: GET /api/games?status=active returns only active games
+// ---------------------------------------------------------------------------
+test('GT22: GET /api/games?status=active returns only active games', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Create a game and finish it
+  const r1 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: finishedId } = await r1.json();
+
+  // Finish the game (3 throws × 2 players)
+  for (let i = 0; i < 3; i++) {
+    await fetch(`${baseUrl}/api/games/${finishedId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: 1, throw_index: i, value: 5 })
+    });
+  }
+  for (let i = 0; i < 3; i++) {
+    await fetch(`${baseUrl}/api/games/${finishedId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: 2, throw_index: i, value: 7 })
+    });
+  }
+
+  // Create an active game
+  const r2 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: activeId } = await r2.json();
+
+  // GET /api/games?status=active
+  const res = await fetch(`${baseUrl}/api/games?status=active`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+
+  assert.ok(Array.isArray(body), `Expected array, got ${typeof body}`);
+  // All returned games must have status=active
+  for (const g of body) {
+    assert.equal(g.status, 'active', `Expected status='active', got '${g.status}' for game ${g.id}`);
+  }
+  // The active game we created must be present
+  assert.ok(body.some(g => g.id === activeId), `Active game ${activeId} should be in results`);
+  // The finished game must NOT be present
+  assert.ok(!body.some(g => g.id === finishedId), `Finished game ${finishedId} should NOT be in active results`);
+});
+
+// ---------------------------------------------------------------------------
+// GT23: GET /api/games?status=finished returns only finished games
+// ---------------------------------------------------------------------------
+test('GT23: GET /api/games?status=finished returns only finished games', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Create and finish a game
+  const r1 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: finishedId } = await r1.json();
+
+  for (let i = 0; i < 3; i++) {
+    await fetch(`${baseUrl}/api/games/${finishedId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: 1, throw_index: i, value: 5 })
+    });
+  }
+  for (let i = 0; i < 3; i++) {
+    await fetch(`${baseUrl}/api/games/${finishedId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: 2, throw_index: i, value: 7 })
+    });
+  }
+
+  // Create an active game (should NOT appear in finished results)
+  const r2 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: activeId } = await r2.json();
+
+  // GET /api/games?status=finished
+  const res = await fetch(`${baseUrl}/api/games?status=finished`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+
+  assert.ok(Array.isArray(body), `Expected array, got ${typeof body}`);
+  // All returned games must have status=finished
+  for (const g of body) {
+    assert.equal(g.status, 'finished', `Expected status='finished', got '${g.status}' for game ${g.id}`);
+  }
+  // The finished game must be present
+  assert.ok(body.some(g => g.id === finishedId), `Finished game ${finishedId} should be in results`);
+  // The active game must NOT be present
+  assert.ok(!body.some(g => g.id === activeId), `Active game ${activeId} should NOT be in finished results`);
+});
+
+// ---------------------------------------------------------------------------
 // GT15: Crash recovery — rebuildActiveGames restores state from DB
 // ---------------------------------------------------------------------------
 test('GT15: rebuildActiveGames rebuilds activeGames from DB after full Map teardown', async () => {
