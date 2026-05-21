@@ -28,8 +28,8 @@ module.exports = {
     return {
       grid: Array.from({ length: 9 }, () => Array(9).fill(null)),
       nr: Array(9).fill(8), // next available row per column (8=bottom, decrements upward)
-      tX: players.filter(p => p.team === 'X').map(p => ({ id: p.id, name: p.name, emoji: p.emoji, team: 'X' })),
-      tO: players.filter(p => p.team === 'O').map(p => ({ id: p.id, name: p.name, emoji: p.emoji, team: 'O' })),
+      tX: players.filter(p => p.role === 'X').map(p => ({ id: p.id, name: p.name, emoji: p.emoji, team: 'X' })),
+      tO: players.filter(p => p.role === 'O').map(p => ({ id: p.id, name: p.name, emoji: p.emoji, team: 'O' })),
       aktT: 'X',
       iX: 0,
       iO: 0,

@@ -895,6 +895,37 @@ test('GT23: GET /api/games?status=finished returns only finished games', async (
 });
 
 // ---------------------------------------------------------------------------
+// GT24: POST /api/games with viergewinnt + roles produces non-empty state.tX and state.tO
+// ---------------------------------------------------------------------------
+test('GT24: POST /api/games viergewinnt with roles produces non-empty state.tX and state.tO', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Create a viergewinnt game with player 1 as X and player 2 as O
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({
+      type_key: 'viergewinnt',
+      player_ids: [1, 2],
+      roles: { '1': 'X', '2': 'O' }
+    })
+  });
+  assert.equal(createRes.status, 201, `Expected 201, got ${createRes.status}`);
+  const { id: gameId } = await createRes.json();
+
+  // GET the game state
+  const getRes = await fetch(`${baseUrl}/api/games/${gameId}`);
+  assert.equal(getRes.status, 200, `Expected 200, got ${getRes.status}`);
+  const body = await getRes.json();
+
+  // state.tX and state.tO must be non-empty arrays
+  assert.ok(Array.isArray(body.state.tX), `state.tX should be an array, got ${typeof body.state.tX}`);
+  assert.ok(Array.isArray(body.state.tO), `state.tO should be an array, got ${typeof body.state.tO}`);
+  assert.ok(body.state.tX.length > 0, `state.tX should be non-empty (fix p.team -> p.role in vier-gewinnt.js)`);
+  assert.ok(body.state.tO.length > 0, `state.tO should be non-empty (fix p.team -> p.role in vier-gewinnt.js)`);
+});
+
+// ---------------------------------------------------------------------------
 // GT15: Crash recovery — rebuildActiveGames restores state from DB
 // ---------------------------------------------------------------------------
 test('GT15: rebuildActiveGames rebuilds activeGames from DB after full Map teardown', async () => {

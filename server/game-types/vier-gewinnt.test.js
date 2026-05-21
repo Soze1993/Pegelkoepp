@@ -4,8 +4,8 @@ const assert = require('node:assert/strict');
 const vierGewinnt = require('./vier-gewinnt');
 
 const players = [
-  { id: 1, name: 'A', emoji: 'A', team: 'X' },
-  { id: 2, name: 'B', emoji: 'B', team: 'O' }
+  { id: 1, name: 'A', emoji: 'A', role: 'X' },
+  { id: 2, name: 'B', emoji: 'B', role: 'O' }
 ];
 
 // C1: Module shape
