@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Backend Foundation** - Scaffold, SQLite schema, game-type modules extracted from HTML, REST API, PIN auth (completed 2026-05-20)
 - [x] **Phase 2: Real-Time & TV** - Socket.io throw sync, TV display page, undo, reconnect, connection indicator (completed 2026-05-20)
-- [ ] **Phase 3: Frontend Wiring** - Connect existing HTML app to backend API; replace in-memory state with API/socket calls
+- [x] **Phase 3: Frontend Wiring** - Connect existing HTML app to backend API; replace in-memory state with API/socket calls (completed 2026-05-21)
 - [ ] **Phase 4: Club Features** - Kegelabend sessions, statistics (wins/losses, personal records, Pudel%), custom game types
 - [ ] **Phase 5: Production Deployment** - PM2, Nginx + WebSocket headers, Certbot HTTPS, crash recovery
 
@@ -93,7 +93,7 @@ Plans:
   2. Refreshing the browser mid-game does not lose the current game state — the UI reloads the in-progress game from the server
   3. Completing a game through the UI writes the final result to the database and the result is visible via the stats/history view
 
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 
 **Wave 0**
@@ -102,11 +102,11 @@ Plans:
 
 **Wave 1** *(blocked on Wave 0 completion)*
 
-- [ ] 03-02-PLAN.md — Foundation slice: copy kegelclub_12.html → public/index.html, wire DOMContentLoaded auth gate + PIN overlay, init() sequence (players + active game recovery + Socket.io), connection dot in topbar
+- [x] 03-02-PLAN.md — Foundation slice: copy kegelclub_12.html → public/index.html, wire DOMContentLoaded auth gate + PIN overlay, init() sequence (players + active game recovery + Socket.io), connection dot in topbar
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 03-03-PLAN.md — Game wiring vertical slice: all 9 start functions → POST /api/games, all throw functions → POST /api/games/:id/throws, undo → POST /api/games/:id/undo, renderSpielenTab type_key switch, renderSpiele API call, human verification checkpoint
+- [x] 03-03-PLAN.md — Game wiring vertical slice: all 9 start functions → POST /api/games, all throw functions → POST /api/games/:id/throws, undo → POST /api/games/:id/undo, renderSpielenTab type_key switch, renderSpiele API call, human verification checkpoint
 **UI hint**: yes
 
 ### Phase 4: Club Features
@@ -149,6 +149,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
 | 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
-| 3. Frontend Wiring | 1/3 | In Progress|  |
+| 3. Frontend Wiring | 3/3 | Complete   | 2026-05-21 |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |
