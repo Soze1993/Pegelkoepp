@@ -47,15 +47,22 @@ router.post('/', requireSession, (req, res) => {
     return res.status(400).json({ error: 'One or more player_ids are invalid or archived' });
   }
 
+  // Abend auto-link (D-04): if no abend_id supplied, auto-link to active abend
+  let abendId = (req.body && req.body.abend_id) || null;
+  if (!abendId) {
+    const active = db.prepare('SELECT id FROM abende WHERE ended_at IS NULL LIMIT 1').get();
+    if (active) abendId = active.id;
+  }
+
   // Insert game row + game_players in a single transaction
   // roles: optional { '<playerId>': 'fuchs' } map for fuchsjagd (D-13)
-  const insertGame = db.prepare('INSERT INTO games (type_key) VALUES (?)');
+  const insertGame = db.prepare('INSERT INTO games (type_key, abend_id) VALUES (?, ?)');
   const insertGamePlayer = db.prepare(
     'INSERT INTO game_players (game_id, player_id, seat, role) VALUES (?, ?, ?, ?)'
   );
 
   const txn = db.transaction(() => {
-    const gameResult = insertGame.run(type_key);
+    const gameResult = insertGame.run(type_key, abendId);
     const gameId = gameResult.lastInsertRowid;
     players.forEach((p, i) => {
       const role = (roles && roles[String(p.id)]) || null;
