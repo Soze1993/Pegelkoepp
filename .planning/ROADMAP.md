@@ -123,7 +123,16 @@ Plans:
   4. The player statistics view shows each player's total Pudel count and Pudel percentage (Pudel ÷ total throws × 100)
   5. A user can create a custom game type with a name and description; the custom type persists after a server restart and can be selected when starting a new game
 
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Backend: DB migrations (abende table + games.abend_id), abende/stats/game-types route files, abend auto-link in POST /api/games, route mounting, node:test coverage (AB01–AB06, ST10–ST20, GT25–GT31)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 04-02-PLAN.md — Frontend: S.aktAbend state, abend banner + modal + grouping in Spiele tab, real Stats tab with player cards and personal bests, Bibliothek custom type section with add/delete modal
 **UI hint**: yes
 
 ### Phase 5: Production Deployment
@@ -150,5 +159,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
 | 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
 | 3. Frontend Wiring | 3/3 | Complete   | 2026-05-21 |
-| 4. Club Features | 0/? | Not started | - |
+| 4. Club Features | 0/2 | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |

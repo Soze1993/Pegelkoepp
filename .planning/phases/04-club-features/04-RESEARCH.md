@@ -681,21 +681,21 @@ async function renderSpiele() {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `kleineHaus` personal best show the winner's score or the player's best-ever score?**
    - What we know: lower is better in kleineHaus; `getFinalResults` returns the winner's actual house number.
    - What's unclear: should a player who scored 123 and lost see that as their personal "best" (closest to winning)?
-   - Recommendation: For simplicity, only record personal bests for `winner: true` entries in kleineHaus (the score that won). This is unambiguous and consistent.
+   - RESOLVED: Only record personal bests for `winner: true` entries in kleineHaus (the score that won). This is unambiguous and consistent. Plans implement this by tracking the winner's score as the personal best per type_key.
 
 2. **Should `GET /api/stats` include archived players?**
    - What we know: `GET /api/players` returns archived=0 players; the stats query fetches `WHERE archived = 0`.
    - What's unclear: if a player was active for 50 games and then archived, should their historical stats still appear?
-   - Recommendation: Exclude archived players from stats (consistent with all other API responses). Historical data is preserved in DB but not displayed.
+   - RESOLVED: Exclude archived players from stats (consistent with all other API responses). Historical data is preserved in DB but not displayed. Plans implement `WHERE archived = 0` in the player query.
 
 3. **Should custom game types appear in `GET /api/game-types` or be merged into the existing `S.typen` array?**
    - What we know: `S.typen` is hardcoded JS. `GET /api/game-types` returns only `is_builtin = 0` rows.
-   - Recommendation: Keep them separate. `S.typen` stays as-is for built-in types. Custom types fetched from API and rendered in their own section in the Bibliothek tab. This is exactly what D-12 specifies.
+   - RESOLVED: Keep them separate. `S.typen` stays as-is for built-in types. Custom types fetched from API and rendered in their own section in the Bibliothek tab. This is exactly what D-12 specifies. Plans implement `GET /api/game-types` returning only `is_builtin=0` rows.
 
 ---
 
