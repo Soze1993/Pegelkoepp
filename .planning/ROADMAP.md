@@ -93,7 +93,20 @@ Plans:
   2. Refreshing the browser mid-game does not lose the current game state — the UI reloads the in-progress game from the server
   3. Completing a game through the UI writes the final result to the database and the result is visible via the stats/history view
 
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+
+**Wave 0**
+
+- [ ] 03-01-PLAN.md — Backend prerequisites: GET /api/games route with ?status filter, vier-gewinnt.js p.team→p.role fix, tv.js game:finished idle transition, test stubs GT21–GT24
+
+**Wave 1** *(blocked on Wave 0 completion)*
+
+- [ ] 03-02-PLAN.md — Foundation slice: copy kegelclub_12.html → public/index.html, wire DOMContentLoaded auth gate + PIN overlay, init() sequence (players + active game recovery + Socket.io), connection dot in topbar
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-03-PLAN.md — Game wiring vertical slice: all 9 start functions → POST /api/games, all throw functions → POST /api/games/:id/throws, undo → POST /api/games/:id/undo, renderSpielenTab type_key switch, renderSpiele API call, human verification checkpoint
 **UI hint**: yes
 
 ### Phase 4: Club Features
@@ -136,6 +149,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
 | 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
-| 3. Frontend Wiring | 0/? | Not started | - |
+| 3. Frontend Wiring | 0/3 | Not started | - |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |
