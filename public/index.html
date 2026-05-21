@@ -106,6 +106,7 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 .conn-dot{width:10px;height:10px;border-radius:50%;background:#888;flex-shrink:0}
 .conn-dot.green{background:var(--grn)}
 .conn-dot.red{background:var(--red)}
+.abend-banner{background:var(--bg2);border:1px solid var(--ac);border-left:3px solid var(--ac);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -237,6 +238,27 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
   </div>
 </div></div>
 
+
+<div class="mo" id="m-start-abend"><div class="md">
+  <h2>Abend starten</h2>
+  <div class="fg"><label>Name (optional)</label><input type="text" id="m-abend-name" placeholder="z.B. Freitagsrunde (optional)"></div>
+  <div style="font-size:11px;color:var(--mut);margin-top:-8px;margin-bottom:14px">Leer lassen für automatischen Namen</div>
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button class="btn bp" style="flex:1" onclick="startAbend()">Starten</button>
+    <button class="btn bg" onclick="closeM('m-start-abend')">Abbrechen</button>
+  </div>
+</div></div>
+
+<div class="mo" id="m-neu-typ"><div class="md">
+  <h2>Neuer Spieltyp</h2>
+  <div class="fg"><label>Name</label><input type="text" id="m-typ-name" placeholder="Name..."></div>
+  <div class="fg"><label>Regeln / Beschreibung</label><textarea id="m-typ-desc" placeholder="Wie wird gespielt?..."></textarea></div>
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button class="btn bp" style="flex:1" onclick="addCustomTyp()">Hinzufügen</button>
+    <button class="btn bg" onclick="closeM('m-neu-typ')">Abbrechen</button>
+  </div>
+</div></div>
+
 </div>
 <div class="notif" id="notif"></div>
 <script src="/socket.io/socket.io.js"></script>
@@ -260,13 +282,14 @@ var S={
     {id:'kda',bi:true,icon:'🏆',name:'Kegler des Abends',desc:'Double-Elimination Turnier. Zufaellige Paarungen. Jeder darf 1x verlieren.',mode:'multi'},
     {id:'bilderkegel',bi:true,icon:'🖼',name:'Bilderkegel',desc:'5 Bilder im Abraeumen: Volle, Kleeblatt, Hint. Kranz, Damen, Bauern. Reihum je 2 Wuerfe. Meiste Punkte gewinnt, wenigste Punkte muss naechstes Kegeln bezahlen.',mode:'multi'}
   ],
-  aktSpiel:null
+  aktSpiel:null,
+  aktAbend:null
 };
 
 function today(){return new Date().toISOString().slice(0,10);}
 function notify(msg,col){var n=document.getElementById('notif');n.textContent=msg;n.style.background=col||'var(--grn)';n.classList.add('show');setTimeout(function(){n.classList.remove('show');},2400);}
 function showTab(id){document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});var pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('active');var map={spiele:0,spielen:1,bib:2,spieler:3,stats:4};var tabs=document.querySelectorAll('.tab');if(map[id]!==undefined&&tabs[map[id]])tabs[map[id]].classList.add('active');renderAll();}
-function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}}
+function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function updSp(id,opts){return;}
 
@@ -284,6 +307,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function init() {
   var playersRes = await fetch('/api/players');
   S.spieler = await playersRes.json();
+
+  var abendRes = await fetch('/api/abende/active');
+  var abendData = await abendRes.json();
+  S.aktAbend = abendData ? { id: abendData.id, name: abendData.name } : null;
 
   var gamesRes = await fetch('/api/games?status=active');
   var activeGames = await gamesRes.json();
@@ -390,6 +417,29 @@ async function submitUndo() {
   renderSpielenTab();
 }
 
+async function startAbend() {
+  var val = document.getElementById('m-abend-name').value.trim();
+  var res = await fetch('/api/abende', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: val })
+  });
+  if (!res.ok) { notify('Fehler beim Starten', 'var(--red)'); return; }
+  var data = await res.json();
+  S.aktAbend = { id: data.id, name: data.name };
+  closeM('m-start-abend');
+  renderSpiele().catch(function(){});
+}
+
+async function endAbend() {
+  if (!S.aktAbend) return;
+  var name = S.aktAbend.name;
+  if (!confirm('Abend \'' + name + '\' beenden?')) return;
+  var res = await fetch('/api/abende/' + S.aktAbend.id + '/end', { method: 'POST' });
+  if (!res.ok) { notify('Fehler beim Beenden', 'var(--red)'); return; }
+  S.aktAbend = null;
+  renderSpiele().catch(function(){});
+}
+
 // Winner banner
 function getWinnerName(state, type_key) {
   if (!state) return 'Unbekannt';
@@ -489,26 +539,150 @@ function kegelSVG(activePins,w,h){var px={1:[40,88],2:[24,68],3:[56,68],4:[8,48]
 // Spiele Liste
 async function renderSpiele() {
   var el = document.getElementById('r-spiele');
-  var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="stitle" style="margin:0">Alle Spiele</div><button class="btn bp sm" onclick="showTab(\'bib\')">+ Neues Spiel</button></div>';
+  var frag = document.createDocumentFragment();
+
+  // Header row
+  var headerDiv = document.createElement('div');
+  headerDiv.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px';
+  var titleDiv = document.createElement('div');
+  titleDiv.className = 'stitle';
+  titleDiv.style.margin = '0';
+  titleDiv.textContent = 'Alle Spiele';
+  var newBtn = document.createElement('button');
+  newBtn.className = 'btn bp sm';
+  newBtn.textContent = '+ Neues Spiel';
+  newBtn.onclick = function(){ showTab('bib'); };
+  headerDiv.appendChild(titleDiv);
+  headerDiv.appendChild(newBtn);
+  frag.appendChild(headerDiv);
+
+  // Fetch active abend → update S.aktAbend
+  try {
+    var abRes = await fetch('/api/abende/active');
+    var abData = await abRes.json();
+    S.aktAbend = abData ? { id: abData.id, name: abData.name } : null;
+  } catch(e) { S.aktAbend = null; }
+
+  // Abend banner or start button
+  if (S.aktAbend) {
+    var banner = document.createElement('div');
+    banner.className = 'abend-banner';
+    var leftDiv = document.createElement('div');
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:11px;color:var(--mut)';
+    lbl.textContent = '📍 Abend läuft:';
+    var nameSpan = document.createElement('div');
+    nameSpan.style.cssText = 'font-weight:700;color:var(--txt);margin-top:2px';
+    nameSpan.textContent = S.aktAbend.name;
+    leftDiv.appendChild(lbl);
+    leftDiv.appendChild(nameSpan);
+    var endBtn = document.createElement('button');
+    endBtn.className = 'btn bd sm';
+    endBtn.textContent = '■ Beenden';
+    endBtn.onclick = endAbend;
+    banner.appendChild(leftDiv);
+    banner.appendChild(endBtn);
+    frag.appendChild(banner);
+  } else {
+    var startBtn = document.createElement('button');
+    startBtn.className = 'btn bp';
+    startBtn.style.marginBottom = '14px';
+    startBtn.textContent = '▶ Abend starten';
+    startBtn.onclick = function(){ openM('m-start-abend'); };
+    frag.appendChild(startBtn);
+  }
+
+  // Fetch abende list for grouping
+  var abendeMap = {};
+  try {
+    var abListRes = await fetch('/api/abende');
+    var abList = await abListRes.json();
+    abList.forEach(function(a){ abendeMap[a.id] = a; });
+  } catch(e) {}
+
+  // Fetch finished games
   var games;
   try {
     games = await fetch('/api/games?status=finished').then(function(r){return r.json();});
   } catch(e) {
-    el.innerHTML = header + '<div class="empty"><div class="icon">🎳</div><p>Laden fehlgeschlagen.</p></div>';
+    var errDiv = document.createElement('div');
+    errDiv.className = 'empty';
+    errDiv.innerHTML = '<div class="icon">🎳</div><p>Laden fehlgeschlagen.</p>';
+    frag.appendChild(errDiv);
+    el.innerHTML = '';
+    el.appendChild(frag);
     return;
   }
+
   if (!games.length) {
-    el.innerHTML = header + '<div class="empty"><div class="icon">🎳</div><p>Noch keine Spiele.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p></div>';
+    var emptyDiv = document.createElement('div');
+    emptyDiv.className = 'empty';
+    emptyDiv.innerHTML = '<div class="icon">🎳</div><p>Noch keine Spiele.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p>';
+    frag.appendChild(emptyDiv);
+    el.innerHTML = '';
+    el.appendChild(frag);
     return;
   }
-  var cards = games.map(function(g) {
+
+  function makeGameCard(g) {
     var typ = S.typen.find(function(t){return t.id===g.type_key;});
     var icon = typ ? typ.icon : '🎲';
     var name = typ ? typ.name : g.type_key;
     var dateStr = g.started_at ? new Date(g.started_at).toLocaleDateString('de-DE') : '';
-    return '<div class="stc"><div style="display:flex;align-items:center;gap:12px"><div class="uav" style="font-size:20px">' + icon + '</div><div class="uinfo"><div class="nm">' + name + '</div><div class="sub">' + dateStr + '</div></div></div></div>';
-  }).join('');
-  el.innerHTML = header + cards;
+    var card = document.createElement('div');
+    card.className = 'stc';
+    card.innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div class="uav" style="font-size:20px">' + icon + '</div><div class="uinfo"><div class="nm">' + name + '</div><div class="sub">' + dateStr + '</div></div></div>';
+    return card;
+  }
+
+  function makeGroupHeader(text) {
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--brd)';
+    hdr.textContent = text;
+    return hdr;
+  }
+
+  // Group games by abend_id
+  var grouped = {}; // abend_id (string) -> [game, ...]
+  var ohne = [];
+  games.forEach(function(g) {
+    if (g.abend_id != null) {
+      var key = String(g.abend_id);
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(g);
+    } else {
+      ohne.push(g);
+    }
+  });
+
+  // Render groups in order (by first game's started_at, newest group first)
+  var abendIds = Object.keys(grouped);
+  // Sort by first game in group descending
+  abendIds.sort(function(a, b) {
+    var ga = grouped[a][0], gb = grouped[b][0];
+    return new Date(gb.started_at || 0) - new Date(ga.started_at || 0);
+  });
+
+  abendIds.forEach(function(abendId) {
+    var abend = abendeMap[abendId];
+    var headerText;
+    if (abend) {
+      var dateLabel = abend.started_at ? new Date(abend.started_at).toLocaleDateString('de-DE', {weekday:'short',day:'2-digit',month:'2-digit'}) : '';
+      headerText = abend.name + (dateLabel ? ' (' + dateLabel + ')' : '');
+    } else {
+      headerText = 'Abend #' + abendId;
+    }
+    frag.appendChild(makeGroupHeader(headerText));
+    grouped[abendId].forEach(function(g){ frag.appendChild(makeGameCard(g)); });
+  });
+
+  if (ohne.length) {
+    frag.appendChild(makeGroupHeader('Ohne Abend'));
+    ohne.forEach(function(g){ frag.appendChild(makeGameCard(g)); });
+  }
+
+  el.innerHTML = '';
+  el.appendChild(frag);
 }
 
 // Spielen Tab
