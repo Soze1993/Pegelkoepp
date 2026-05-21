@@ -22,9 +22,12 @@ db.exec(schema);
 
 // Phase 2 migrations (D-12, D-13): idempotent via try/catch on duplicate-column error
 // SQLite does not support ALTER TABLE ... ADD COLUMN IF NOT EXISTS — try/catch is the approved pattern.
+// Phase 4 migrations (D-02): abende table + abend_id column on games.
 const migrations = [
   'ALTER TABLE throws ADD COLUMN meta TEXT NULL',
-  'ALTER TABLE game_players ADD COLUMN role TEXT NULL'
+  'ALTER TABLE game_players ADD COLUMN role TEXT NULL',
+  "CREATE TABLE IF NOT EXISTS abende (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, started_at TEXT NOT NULL DEFAULT (datetime('now')), ended_at TEXT NULL)",
+  'ALTER TABLE games ADD COLUMN abend_id INTEGER NULL REFERENCES abende(id)'
 ];
 
 for (const sql of migrations) {

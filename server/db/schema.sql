@@ -31,6 +31,16 @@ CREATE TABLE IF NOT EXISTS throws (
   UNIQUE (game_id, player_id, throw_index)
 );
 
+-- Phase 4: Kegelabend sessions (D-02, PERS-04)
+-- Created via migrations array in db/index.js (not via db.exec(schema)) — listed here for documentation.
+-- CREATE TABLE IF NOT EXISTS abende (
+--   id         INTEGER PRIMARY KEY AUTOINCREMENT,
+--   name       TEXT NOT NULL,
+--   started_at TEXT NOT NULL DEFAULT (datetime('now')),
+--   ended_at   TEXT NULL
+-- );
+-- ALTER TABLE games ADD COLUMN abend_id INTEGER NULL REFERENCES abende(id);
+
 -- Empty in Phase 1; populated in Phase 4 (PERS-03)
 -- Stores user-created game types (generic scoring: name + max throws + target score)
 -- Built-in game types (9) are code modules, not rows in this table
