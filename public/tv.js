@@ -15,11 +15,11 @@ socket.on('disconnect', () => { connDot.className = 'conn-dot red';   });
 // State events (D-09, D-11)
 socket.on('game:state',    ({ idle, state, gameId, lastWinner }) => {
   if (idle) renderIdle(lastWinner);
-  else renderGame(state);
+  else { socket.emit('join', gameId); renderGame(state); }
 });
 socket.on('throw:applied', ({ state }) => renderGame(state));
 socket.on('undo:applied',  ({ state }) => renderGame(state));   // D-07: silent re-render
-socket.on('game:started',  ({ state }) => renderGame(state));
+socket.on('game:started',  ({ state, gameId }) => { socket.emit('join', gameId); renderGame(state); });
 socket.on('game:finished', function({ state }) {
   renderGame(state);
   setTimeout(function() { renderIdle(null); }, 3000);

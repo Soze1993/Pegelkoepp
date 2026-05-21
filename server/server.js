@@ -27,6 +27,9 @@ const io = new Server(server, { cors: { origin: false } });
 app.locals.io = io;  // Must be set BEFORE server.listen so route handlers can read it
 
 io.on('connection', (socket) => {
+  // Allow any client (tablet or TV) to join a game room after game:started
+  socket.on('join', (gameId) => { socket.join(`game:${gameId}`); });
+
   // Find most recently started active game (D-10: highest id where status='active')
   const activeGame = db.prepare(
     "SELECT id FROM games WHERE status = 'active' ORDER BY id DESC LIMIT 1"
