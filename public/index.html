@@ -268,7 +268,7 @@ function notify(msg,col){var n=document.getElementById('notif');n.textContent=ms
 function showTab(id){document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});var pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('active');var map={spiele:0,spielen:1,bib:2,spieler:3,stats:4};var tabs=document.querySelectorAll('.tab');if(map[id]!==undefined&&tabs[map[id]])tabs[map[id]].classList.add('active');renderAll();}
 function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}}
 function closeM(id){document.getElementById(id).classList.remove('open');}
-function updSp(id,opts){var s=S.spieler.find(function(x){return x.id===id;});if(!s)return;if(opts.neu){s.spiele++;if(opts.sieg)s.siege++;else s.niederlagen++;var h=today();if(s.tDatum!==h){s.tDatum=h;s.tSiege=0;s.tNiederlagen=0;}if(opts.sieg)s.tSiege++;else s.tNiederlagen++;}s.pts+=(opts.pts||0);s.wuerfe+=(opts.w||0);s.pudel+=(opts.p||0);if((opts.pts||0)>s.best)s.best=opts.pts||0;}
+function updSp(id,opts){return;}
 
 // Auth gate + init
 document.addEventListener('DOMContentLoaded', async function() {
@@ -435,7 +435,21 @@ function renderBib(){var el=document.getElementById('r-bib');var bi=S.typen.filt
 function startTyp(id){var st=S.typen.find(function(s){return s.id===id;});if(!st)return;if(id==='viergewinnt'){openM('m-vg');return;}if(id==='fuchsjagd'){openM('m-fj');return;}if(id==='anker'){openM('m-anker');return;}if(id==='kda'){openM('m-kda');return;}if(id==='bilderkegel'){openM('m-bk');return;}genTyp=st;genSel=[];document.getElementById('m-gen-title').textContent=st.icon+' '+st.name;document.getElementById('m-gen-datum').value=today();document.getElementById('m-gen-extra').innerHTML='';document.getElementById('m-gen-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togGen('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');openM('m-spiel-gen');}
 function togGen(id,el){if(genSel.indexOf(id)>=0){genSel=genSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{genSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
 function makeGP(id){var s=S.spieler.find(function(x){return x.id===id;});return{id:s.id,name:s.name,emoji:s.emoji,wuerfe:[],pudel:0,slots:{h:null,z:null,e:null}};}
-function startGenSpiel(){if(!genSel.length){notify('Spieler waehlen','var(--red)');return;}notify('Spiel wird gestartet...');closeM('m-spiel-gen');}
+async function startGenSpiel() {
+  if (!genSel.length) { notify('Spieler waehlen', 'var(--red)'); return; }
+  var res = await fetch('/api/games', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type_key: genTyp.id, player_ids: genSel })
+  });
+  if (!res.ok) { notify('Fehler beim Starten', 'var(--red)'); return; }
+  var data = await res.json();
+  var detail = await fetch('/api/games/' + data.id).then(function(r){return r.json();});
+  S.aktSpiel = { gameId: data.id, state: detail.state, type_key: data.type_key };
+  joinGameRoom(data.id);
+  closeM('m-spiel-gen');
+  notify(genTyp.icon + ' ' + genTyp.name + ' gestartet!');
+  showTab('spielen');
+}
 
 // Helpers
 function hn(slots){if(slots.h===null||slots.z===null||slots.e===null)return null;return(slots.h*100)+(slots.z*10)+slots.e;}
@@ -448,16 +462,52 @@ function cbBox(cbId,fn){return'<div class="cb" id="'+cbId+'"><div style="font-si
 function kegelSVG(activePins,w,h){var px={1:[40,88],2:[24,68],3:[56,68],4:[8,48],5:[40,48],6:[72,48],7:[24,28],8:[56,28],9:[40,8]};var circles='';for(var pin=1;pin<=9;pin++){var xy=px[pin],act=activePins.indexOf(pin)>=0;circles+='<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="11" fill="'+(act?'#222':'#ddd')+'" stroke="'+(act?'#444':'#aaa')+'" stroke-width="1.5"/>';}return'<svg viewBox="0 0 80 100" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle">'+circles+'</svg>';}
 
 // Spiele Liste
-function renderSpiele(){var el=document.getElementById('r-spiele');var html='<div style="background:#111118;border:1px solid #333344;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><div style="font-family:UnifrakturMaguntia,serif;font-size:26px;color:var(--ac)">Pegelköpp</div><div style="font-size:11px;color:var(--mut);letter-spacing:.08em;text-transform:uppercase">Kegelclub App</div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="stitle" style="margin:0">Alle Spiele</div><button class="btn bp sm" onclick="showTab(\'bib\')">+ Neues Spiel</button></div>';html+='<div class="empty"><div class="icon">🎳</div><p>Noch keine Spiele.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p></div>';el.innerHTML=html;}
+async function renderSpiele() {
+  var el = document.getElementById('r-spiele');
+  var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="stitle" style="margin:0">Alle Spiele</div><button class="btn bp sm" onclick="showTab(\'bib\')">+ Neues Spiel</button></div>';
+  var games;
+  try {
+    games = await fetch('/api/games?status=finished').then(function(r){return r.json();});
+  } catch(e) {
+    el.innerHTML = header + '<div class="empty"><div class="icon">🎳</div><p>Laden fehlgeschlagen.</p></div>';
+    return;
+  }
+  if (!games.length) {
+    el.innerHTML = header + '<div class="empty"><div class="icon">🎳</div><p>Noch keine Spiele.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p></div>';
+    return;
+  }
+  var cards = games.map(function(g) {
+    var typ = S.typen.find(function(t){return t.id===g.type_key;});
+    var icon = typ ? typ.icon : '🎲';
+    var name = typ ? typ.name : g.type_key;
+    var dateStr = g.started_at ? new Date(g.started_at).toLocaleDateString('de-DE') : '';
+    return '<div class="stc"><div style="display:flex;align-items:center;gap:12px"><div class="uav" style="font-size:20px">' + icon + '</div><div class="uinfo"><div class="nm">' + name + '</div><div class="sub">' + dateStr + '</div></div></div></div>';
+  }).join('');
+  el.innerHTML = header + cards;
+}
 
 // Spielen Tab
-function renderSpielenTab(){var el=document.getElementById('r-spielen');if(!S.aktSpiel){el.innerHTML='<div class="empty" style="margin-top:40px"><div class="icon">🎳</div><p>Kein aktives Spiel.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p></div>';return;}el.innerHTML='<div class="empty" style="margin-top:40px"><div class="icon">🎮</div><p>Spiel laeuft...<br><span style="font-size:12px;color:var(--mut)">Spielfunktionen kommen in Wave 2</span></p></div>';}
+function renderSpielenTab() {
+  var el = document.getElementById('r-spielen');
+  if (!S.aktSpiel) {
+    el.innerHTML = '<div class="empty" style="margin-top:40px"><div class="icon">🎳</div><p>Kein aktives Spiel.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p></div>';
+    return;
+  }
+  switch (S.aktSpiel.type_key) {
+    case 'viergewinnt':  renderVGSpiel(el, S.aktSpiel.state); break;
+    case 'fuchsjagd':   renderFJSpiel(el, S.aktSpiel.state); break;
+    case 'anker':       renderAnkerSpiel(el, S.aktSpiel.state); break;
+    case 'kda':         renderKDASpiel(el, S.aktSpiel.state); break;
+    case 'bilderkegel': renderBKSpiel(el, S.aktSpiel.state); break;
+    default:            renderNSpiel(el, S.aktSpiel.state); break;
+  }
+}
 
 // Bilderkegel
 var BK_BILDER=[{id:'volle',name:'Volle',pins:[1,2,3,4,5,6,7,8,9]},{id:'kleeblatt',name:'Kleeblatt',pins:[2,3,4,6,7,8,9]},{id:'hint_kranz',name:'Hint. Kranz',pins:[4,6,7,8,9]},{id:'damen',name:'Damen',pins:[2,3,7,8]},{id:'bauern',name:'Bauern',pins:[4,6]}];
 function renderBKWahl(){bkSel=[];document.getElementById('m-bk-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togBK('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');}
 function togBK(id,el){if(bkSel.indexOf(id)>=0){bkSel=bkSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{bkSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
-function startBK(){if(bkSel.length<2){notify('Mind. 2 Spieler','var(--red)');return;}notify('Bilderkegel wird gestartet...');closeM('m-bk');}
+async function startBK(){if(bkSel.length<2){notify('Mind. 2 Spieler','var(--red)');return;}var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'bilderkegel',player_ids:bkSel})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-bk');notify('🖼 Bilderkegel gestartet!');showTab('spielen');}
 function bkSelK(n){bkK=n;}
 function doBKWurf(){notify('Wave 2','var(--mut)');}
 function bkTotal(p){return(p.bildPts||[]).reduce(function(a,b){return a+(b!==null?b:0);},0);}
@@ -479,7 +529,7 @@ function renderNSpiel(el){el.innerHTML='';}
 var vgX=[],vgO=[];
 function renderVGWahl(){vgX=[];vgO=[];['x','o'].forEach(function(t){document.getElementById('m-vg-'+t).innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togVG('+s.id+',\''+t+'\',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');});}
 function togVG(id,team,el){vgX=vgX.filter(function(x){return x!==id;});vgO=vgO.filter(function(x){return x!==id;});document.querySelectorAll('[onclick*="togVG('+id+'"]').forEach(function(b){b.style.borderColor='var(--brd)';b.style.background='var(--bg3)';b.style.color='var(--txt)';});if(team==='x'){vgX.push(id);el.style.borderColor='var(--tX)';el.style.background='#e0525222';el.style.color='var(--tX)';}else{vgO.push(id);el.style.borderColor='var(--tO)';el.style.background='#5b8dee22';el.style.color='var(--tO)';}}
-function startVG(){if(!vgX.length||!vgO.length){notify('Beide Teams benoetigen Spieler','var(--red)');return;}notify('Vier Gewinnt wird gestartet...');closeM('m-vg');}
+async function startVG(){if(!vgX.length||!vgO.length){notify('Beide Teams benoetigen Spieler','var(--red)');return;}var rolesObj={};vgX.forEach(function(id){rolesObj[String(id)]='X';});vgO.forEach(function(id){rolesObj[String(id)]='O';});var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'viergewinnt',player_ids:vgX.concat(vgO),roles:rolesObj})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-vg');notify('🔴 Vier Gewinnt gestartet!');showTab('spielen');}
 function getVGP(sp){return sp.aktT==='X'?sp.tX[sp.iX%sp.tX.length]:sp.tO[sp.iO%sp.tO.length];}
 function check4(grid,t){var win=new Set(),N=9;function mk(c){c.forEach(function(rc){win.add(rc[0]+','+rc[1]);});}for(var r=0;r<N;r++)for(var c=0;c<N;c++){if(grid[r][c]!==t)continue;if(c+3<N&&grid[r][c+1]===t&&grid[r][c+2]===t&&grid[r][c+3]===t)mk([[r,c],[r,c+1],[r,c+2],[r,c+3]]);if(r+3<N&&grid[r+1][c]===t&&grid[r+2][c]===t&&grid[r+3][c]===t)mk([[r,c],[r+1,c],[r+2,c],[r+3,c]]);if(r+3<N&&c+3<N&&grid[r+1][c+1]===t&&grid[r+2][c+2]===t&&grid[r+3][c+3]===t)mk([[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]]);if(r+3<N&&c-3>=0&&grid[r+1][c-1]===t&&grid[r+2][c-2]===t&&grid[r+3][c-3]===t)mk([[r,c],[r+1,c-1],[r+2,c-2],[r+3,c-3]]);}return win;}
 function vgSelFn(v){vgSel=v;}
@@ -494,7 +544,7 @@ var fjFuchs=null,fjJaeger=[];
 function renderFJWahl(){fjFuchs=null;fjJaeger=[];document.getElementById('m-fj-fuchs').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="selFuchs('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');document.getElementById('m-fj-jaeger').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togJaeger('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');}
 function selFuchs(id,el){fjFuchs=id;document.querySelectorAll('#m-fj-fuchs div').forEach(function(b){b.style.borderColor='var(--brd)';b.style.background='var(--bg3)';b.style.color='var(--txt)';});el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}
 function togJaeger(id,el){if(fjJaeger.indexOf(id)>=0){fjJaeger=fjJaeger.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{fjJaeger.push(id);el.style.borderColor='var(--red)';el.style.background='#e0525222';el.style.color='var(--red)';}}
-function startFJ(){if(!fjFuchs){notify('Fuchs waehlen','var(--red)');return;}if(!fjJaeger.length){notify('Jaeger waehlen','var(--red)');return;}if(fjJaeger.indexOf(fjFuchs)>=0){notify('Fuchs kann kein Jaeger sein','var(--red)');return;}notify('Fuchsjagd wird gestartet...');closeM('m-fj');}
+async function startFJ(){if(!fjFuchs){notify('Fuchs waehlen','var(--red)');return;}if(!fjJaeger.length){notify('Jaeger waehlen','var(--red)');return;}if(fjJaeger.indexOf(fjFuchs)>=0){notify('Fuchs kann kein Jaeger sein','var(--red)');return;}var rolesObj={};rolesObj[String(fjFuchs)]='fuchs';fjJaeger.forEach(function(id){rolesObj[String(id)]='jaeger';});var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'fuchsjagd',player_ids:[fjFuchs].concat(fjJaeger),roles:rolesObj})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-fj');notify('🦊 Fuchsjagd gestartet!');showTab('spielen');}
 function fjSelFn(n){fjSel=n;}
 function doFJWurf(){notify('Wave 2','var(--mut)');}
 function endFJ(sp,gew,jaeger){}
@@ -505,7 +555,7 @@ function renderFJSpiel(el){el.innerHTML='';}
 var ankerSel=[];
 function renderAnkerWahl(){ankerSel=[];document.getElementById('m-anker-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togAnker('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');}
 function togAnker(id,el){if(ankerSel.indexOf(id)>=0){ankerSel=ankerSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{ankerSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
-function startAnker(){if(!ankerSel.length){notify('Spieler waehlen','var(--red)');return;}notify('Anker wird gestartet...');closeM('m-anker');}
+async function startAnker(){if(!ankerSel.length){notify('Spieler waehlen','var(--red)');return;}var maxR=parseInt(document.getElementById('m-anker-runden').value)||3;var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'anker',player_ids:ankerSel,config:{maxRunden:maxR}})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-anker');notify('⚓ Anker gestartet!');showTab('spielen');}
 function doAnkerWurf(){notify('Wave 2','var(--mut)');}
 function endAnker(sp){}
 function ankerAbbruch(){}
@@ -517,7 +567,21 @@ var kdaSel=[];
 function renderKDAWahl(){kdaSel=[];document.getElementById('m-kda-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togKDA('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');}
 function togKDA(id,el){if(kdaSel.indexOf(id)>=0){kdaSel=kdaSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{kdaSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
 function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function startKDA(){if(kdaSel.length<2){notify('Mind. 2 Spieler','var(--red)');return;}notify('Kegler des Abends wird gestartet...');closeM('m-kda');}
+async function startKDA() {
+  if (kdaSel.length < 2) { notify('Mind. 2 Spieler', 'var(--red)'); return; }
+  var res = await fetch('/api/games', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type_key: 'kda', player_ids: kdaSel, config: { seed: Date.now() } })
+  });
+  if (!res.ok) { notify('Fehler beim Starten', 'var(--red)'); return; }
+  var data = await res.json();
+  var detail = await fetch('/api/games/' + data.id).then(function(r){return r.json();});
+  S.aktSpiel = { gameId: data.id, state: detail.state, type_key: 'kda' };
+  joinGameRoom(data.id);
+  closeM('m-kda');
+  notify('Kegler des Abends gestartet!');
+  showTab('spielen');
+}
 function kdaSetWinner(matchId,winnerId){notify('Wave 2','var(--mut)');}
 function renderKDASpiel(el){el.innerHTML='';}
 
@@ -527,7 +591,7 @@ function renderStats() {
   el.innerHTML = '<div class="empty"><div class="icon">📊</div><p>Demnächst</p></div>';
 }
 
-function renderAll(){renderSpiele();renderSpielerListe();renderSpielenTab();renderBib();renderStats();}
+function renderAll(){renderSpiele().catch(function(){}); renderSpielerListe(); renderSpielenTab(); renderBib(); renderStats();}
 window.addEventListener('load', function() {
   document.querySelectorAll('.mo').forEach(function(m) {
     m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
