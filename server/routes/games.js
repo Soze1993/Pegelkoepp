@@ -162,7 +162,16 @@ router.post('/:id/throws', requireSession, (req, res) => {
   if (io) {
     io.to(`game:${gameId}`).emit('throw:applied', { state: newState, finished });
     if (finished) {
-      io.to(`game:${gameId}`).emit('game:finished', { state: newState });
+      let lastWinner = null;
+      try {
+        const results = gameModule.getFinalResults(newState);
+        const winnerEntry = results.find(r => r.winner);
+        if (winnerEntry) {
+          const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
+          lastWinner = row ? row.name : null;
+        }
+      } catch (e) { /* non-fatal */ }
+      io.to(`game:${gameId}`).emit('game:finished', { state: newState, lastWinner });
     }
   }
 

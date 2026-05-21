@@ -20,9 +20,9 @@ socket.on('game:state',    ({ idle, state, gameId, lastWinner }) => {
 socket.on('throw:applied', ({ state }) => renderGame(state));
 socket.on('undo:applied',  ({ state }) => renderGame(state));   // D-07: silent re-render
 socket.on('game:started',  ({ state, gameId }) => { socket.emit('join', gameId); renderGame(state); });
-socket.on('game:finished', function({ state }) {
+socket.on('game:finished', function({ state, lastWinner }) {
   renderGame(state);
-  setTimeout(function() { renderIdle(null); }, 3000);
+  setTimeout(function() { renderIdle(lastWinner || null); }, 3000);
 });
 
 function renderIdle(lastWinner) {
