@@ -93,12 +93,12 @@ Plans:
   2. Refreshing the browser mid-game does not lose the current game state — the UI reloads the in-progress game from the server
   3. Completing a game through the UI writes the final result to the database and the result is visible via the stats/history view
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
 
 **Wave 0**
 
-- [ ] 03-01-PLAN.md — Backend prerequisites: GET /api/games route with ?status filter, vier-gewinnt.js p.team→p.role fix, tv.js game:finished idle transition, test stubs GT21–GT24
+- [x] 03-01-PLAN.md — Backend prerequisites: GET /api/games route with ?status filter, vier-gewinnt.js p.team→p.role fix, tv.js game:finished idle transition, test stubs GT21–GT24
 
 **Wave 1** *(blocked on Wave 0 completion)*
 
@@ -149,6 +149,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
 | 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
-| 3. Frontend Wiring | 0/3 | Not started | - |
+| 3. Frontend Wiring | 1/3 | In Progress|  |
 | 4. Club Features | 0/? | Not started | - |
 | 5. Production Deployment | 0/? | Not started | - |

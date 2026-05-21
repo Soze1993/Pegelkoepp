@@ -34,7 +34,7 @@
 ### Gameplay
 
 - [x] **PLAY-01**: User can undo the last entered throw during any active game (single-step undo)
-- [ ] **PLAY-02**: All 9 built-in game types (Vier Gewinnt, Fuchsjagd, Drei in die Vollen, Große Hausnummer, Kleine Hausnummer, Plus/Minus/Mal/Geteilt, Anker, Kegler des Abends, Bilderkegel) work with backend-connected state
+- [x] **PLAY-02**: All 9 built-in game types (Vier Gewinnt, Fuchsjagd, Drei in die Vollen, Große Hausnummer, Kleine Hausnummer, Plus/Minus/Mal/Geteilt, Anker, Kegler des Abends, Bilderkegel) work with backend-connected state
 
 ### Statistics
 
@@ -92,7 +92,7 @@
 | TV-03 | Phase 2 | Complete |
 | TV-04 | Phase 2 | Complete |
 | PLAY-01 | Phase 2 | Complete |
-| PLAY-02 | Phase 3 | Pending |
+| PLAY-02 | Phase 3 | Complete |
 | STAT-01 | Phase 4 | Pending |
 | STAT-02 | Phase 4 | Pending |
 | STAT-03 | Phase 4 | Pending |
