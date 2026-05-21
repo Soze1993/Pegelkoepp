@@ -365,6 +365,31 @@ function joinGameRoom(gameId) {
   if (socket) socket.emit('join', gameId);
 }
 
+async function submitThrow(player_id, throw_index, value, meta) {
+  var body = { player_id: player_id, throw_index: throw_index, value: value };
+  if (meta !== undefined) body.meta = meta;
+  var res = await fetch('/api/games/' + S.aktSpiel.gameId + '/throws', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    if (res.status === 409) { notify('Doppelter Wurf', 'var(--red)'); } else { notify('Fehler beim Wurf', 'var(--red)'); }
+    return null;
+  }
+  return await res.json();
+}
+
+async function submitUndo() {
+  if (!S.aktSpiel) return;
+  var res = await fetch('/api/games/' + S.aktSpiel.gameId + '/undo', {
+    method: 'POST', headers: { 'content-type': 'application/json' }
+  });
+  if (!res.ok) { notify('Kein Wurf zum Rueckgaengig machen', 'var(--red)'); return; }
+  var data = await res.json();
+  S.aktSpiel.state = data.state;
+  renderSpielenTab();
+}
+
 // Winner banner
 function getWinnerName(state, type_key) {
   if (!state) return 'Unbekannt';
@@ -509,21 +534,65 @@ function renderBKWahl(){bkSel=[];document.getElementById('m-bk-wahl').innerHTML=
 function togBK(id,el){if(bkSel.indexOf(id)>=0){bkSel=bkSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{bkSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
 async function startBK(){if(bkSel.length<2){notify('Mind. 2 Spieler','var(--red)');return;}var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'bilderkegel',player_ids:bkSel})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-bk');notify('🖼 Bilderkegel gestartet!');showTab('spielen');}
 function bkSelK(n){bkK=n;}
-function doBKWurf(){notify('Wave 2','var(--mut)');}
+async function doBKWurf() {
+  if (bkK === null) { notify('Bitte waehlen', 'var(--red)'); return; }
+  if (!S.aktSpiel) return;
+  var state = S.aktSpiel.state;
+  var akt = state.players[state.aktSpIdx];
+  var throwIndex = 0;
+  state.players.forEach(function(p){
+    if (p.wuerfe) p.wuerfe.forEach(function(bw){throwIndex+=bw.length;});
+  });
+  var value = bkK;
+  bkK = null;
+  var data = await submitThrow(akt.id, throwIndex, value, undefined);
+  if (!data) return;
+  S.aktSpiel.state = data.state;
+  if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
+}
 function bkTotal(p){return(p.bildPts||[]).reduce(function(a,b){return a+(b!==null?b:0);},0);}
 function endBK(sp){notify('Bilderkegel beendet!');}
-function bkAbbruch(){notify('Abgebrochen');}
-function renderBKSpiel(el){el.innerHTML='';}
+function bkAbbruch(){S.aktSpiel = null; showTab('spiele'); renderAll();}
+function renderBKSpiel(el, state){el.innerHTML='';}
 
 // Normales Spiel
 function nSelK(n){selK=n;}
 function hausSelWurf(n){hausWurf=n;}
 function hausSelSlotFn(sl){hausSlot=sl;}
-function doNWurf(){notify('Wave 2','var(--mut)');}
+async function doNWurf() {
+  if (!S.aktSpiel) return;
+  var state = S.aktSpiel.state;
+  var stid = S.aktSpiel.type_key;
+  var akt = state.players[state.aktSpIdx];
+  if (stid === 'dreiVollen' || stid === 'plusMinus') {
+    if (selK === null) { notify('Bitte waehlen', 'var(--red)'); return; }
+    var throwIndex = akt.wuerfe ? akt.wuerfe.length : 0;
+    var value = selK;
+    selK = null;
+    var data = await submitThrow(akt.id, throwIndex, value, undefined);
+    if (!data) return;
+    S.aktSpiel.state = data.state;
+    if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
+    return;
+  }
+  if (stid === 'grosseHaus' || stid === 'kleineHaus') {
+    if (hausWurf === null) { notify('Ergebnis waehlen', 'var(--red)'); return; }
+    if (!hausSlot) { notify('Stelle waehlen', 'var(--red)'); return; }
+    var throwIndex2 = akt.wuerfe ? akt.wuerfe.length : 0;
+    var val2 = hausWurf;
+    if (stid === 'kleineHaus' && hausWurf === 0) val2 = 9;
+    var meta2 = { slot: hausSlot };
+    hausWurf = null; hausSlot = null;
+    var data2 = await submitThrow(akt.id, throwIndex2, val2, meta2);
+    if (!data2) return;
+    S.aktSpiel.state = data2.state;
+    if (data2.finished) { handleGameFinished(data2.state); } else { renderSpielenTab(); }
+  }
+}
 function advGenSp(sp){}
 function endNSpiel(sp){}
-function nEndM(){}
-function renderNSpiel(el){el.innerHTML='';}
+function nEndM(){S.aktSpiel = null; showTab('spiele'); renderAll();}
+function renderNSpiel(el, state){el.innerHTML='';}
 
 // Vier Gewinnt
 var vgX=[],vgO=[];
@@ -533,11 +602,27 @@ async function startVG(){if(!vgX.length||!vgO.length){notify('Beide Teams benoet
 function getVGP(sp){return sp.aktT==='X'?sp.tX[sp.iX%sp.tX.length]:sp.tO[sp.iO%sp.tO.length];}
 function check4(grid,t){var win=new Set(),N=9;function mk(c){c.forEach(function(rc){win.add(rc[0]+','+rc[1]);});}for(var r=0;r<N;r++)for(var c=0;c<N;c++){if(grid[r][c]!==t)continue;if(c+3<N&&grid[r][c+1]===t&&grid[r][c+2]===t&&grid[r][c+3]===t)mk([[r,c],[r,c+1],[r,c+2],[r,c+3]]);if(r+3<N&&grid[r+1][c]===t&&grid[r+2][c]===t&&grid[r+3][c]===t)mk([[r,c],[r+1,c],[r+2,c],[r+3,c]]);if(r+3<N&&c+3<N&&grid[r+1][c+1]===t&&grid[r+2][c+2]===t&&grid[r+3][c+3]===t)mk([[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]]);if(r+3<N&&c-3>=0&&grid[r+1][c-1]===t&&grid[r+2][c-2]===t&&grid[r+3][c-3]===t)mk([[r,c],[r+1,c-1],[r+2,c-2],[r+3,c-3]]);}return win;}
 function vgSelFn(v){vgSel=v;}
-function doVGWurf(){notify('Wave 2','var(--mut)');}
+async function doVGWurf() {
+  if (vgSel === null) { notify('Bitte waehlen', 'var(--red)'); return; }
+  if (!S.aktSpiel) return;
+  var state = S.aktSpiel.state;
+  var aktT = state.aktT;
+  var team = aktT === 'X' ? state.tX : state.tO;
+  var idx = aktT === 'X' ? state.iX : state.iO;
+  var akt = team[idx % team.length];
+  var throwIndex = state.iX + state.iO;
+  var value, meta;
+  if (vgSel === 'P') { value = 0; meta = { pudel: true }; } else { value = vgSel; }
+  vgSel = null;
+  var data = await submitThrow(akt.id, throwIndex, value, meta);
+  if (!data) return;
+  S.aktSpiel.state = data.state;
+  if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
+}
 function endVG(sp,erg){}
-function vgAbbruch(){}
+function vgAbbruch(){S.aktSpiel = null; showTab('spiele'); renderAll();}
 function neueRunde(id){}
-function renderVGSpiel(el){el.innerHTML='';}
+function renderVGSpiel(el, state){el.innerHTML='';}
 
 // Fuchsjagd
 var fjFuchs=null,fjJaeger=[];
@@ -546,21 +631,48 @@ function selFuchs(id,el){fjFuchs=id;document.querySelectorAll('#m-fj-fuchs div')
 function togJaeger(id,el){if(fjJaeger.indexOf(id)>=0){fjJaeger=fjJaeger.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{fjJaeger.push(id);el.style.borderColor='var(--red)';el.style.background='#e0525222';el.style.color='var(--red)';}}
 async function startFJ(){if(!fjFuchs){notify('Fuchs waehlen','var(--red)');return;}if(!fjJaeger.length){notify('Jaeger waehlen','var(--red)');return;}if(fjJaeger.indexOf(fjFuchs)>=0){notify('Fuchs kann kein Jaeger sein','var(--red)');return;}var rolesObj={};rolesObj[String(fjFuchs)]='fuchs';fjJaeger.forEach(function(id){rolesObj[String(id)]='jaeger';});var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'fuchsjagd',player_ids:[fjFuchs].concat(fjJaeger),roles:rolesObj})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-fj');notify('🦊 Fuchsjagd gestartet!');showTab('spielen');}
 function fjSelFn(n){fjSel=n;}
-function doFJWurf(){notify('Wave 2','var(--mut)');}
+async function doFJWurf() {
+  if (fjSel === null) { notify('Bitte waehlen', 'var(--red)'); return; }
+  if (!S.aktSpiel) return;
+  var state = S.aktSpiel.state;
+  var activeId;
+  if (state.phase === 'start') { activeId = state.fuchs.id; }
+  else if (state.jPhase === 'jaeger') { activeId = state.jaeger[state.jIdx].id; }
+  else { activeId = state.fuchs.id; }
+  var throwIndex = state.fuchs.w.length + state.jaeger.reduce(function(s,j){return s+j.w.length;},0);
+  var value = fjSel;
+  fjSel = null;
+  var data = await submitThrow(activeId, throwIndex, value, undefined);
+  if (!data) return;
+  S.aktSpiel.state = data.state;
+  if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
+}
 function endFJ(sp,gew,jaeger){}
-function fjAbbruch(){}
-function renderFJSpiel(el){el.innerHTML='';}
+function fjAbbruch(){S.aktSpiel = null; showTab('spiele'); renderAll();}
+function renderFJSpiel(el, state){el.innerHTML='';}
 
 // Anker
 var ankerSel=[];
 function renderAnkerWahl(){ankerSel=[];document.getElementById('m-anker-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togAnker('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');}
 function togAnker(id,el){if(ankerSel.indexOf(id)>=0){ankerSel=ankerSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{ankerSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
 async function startAnker(){if(!ankerSel.length){notify('Spieler waehlen','var(--red)');return;}var maxR=parseInt(document.getElementById('m-anker-runden').value)||3;var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'anker',player_ids:ankerSel,config:{maxRunden:maxR}})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-anker');notify('⚓ Anker gestartet!');showTab('spielen');}
-function doAnkerWurf(){notify('Wave 2','var(--mut)');}
+async function doAnkerWurf() {
+  if (ankerPts === null) { notify('Punkte waehlen', 'var(--red)'); return; }
+  if (!S.aktSpiel) return;
+  var state = S.aktSpiel.state;
+  var akt = state.players[state.aktSpIdx];
+  var throwIndex = akt.runden ? akt.runden.reduce(function(s,r){return s+r.length;},0) : 0;
+  var value = ankerPts;
+  ankerPts = null;
+  var data = await submitThrow(akt.id, throwIndex, value, undefined);
+  if (!data) return;
+  S.aktSpiel.state = data.state;
+  if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
+}
 function endAnker(sp){}
-function ankerAbbruch(){}
+function ankerAbbruch(){S.aktSpiel = null; showTab('spiele'); renderAll();}
 function ankerSelPts(v){ankerPts=v;}
-function renderAnkerSpiel(el){el.innerHTML='';}
+function renderAnkerSpiel(el, state){el.innerHTML='';}
 
 // Kegler des Abends
 var kdaSel=[];
@@ -582,8 +694,16 @@ async function startKDA() {
   notify('Kegler des Abends gestartet!');
   showTab('spielen');
 }
-function kdaSetWinner(matchId,winnerId){notify('Wave 2','var(--mut)');}
-function renderKDASpiel(el){el.innerHTML='';}
+async function kdaSetWinner(matchId, winnerId) {
+  if (!S.aktSpiel) return;
+  var state = S.aktSpiel.state;
+  var throwIndex = state.matches.filter(function(m){return m.done;}).length;
+  var data = await submitThrow(matchId, throwIndex, winnerId, undefined);
+  if (!data) return;
+  S.aktSpiel.state = data.state;
+  if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
+}
+function renderKDASpiel(el, state){el.innerHTML='';}
 
 // Statistik
 function renderStats() {
