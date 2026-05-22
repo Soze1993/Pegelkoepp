@@ -114,7 +114,7 @@ metrics:
 ## Duration and Scope
 
 - **Start:** 2026-05-20
-- **Tasks completed:** 3 of 4 (Task 4 is a human verification checkpoint — PAUSED)
+- **Tasks completed:** 4 of 4 (Task 4 human verification: PASSED 2026-05-20)
 - **Files created:** 13
 - **Tests written:** 15 (8 DB + 7 routes)
 - **Tests passing:** 15/15
@@ -219,17 +219,19 @@ No new security-relevant surfaces introduced beyond the plan's threat model.
 - **Plan 04 (games API):** `server/routes/games.js` will need `activeGames` Map and `reconstructState` function per PATTERNS.md.
 - **All plans:** Session store uses `data/sessions.db`; app data uses `data/kegelclub.db` — both in gitignored `data/` directory.
 
-## Pending: Task 4 — Human Verification
+## Task 4 — Human Verification: PASSED (2026-05-20)
 
-Task 4 requires the user to run a manual smoke test:
+| Step | Result |
+|------|--------|
+| 1. `npm start` → `Pegelköpp server listening on port 3000` | ✅ |
+| 2. `GET /api/players` → 12 players `[{id, name, emoji}]` | ✅ |
+| 3. `GET /tv` → black page, "Pegelköpp" at 8vw, no auth | ✅ |
+| 4. `data/` contains `kegelclub.db`, `-shm`, `-wal` | ✅ |
+| 5. Restart → still exactly 12 players (idempotent seed) | ✅ |
+| 6. `npm test` → 15/15 pass | ✅ |
+| 7. `.env` + `data/` not in git | ✅ |
 
-1. `npm start` → console prints `Pegelköpp server listening on port 3000`
-2. `curl http://localhost:3000/api/players` → JSON array of 12 players `[{id, name, emoji}]`
-3. Open `http://localhost:3000/tv` → black page, "Pegelköpp" visible (8vw), no login prompt
-4. `ls data/` → confirms `kegelclub.db`, `kegelclub.db-shm`, `kegelclub.db-wal` exist
-5. Restart server → still exactly 12 players (idempotent seed)
-6. `npm test` → 15/15 tests pass
-7. Git status → `.env.example` committed, `.env` and `data/` NOT in git
+Note: On first clean-boot test, the SQLite WAL files locked `data/`; server process had to be killed before `rm -rf data/` succeeded. Normal Windows behavior — SQLite holds file locks while the process is live.
 
 ## Self-Check: PASSED
 

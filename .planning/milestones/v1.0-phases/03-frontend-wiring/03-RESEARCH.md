@@ -649,7 +649,7 @@ function showWinnerBanner(state) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **TV idle after game:finished — show winner name or null?**
    - What we know: Current fix passes `null` to `renderIdle`, showing "Noch kein Spiel gespielt" for 3 seconds until next reconnect pushes correct state.
