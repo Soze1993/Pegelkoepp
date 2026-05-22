@@ -44,8 +44,8 @@
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: App is deployed on VPS and accessible via HTTPS
-- [ ] **DEPLOY-02**: App survives server restarts without data loss; active games are recoverable from the database
+- [x] **DEPLOY-01**: App is deployed on VPS and accessible via HTTPS
+- [x] **DEPLOY-02**: App survives server restarts without data loss; active games are recoverable from the database
 
 ---
 
@@ -96,5 +96,5 @@
 | STAT-01 | Phase 4 | Pending |
 | STAT-02 | Phase 4 | Pending |
 | STAT-03 | Phase 4 | Pending |
-| DEPLOY-01 | Phase 5 | Pending |
-| DEPLOY-02 | Phase 5 | Pending |
+| DEPLOY-01 | Phase 5 | Complete |
+| DEPLOY-02 | Phase 5 | Complete |

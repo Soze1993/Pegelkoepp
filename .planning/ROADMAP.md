@@ -147,11 +147,11 @@ Plans:
   2. WebSocket connections work over `wss://` through Nginx — throws submitted on the tablet appear on the TV with no proxy errors
   3. After `sudo reboot` on the VPS, the app starts automatically within 60 seconds and any game that was active before the reboot is recoverable from the database
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 **Wave 1**
 
-- [ ] 05-01-PLAN.md — Code prep: trust proxy fix in server/app.js, ecosystem.config.js, DEPLOY.md runbook committed to repo
+- [x] 05-01-PLAN.md — Code prep: trust proxy fix in server/app.js, ecosystem.config.js, DEPLOY.md runbook committed to repo
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -168,4 +168,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
 | 3. Frontend Wiring | 3/3 | Complete   | 2026-05-21 |
 | 4. Club Features | 2/2 | Complete   | 2026-05-22 |
-| 5. Production Deployment | 0/2 | Not started | - |
+| 5. Production Deployment | 1/2 | In Progress|  |
