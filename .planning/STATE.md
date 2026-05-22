@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 04 complete — all 2 plans executed, human checkpoint passed
-last_updated: "2026-05-22T00:00:00.000Z"
+stopped_at: Phase 05 planned — 2 plans ready (Wave 1 autonomous, Wave 2 human checkpoints)
+last_updated: "2026-05-22T10:00:00.000Z"
 last_activity: 2026-05-22
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 14
-  completed_plans: 12
-  percent: 80
+  total_plans: 16
+  completed_plans: 14
+  percent: 88
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Ein Tablet tippt, der Fernseher zeigt es sofort — live, ohne Reload.
-**Current focus:** Phase 05 — production-deployment
+**Current focus:** Phase 05 — production-deployment (planned, ready to execute)
 
 ## Current Position
 
@@ -96,5 +96,5 @@ None yet.
 
 Last session: 2026-05-22T00:00:00.000Z
 Stopped at: Phase 04 complete — all club features verified in browser
-Next: Execute Phase 05 — production deployment (PM2, Nginx, Certbot HTTPS, crash recovery)
+Next: Execute Phase 05 — Wave 1 autonomous (trust proxy fix + ecosystem.config.js + DEPLOY.md), then Wave 2 VPS provisioning with human checkpoints
 Resume file: None
