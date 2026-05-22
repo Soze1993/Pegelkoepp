@@ -30,16 +30,20 @@ tech-stack:
 key-files:
   modified:
     - Claude/public/index.html
+    - Claude/server/routes/games.js
 
 key-decisions:
   - "DocumentFragment used in renderSpiele and renderStats to batch DOM appends — avoids intermediate innerHTML reflows"
   - "Custom type delete button uses IIFE closure (function(id){...})(typ.id) to capture loop variable correctly in ES5-style loop"
   - "renderBib appends static builtin HTML via innerHTML for trusted game type names/icons, then DOM-creates the custom section — hybrid approach balances performance and XSS safety"
   - "Group headers sorted by first game in group descending — newest abend shown first"
+  - "Bug fix: GET /api/games was missing abend_id in SELECT — added to games.js so frontend grouping by session works end-to-end"
+
+requirements-completed: [PERS-03, PERS-04, STAT-01, STAT-02, STAT-03]
 
 # Metrics
-duration: ~45min
-completed: 2026-05-21
+duration: ~60min
+completed: 2026-05-22
 ---
 
 # Phase 4 Plan 02: Frontend UI Wiring for Club Features Summary
@@ -48,11 +52,11 @@ completed: 2026-05-21
 
 ## Performance
 
-- **Duration:** ~45 min
+- **Duration:** ~60 min
 - **Started:** 2026-05-21
-- **Completed:** 2026-05-21 (Tasks 1–2 complete; Task 3 human verification pending)
-- **Tasks:** 3 (2 TDD auto complete + 1 human-verify checkpoint pending)
-- **Files modified:** 1 (public/index.html)
+- **Completed:** 2026-05-22
+- **Tasks:** 3 (2 implementation + 1 human-verify checkpoint — approved)
+- **Files modified:** 2 (public/index.html + server/routes/games.js)
 
 ## Accomplishments
 
@@ -64,11 +68,12 @@ completed: 2026-05-21
 
 1. **Task 1: Abend session controls** — `223f381` (feat)
 2. **Task 2: Stats tab + Bibliothek custom types** — `9620976` (feat)
-3. **Task 3: Human verification** — pending (no code commit)
+3. **Bug fix: include abend_id in GET /api/games response** — `99a4031` (fix)
 
 ## Files Created/Modified
 
 - `Claude/public/index.html` — All Phase 4 frontend features; additive changes only
+- `Claude/server/routes/games.js` — Added abend_id to both SELECT statements so GET /api/games returns the field needed for frontend session grouping
 
 **Key additions in Task 1:**
 - `.abend-banner` CSS class (line 109)
@@ -104,7 +109,20 @@ abendIds are sorted by the first game's started_at in descending order — users
 
 ## Deviations from Plan
 
-None — plan executed exactly as written.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] GET /api/games missing abend_id in SELECT**
+- **Found during:** Task 3 (human checkpoint verification)
+- **Issue:** The frontend grouping logic keyed on `game.abend_id`, but the API response never included that field — the SELECT clause in games.js omitted it from both the main query and the count query. Grouping silently placed all games into "Ohne Abend" regardless of their actual session.
+- **Fix:** Added `abend_id` to both SELECT statements in `Claude/server/routes/games.js`
+- **Files modified:** Claude/server/routes/games.js
+- **Verification:** Checkpoint reviewer confirmed grouping works correctly after fix; 194 tests continue to pass
+- **Committed in:** 99a4031
+
+---
+
+**Total deviations:** 1 auto-fixed (Rule 1 - bug)
+**Impact on plan:** Fix was essential for the core session-grouping feature to function. No scope creep.
 
 ## Known Stubs
 
@@ -128,10 +146,12 @@ No new security surface introduced beyond what the plan's threat model covers (T
 - [x] `renderAll()` uses .catch(function(){}) on all async renders
 - [x] No innerHTML with DB-sourced strings (abend name, player name, type name/desc all use textContent)
 - [x] node --test: 194 tests, 0 failures (verified twice — after Task 1 and Task 2)
-- [x] Commits exist: 223f381 (Task 1), 9620976 (Task 2)
+- [x] Commits exist: 223f381 (Task 1), 9620976 (Task 2), 99a4031 (bug fix)
+- [x] games.js updated: abend_id included in GET /api/games SELECT
+- [x] Checkpoint approved by human reviewer
 
 ## Self-Check: PASSED
 
 ---
 *Phase: 04-club-features*
-*Completed: 2026-05-21*
+*Completed: 2026-05-22*
