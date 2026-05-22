@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Backend Foundation** - Scaffold, SQLite schema, game-type modules extracted from HTML, REST API, PIN auth (completed 2026-05-20)
 - [x] **Phase 2: Real-Time & TV** - Socket.io throw sync, TV display page, undo, reconnect, connection indicator (completed 2026-05-20)
 - [x] **Phase 3: Frontend Wiring** - Connect existing HTML app to backend API; replace in-memory state with API/socket calls (completed 2026-05-21)
-- [ ] **Phase 4: Club Features** - Kegelabend sessions, statistics (wins/losses, personal records, Pudel%), custom game types
+- [x] **Phase 4: Club Features** - Kegelabend sessions, statistics (wins/losses, personal records, Pudel%), custom game types (completed 2026-05-22)
 - [ ] **Phase 5: Production Deployment** - PM2, Nginx + WebSocket headers, Certbot HTTPS, crash recovery
 
 ## Phase Details
@@ -128,11 +128,11 @@ Plans:
 
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Backend: DB migrations (abende table + games.abend_id), abende/stats/game-types route files, abend auto-link in POST /api/games, route mounting, node:test coverage (AB01–AB06, ST10–ST20, GT25–GT31)
+- [x] 04-01-PLAN.md — Backend: DB migrations (abende table + games.abend_id), abende/stats/game-types route files, abend auto-link in POST /api/games, route mounting, node:test coverage (AB01–AB06, ST10–ST20, GT25–GT31)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 04-02-PLAN.md — Frontend: S.aktAbend state, abend banner + modal + grouping in Spiele tab, real Stats tab with player cards and personal bests, Bibliothek custom type section with add/delete modal
+- [x] 04-02-PLAN.md — Frontend: S.aktAbend state, abend banner + modal + grouping in Spiele tab, real Stats tab with player cards and personal bests, Bibliothek custom type section with add/delete modal
 **UI hint**: yes
 
 ### Phase 5: Production Deployment
@@ -159,5 +159,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Backend Foundation | 4/4 | Complete   | 2026-05-20 |
 | 2. Real-Time & TV | 4/4 | Complete   | 2026-05-20 |
 | 3. Frontend Wiring | 3/3 | Complete   | 2026-05-21 |
-| 4. Club Features | 0/2 | Not started | - |
+| 4. Club Features | 2/2 | Complete   | 2026-05-22 |
 | 5. Production Deployment | 0/? | Not started | - |

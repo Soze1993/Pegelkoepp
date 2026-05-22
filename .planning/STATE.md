@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 03 complete — all 3 plans executed, human checkpoint passed
-last_updated: "2026-05-21T00:00:00.000Z"
-last_activity: 2026-05-21
+stopped_at: Phase 04 complete — all 2 plans executed, human checkpoint passed
+last_updated: "2026-05-22T00:00:00.000Z"
+last_activity: 2026-05-22
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 10
-  percent: 40
+  completed_plans: 12
+  percent: 80
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-19)
 
 **Core value:** Ein Tablet tippt, der Fernseher zeigt es sofort — live, ohne Reload.
-**Current focus:** Phase 03 — frontend-wiring
+**Current focus:** Phase 05 — production-deployment
 
 ## Current Position
 
 Phase: 02 (real-time-tv) — COMPLETE
-Phase: 03 (frontend-wiring) — IN PROGRESS (plan 02/03 complete)
-Status: Plan 03-02 complete — public/index.html shell with auth gate, init, socket, connection dot
-Last activity: 2026-05-21
+Phase: 03 (frontend-wiring) — COMPLETE
+Phase: 04 (club-features) — COMPLETE
+Last activity: 2026-05-22
 
 Progress: [████████░░] 85%
 
@@ -94,7 +94,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-21T08:42:30.368Z
-Stopped at: context exhaustion at 75% (2026-05-21)
-Next: Execute 03-03-PLAN.md — Wave 2 game wiring (start functions, throw submission, renderSpielenTab)
+Last session: 2026-05-22T00:00:00.000Z
+Stopped at: Phase 04 complete — all club features verified in browser
+Next: Execute Phase 05 — production deployment (PM2, Nginx, Certbot HTTPS, crash recovery)
 Resume file: None
