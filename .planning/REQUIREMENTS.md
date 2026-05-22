@@ -59,29 +59,29 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STATS-01 | — | Pending |
-| STATS-02 | — | Pending |
-| STATS-03 | — | Pending |
-| STATS-04 | — | Pending |
-| STATS-05 | — | Pending |
-| RECAP-01 | — | Pending |
-| RECAP-02 | — | Pending |
-| HIGHLIGHT-01 | — | Pending |
-| HIGHLIGHT-02 | — | Pending |
-| HIGHLIGHT-03 | — | Pending |
-| HIGHLIGHT-04 | — | Pending |
-| TOURNAMENT-01 | — | Pending |
-| TOURNAMENT-02 | — | Pending |
-| TOURNAMENT-03 | — | Pending |
-| TV-01 | — | Pending |
-| SHARE-01 | — | Pending |
-| OFFLINE-01 | — | Pending |
+| STATS-01 | Phase 8 | Pending |
+| STATS-02 | Phase 8 | Pending |
+| STATS-03 | Phase 8 | Pending |
+| STATS-04 | Phase 8 | Pending |
+| STATS-05 | Phase 8 | Pending |
+| RECAP-01 | Phase 8 | Pending |
+| RECAP-02 | Phase 8 | Pending |
+| HIGHLIGHT-01 | Phase 7 | Pending |
+| HIGHLIGHT-02 | Phase 7 | Pending |
+| HIGHLIGHT-03 | Phase 7 | Pending |
+| HIGHLIGHT-04 | Phase 7 | Pending |
+| TOURNAMENT-01 | Phase 6 | Pending |
+| TOURNAMENT-02 | Phase 6 | Pending |
+| TOURNAMENT-03 | Phase 6 | Pending |
+| TV-01 | Phase 7 | Pending |
+| SHARE-01 | Phase 9 | Pending |
+| OFFLINE-01 | Phase 9 | Pending |
 
 **Coverage:**
-- v2.0 requirements: 18 total
-- Mapped to phases: 0 (filled by roadmapper)
-- Unmapped: 18
+- v2.0 requirements: 17 total
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-22*
-*Last updated: 2026-05-22 — initial v2.0 definition*
+*Last updated: 2026-05-22 — traceability filled by roadmapper (v2.0 roadmap)*

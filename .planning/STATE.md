@@ -7,7 +7,7 @@ stopped_at: —
 last_updated: "2026-05-22T00:00:00.000Z"
 last_activity: 2026-05-22
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,10 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap defined, ready for Phase 6)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-22 — Milestone v2.0 started
+Status: Roadmap created — ready to plan Phase 6
+Last activity: 2026-05-22 — v2.0 roadmap defined (Phases 6–9)
+
+Progress bar: [----------] 0% (0/4 phases)
 
 ## Accumulated Context
 
@@ -41,15 +43,15 @@ All decisions logged in PROJECT.md Key Decisions table.
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | v2 | Monthly leaderboard | Deferred | Init |
-| v2 | Win streak tracking | Deferred | Init |
-| v2 | WhatsApp share link | Deferred | Init |
-| v2 | Head-to-head stats | Deferred | Init |
-| v2 | TV layout variants per game type | Deferred | Init |
-| v2 | Self-hosted fonts (offline venue) | Deferred | Phase 2 |
+| v2 | Win streak tracking | Active (STATS-02) | v2.0 |
+| v2 | WhatsApp share link | Active (SHARE-01) | v2.0 |
+| v2 | Head-to-head stats | Active (STATS-03) | v2.0 |
+| v2 | TV layout variants per game type | Active (TV-01) | v2.0 |
+| v2 | Self-hosted fonts (offline venue) | Active (OFFLINE-01) | v2.0 |
 
 ## Session Continuity
 
 Last session: 2026-05-22
-Stopped at: v1.0 milestone archived
-Next: `/gsd-new-milestone` to start v2.0 planning
+Stopped at: v2.0 roadmap created
+Next: `/gsd:plan-phase 6` to plan Turnierbaum phase
 Archive: `.planning/milestones/`
