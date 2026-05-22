@@ -28,6 +28,22 @@ Mitglieder des Kegelclubs "Pegelköpp":
 - **Zuschauer / TV:** Sehen live die aktuellen Ergebnisse auf dem Fernseher (HDMI/Browser)
 - **Alle Mitglieder:** Blättern durch vergangene Spiele, Spielerstatistiken, Ranglisten
 
+## Current Milestone: v2.0 Statistiken, Highlights & Turnierbaum
+
+**Goal:** Die App wird zur vollständigen Kegelclub-Plattform — mit Turnieren, Highlights und tiefen Statistiken.
+
+**Target features:**
+- Jahres-Leaderboard (Top-Spieler pro Kalenderjahr)
+- Win-Streak-Tracking pro Spieler
+- Head-to-Head-Statistiken zwischen zwei Spielern
+- Historische Kegler-des-Abends-Zählung & Bilderkegeln-Verlierer-Zählung pro Spieler
+- Kegler des Abends: Symbol in Tabelle + TV-Overlay am Spielende
+- Bilderkegeln-Verlierer: Symbol in Tabelle + TV-Overlay (wer wenigste Punkte hat)
+- "Kegler des Abends" Spieltyp erweitern um Loser Bracket (Double-Elimination, variabel 4–12 Spieler)
+- TV-Layout-Varianten pro Spieltyp
+- WhatsApp-Share-Link für abgeschlossene Spielergebnisse
+- Self-hosted Fonts (Bebas Neue / DM Sans) für Offline-Venue-Betrieb
+
 ## Requirements
 
 ### Validated (v1.0)
@@ -47,14 +63,19 @@ Mitglieder des Kegelclubs "Pegelköpp":
 - ✓ Eigene Spieltypen anlegen und dauerhaft speichern — v1.0
 - ✓ Deployment auf VPS: HTTPS, PM2, Nginx, crash recovery — v1.0
 
-### Active (v2.0 candidates)
+### Active (v2.0)
 
-- [ ] Monthly leaderboard (top players per calendar month)
-- [ ] Win streak tracking per player
-- [ ] WhatsApp share link for a completed game result
-- [ ] Head-to-head stats between two players
-- [ ] TV layout variants per game type
-- [ ] Self-hosted fonts (Bebas Neue / DM Sans) for offline venue use
+- [ ] Jahres-Leaderboard (Top-Spieler pro Kalenderjahr)
+- [ ] Win-Streak-Tracking pro Spieler
+- [ ] Head-to-Head-Statistiken zwischen zwei Spielern
+- [ ] Historische Kegler-des-Abends-Zählung pro Spieler
+- [ ] Historische Bilderkegeln-Verlierer-Zählung pro Spieler
+- [ ] Kegler des Abends: Symbol in Tabelle + TV-Overlay am Spielende
+- [ ] Bilderkegeln-Verlierer: Symbol in Tabelle + TV-Overlay (wer wenigste Punkte hat)
+- [ ] "Kegler des Abends" Spieltyp: Loser Bracket (Double-Elimination, variabel 4–12 Spieler)
+- [ ] TV-Layout-Varianten pro Spieltyp
+- [ ] WhatsApp-Share-Link für abgeschlossene Spielergebnisse
+- [ ] Self-hosted Fonts (Bebas Neue / DM Sans) für Offline-Venue-Betrieb
 
 ### Out of Scope
 
@@ -107,4 +128,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-22 after v1.0 milestone — app live at https://kegel.pegelkoepp.de*
+*Last updated: 2026-05-22 — Milestone v2.0 started (Statistiken, Highlights & Turnierbaum)*

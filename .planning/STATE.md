@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: MVP
-status: archived
-stopped_at: v1.0 milestone archived — app live at https://kegel.pegelkoepp.de
-last_updated: "2026-05-22T15:00:00.000Z"
+milestone: v2.0
+milestone_name: Statistiken, Highlights & Turnierbaum
+status: planning
+stopped_at: —
+last_updated: "2026-05-22T00:00:00.000Z"
 last_activity: 2026-05-22
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,22 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** Ein Tablet tippt, der Fernseher zeigt es sofort — live, ohne Reload.
-**Current focus:** v1.0 ARCHIVED — consider /gsd-new-milestone for v2.0 planning
+**Current focus:** v2.0 — Statistiken, Highlights & Turnierbaum
 
 ## Current Position
 
-Milestone v1.0 complete and archived.
-
-- Phase 1: Backend Foundation — COMPLETE (2026-05-20)
-- Phase 2: Real-Time & TV — COMPLETE (2026-05-20)
-- Phase 3: Frontend Wiring — COMPLETE (2026-05-21)
-- Phase 4: Club Features — COMPLETE (2026-05-22)
-- Phase 5: Production Deployment — COMPLETE (2026-05-22)
-
-Production URL: https://kegel.pegelkoepp.de  
-VPS: Netcup, Debian 12, IP 94.16.108.174
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-22 — Milestone v2.0 started
 
 ## Accumulated Context
 
