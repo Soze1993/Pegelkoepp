@@ -18,8 +18,8 @@ const activeGames = new Map();
 router.get('/', (req, res) => {
   const { status } = req.query;
   const games = status
-    ? db.prepare('SELECT id, type_key, status, started_at, finished_at FROM games WHERE status = ? ORDER BY id DESC').all(status)
-    : db.prepare('SELECT id, type_key, status, started_at, finished_at FROM games ORDER BY id DESC').all();
+    ? db.prepare('SELECT id, type_key, status, started_at, finished_at, abend_id FROM games WHERE status = ? ORDER BY id DESC').all(status)
+    : db.prepare('SELECT id, type_key, status, started_at, finished_at, abend_id FROM games ORDER BY id DESC').all();
   res.json(games);
 });
 
