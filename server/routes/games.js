@@ -138,12 +138,22 @@ router.post('/:id/throws', requireSession, (req, res) => {
   }
 
   // 3. INSERT into throws FIRST — synchronous + crash-safe (CONTEXT.md C2 + C3).
-  //    If UNIQUE constraint fires → 409 (no state mutation).
-  //    meta column persisted as JSON string (D-13, Phase 2 migration adds the column).
+  //    KDA bracket games auto-compute throw_index as MAX(existing)+1 per player per game:
+  //    the multi-slot bracket means the client cannot reliably track the DB index across
+  //    match boundaries. All other game types use the client-provided throw_index with
+  //    the UNIQUE constraint as an idempotency guard.
+  let effectiveThrowIndex = throw_index;
+  if (game.type_key === 'kda') {
+    const { mx } = db.prepare(
+      'SELECT MAX(throw_index) AS mx FROM throws WHERE game_id = ? AND player_id = ?'
+    ).get(game.id, player_id);
+    effectiveThrowIndex = mx !== null ? mx + 1 : 0;
+  }
+
   try {
     db.prepare(
       'INSERT INTO throws (game_id, player_id, throw_index, value, meta) VALUES (?, ?, ?, ?, ?)'
-    ).run(game.id, player_id, throw_index, value, meta ? JSON.stringify(meta) : null);
+    ).run(game.id, player_id, effectiveThrowIndex, value, meta ? JSON.stringify(meta) : null);
   } catch (e) {
     if (e.message && e.message.includes('UNIQUE')) {
       return res.status(409).json({ error: 'Duplicate throw' });
