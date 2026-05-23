@@ -108,14 +108,18 @@ function renderKDABracket(state) {
   var slotWidth  = wR1Count <= 2 ? 200 : wR1Count <= 4 ? 160 : 140;
   var slotHeight = wR1Count <= 2 ?  80 : wR1Count <= 4 ?  72 :  64;
 
-  // Outer container: 2-column grid — W bracket left, L bracket + GF right
+  // Outer container: flex column — top row (W + L side by side), GF centered at bottom
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr;gap:24px;overflow:hidden';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;overflow:hidden';
 
-  // --- W bracket (left column) ---
+  // --- Top row: W bracket (left) + L bracket (right) ---
+  var topRow = document.createElement('div');
+  topRow.style.cssText = 'display:flex;flex-direction:row;gap:24px;flex:1;min-height:0';
+
+  // W bracket
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;min-width:0';
+  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:1;min-width:0';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
@@ -123,7 +127,7 @@ function renderKDABracket(state) {
   wSection.appendChild(wLabel);
 
   var wRoundsRow = document.createElement('div');
-  wRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:12px;align-items:flex-start;flex:1';
+  wRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:12px;align-items:flex-start';
 
   var wMatches = state.bracket.filter(function(m) { return m.bracket === 'W'; });
   var wRounds = Array.from(new Set(wMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
@@ -139,24 +143,19 @@ function renderKDABracket(state) {
     roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap';
     col.appendChild(roundLabel);
 
-    var roundMatches = wMatches.filter(function(m) { return m.round === round; });
-    roundMatches.forEach(function(slot) {
+    wMatches.filter(function(m) { return m.round === round; }).forEach(function(slot) {
       col.appendChild(buildTVSlotEl(slot, slotWidth, slotHeight));
     });
-
     wRoundsRow.appendChild(col);
   });
   wSection.appendChild(wRoundsRow);
-  container.appendChild(wSection);
+  topRow.appendChild(wSection);
 
-  // --- L bracket + GF (right column) ---
-  var rightSection = document.createElement('div');
-  rightSection.style.cssText = 'display:flex;flex-direction:column;gap:12px;min-width:0';
-
+  // L bracket
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   if (lMatches.length > 0) {
     var lSection = document.createElement('div');
-    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:1;min-width:0';
 
     var lLabel = document.createElement('div');
     lLabel.textContent = 'Loser Bracket';
@@ -179,33 +178,32 @@ function renderKDABracket(state) {
       roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap';
       col.appendChild(roundLabel);
 
-      var roundMatches = lMatches.filter(function(m) { return m.round === round; });
-      roundMatches.forEach(function(slot) {
+      lMatches.filter(function(m) { return m.round === round; }).forEach(function(slot) {
         col.appendChild(buildTVSlotEl(slot, slotWidth, slotHeight));
       });
-
       lRoundsRow.appendChild(col);
     });
     lSection.appendChild(lRoundsRow);
-    rightSection.appendChild(lSection);
+    topRow.appendChild(lSection);
   }
 
-  // --- Grand Final ---
+  container.appendChild(topRow);
+
+  // --- Grand Final: centered at bottom ---
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   if (gfSlot) {
     var gfSection = document.createElement('div');
-    gfSection.style.cssText = 'display:flex;flex-direction:column;gap:4px';
+    gfSection.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:8px';
 
     var gfLabel = document.createElement('div');
     gfLabel.textContent = 'Großes Finale';
     gfLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--ac);line-height:1';
     gfSection.appendChild(gfLabel);
 
-    gfSection.appendChild(buildTVSlotEl(gfSlot, slotWidth, Math.round(slotHeight * 1.25)));
-    rightSection.appendChild(gfSection);
+    gfSection.appendChild(buildTVSlotEl(gfSlot, Math.round(slotWidth * 1.3), Math.round(slotHeight * 1.25)));
+    container.appendChild(gfSection);
   }
 
-  container.appendChild(rightSection);
   gameEl.replaceChildren(container);
 }
 
