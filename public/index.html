@@ -1202,6 +1202,16 @@ function renderKDABracket(el, state) {
 var kdaWurfSlotId = null;
 var kdaWurfVals = {};
 
+// Count how many throws a player has made across ALL bracket slots (game-wide index).
+// The DB UNIQUE constraint is (game_id, player_id, throw_index) — not per-match.
+function kdaPlayerThrowCount(bracket, playerId) {
+  var count = 0;
+  bracket.forEach(function(s) {
+    if (s.throws) s.throws.forEach(function(t) { if (t.playerId === playerId) count++; });
+  });
+  return count;
+}
+
 function openKDAWurfModal(slotId) {
   if (!S.aktSpiel || !S.aktSpiel.state || !S.aktSpiel.state.bracket) return;
   var slot = S.aktSpiel.state.bracket.find(function(s) { return s.id === slotId; });
@@ -1346,9 +1356,8 @@ async function submitKDAWurfe() {
   var isGF = slot.bracket === 'GF';
   var throwsPerPlayer = isGF ? 2 : 1;
 
-  // Build ordered throw list: p1 throws first (throwIdx 0..N), then p2 throws
-  // throw_index = sequential position in match.throws array
-  var currentThrowCount = slot.throws ? slot.throws.length : 0;
+  // Build ordered throw list: interleaved p1/p2 for GF, sequential for normal matches.
+  // throw_index = GAME-WIDE per-player count (DB UNIQUE on game_id, player_id, throw_index).
   var throwList = [];
   var players = [slot.p1, slot.p2];
   for (var t = 0; t < throwsPerPlayer; t++) {
@@ -1363,7 +1372,8 @@ async function submitKDAWurfe() {
 
   for (var j = 0; j < throwList.length; j++) {
     var entry = throwList[j];
-    var throwIndex = currentThrowCount + j;
+    // Re-read count from current state after each submitThrow updates S.aktSpiel.state
+    var throwIndex = kdaPlayerThrowCount(S.aktSpiel.state.bracket, entry.playerId);
     var data = await submitThrow(entry.playerId, throwIndex, entry.value, undefined);
     if (!data) return;
     S.aktSpiel.state = data.state;
