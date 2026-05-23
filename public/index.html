@@ -107,6 +107,32 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 .conn-dot.green{background:var(--grn)}
 .conn-dot.red{background:var(--red)}
 .abend-banner{background:var(--bg2);border:1px solid var(--ac);border-left:3px solid var(--ac);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.kda-bracket-scroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;white-space:nowrap;margin-bottom:12px}
+.kda-bracket{display:inline-flex;flex-direction:column;padding:16px;vertical-align:top}
+.kda-bracket-section{margin-bottom:8px}
+.bracket-section-title{font-family:var(--fh);font-size:20px;color:var(--ac);letter-spacing:.08em;margin-bottom:8px}
+.bracket-cols{display:flex;gap:16px;align-items:flex-start}
+.bracket-col{display:flex;flex-direction:column;justify-content:space-around;gap:16px;flex-shrink:0}
+.bracket-round-label{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;text-align:center}
+.bracket-slot{width:140px;min-height:56px;border-radius:8px;background:var(--card);border:1px solid var(--brd);cursor:default;overflow:hidden;flex-shrink:0}
+.bracket-slot.active{border-color:var(--ac);background:#e8b84b11;cursor:pointer;min-height:44px}
+.bracket-slot.active:active{background:#e8b84b1a}
+@media (hover:hover){.bracket-slot.active:hover{background:#e8b84b1a}}
+.bracket-slot:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.bracket-slot.bye{opacity:.45;border-style:dashed}
+.bracket-slot-divider{height:1px;background:var(--brd);margin:0}
+.bracket-player-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px}
+.bracket-player-row.winner-row{background:#4caf7d11}
+.bracket-player-row.loser-row{background:#e0525211}
+.bracket-player-name{font-size:15px;font-weight:600;font-family:var(--fb);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.bracket-player-score{font-family:var(--fh);font-size:15px;flex-shrink:0;margin-left:4px}
+.kda-winner-banner{font-family:var(--fh);font-size:32px;color:var(--ac);text-align:center;padding:16px;letter-spacing:.04em}
+.kda-wurf-player-section{margin-bottom:16px}
+.kda-wurf-avatar{font-size:32px;margin-bottom:4px;text-align:center}
+.kda-wurf-player-name{font-size:15px;font-weight:600;text-align:center;margin-bottom:8px}
+.kda-wurf-throw-label{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.kda-wurf-total{font-family:var(--fh);font-size:24px;color:var(--ac);text-align:center;margin-top:6px}
+.kda-wurf-tiebreak-header{font-size:14px;font-weight:600;color:var(--ac);text-align:center;margin:12px 0 8px;padding:8px;background:#e8b84b11;border-radius:6px}
 </style>
 </head>
 <body>
@@ -220,11 +246,22 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 <div class="mo" id="m-kda"><div class="md">
   <h2>🏆 Kegler des Abends</h2>
   <div class="fg"><label>Datum</label><input type="date" id="m-kda-datum"></div>
-  <div class="fg"><label>Spieler (min. 2)</label><div id="m-kda-wahl" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div></div>
+  <div class="fg"><label>Spieler (min. 4, max. 12)</label><div id="m-kda-wahl" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div><div id="m-kda-counter" style="font-size:12px;color:var(--mut);margin-top:6px;text-align:center">0 Spieler ausgewählt</div></div>
   <div style="display:flex;gap:10px;margin-top:18px">
-    <button class="btn bp" style="flex:1" onclick="startKDA()">Starten</button>
+    <button class="btn bp" style="flex:1" onclick="startKDA()">Turnier starten</button>
     <button class="btn bg" onclick="closeM('m-kda')">Abbrechen</button>
   </div>
+</div></div>
+
+<div class="mo" id="m-kda-wurf"><div class="md" role="dialog" aria-modal="true" aria-labelledby="m-kda-wurf-title">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div id="m-kda-wurf-title" style="font-family:var(--fh);font-size:20px;color:var(--ac);letter-spacing:.06em"></div>
+    <span id="m-kda-wurf-badge" class="badge bamb"></span>
+    <button style="background:none;border:none;color:var(--mut);font-size:24px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center" onclick="closeM('m-kda-wurf')" aria-label="Schließen">×</button>
+  </div>
+  <div id="m-kda-wurf-body"></div>
+  <button class="btn bp" id="m-kda-wurf-confirm" style="width:100%;margin-top:12px;opacity:.4" disabled onclick="submitKDAWurfe()">Wurf bestätigen</button>
+  <button class="btn bg" style="width:100%;margin-top:8px" onclick="closeM('m-kda-wurf')">Abbrechen</button>
 </div></div>
 
 <div class="mo" id="m-bk"><div class="md">
@@ -901,11 +938,12 @@ function renderAnkerSpiel(el, state){var sp=state;if(!sp){el.innerHTML='';return
 
 // Kegler des Abends
 var kdaSel=[];
-function renderKDAWahl(){kdaSel=[];document.getElementById('m-kda-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togKDA('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');}
-function togKDA(id,el){if(kdaSel.indexOf(id)>=0){kdaSel=kdaSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{kdaSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
+function renderKDAWahl(){kdaSel=[];document.getElementById('m-kda-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togKDA('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');updateKDACounter();}
+function togKDA(id,el){if(kdaSel.indexOf(id)>=0){kdaSel=kdaSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{kdaSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}updateKDACounter();}
+function updateKDACounter(){var n=kdaSel.length;var el=document.getElementById('m-kda-counter');if(!el)return;var valid=n>=4&&n<=12;if(valid){el.textContent=n+' Spieler ausgewählt';el.style.color='var(--grn)';}else if(n<4){el.textContent=n+' Spieler — mind. 4 erforderlich';el.style.color='var(--red)';}else{el.textContent=n+' Spieler — max. 12 erlaubt';el.style.color='var(--red)';}}
 function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 async function startKDA() {
-  if (kdaSel.length < 2) { notify('Mind. 2 Spieler', 'var(--red)'); return; }
+  if (kdaSel.length < 4 || kdaSel.length > 12) { notify('Mind. 4 Spieler (max. 12)', 'var(--red)'); return; }
   var res = await fetch('/api/games', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ type_key: 'kda', player_ids: kdaSel, config: { seed: Date.now() } })
@@ -928,7 +966,417 @@ async function kdaSetWinner(matchId, winnerId) {
   S.aktSpiel.state = data.state;
   if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
 }
-function renderKDASpiel(el, state){var sp=state;if(!sp){el.innerHTML='';return;}var losses={};sp.spieler.forEach(function(s){losses[s.id]=0;});sp.matches.forEach(function(m){if(m.done&&m.loser)losses[m.loser.id]=(losses[m.loser.id]||0)+1;});var statusRows=sp.spieler.map(function(s){var l=losses[s.id]||0,out=l>=2;var badge=out?'bred':l===0?'bgrn':'bamb';var label=out?'Ausgeschieden':l===0?'Ohne Niederlage':'1 Niederlage';return'<tr style="opacity:'+(out?0.4:1)+'"><td>'+s.emoji+' '+s.name+'</td><td style="text-align:right"><span class="badge '+badge+'">'+label+'</span></td></tr>';}).join('');var header='<div class="card"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">&#127942; Kegler des Abends</div><table class="stbl"><thead><tr><th>Spieler</th><th style="text-align:right">Status</th></tr></thead><tbody>'+statusRows+'</tbody></table></div>';if(sp.done){var w=sp.gewinner||sp.spieler[0];el.innerHTML='<div style="text-align:center;padding:24px 0 16px"><div style="font-size:48px">'+w.emoji+'</div><div style="font-family:var(--fh);font-size:32px;color:var(--ac);margin:8px 0">'+w.name+'<br>Kegler des Abends!</div></div>'+header+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurueck</button>';return;}var pending=sp.matches.filter(function(m){return !m.done;});var finished=sp.matches.filter(function(m){return m.done;});var matchCards='';if(sp.bye)matchCards+='<div class="card" style="border-left:3px solid var(--ac)"><div style="font-size:13px;color:var(--mut)">Freilos</div><div style="font-weight:600">'+sp.bye.emoji+' '+sp.bye.name+' kommt weiter</div></div>';pending.forEach(function(m){var bc=m.bracket==='W'?'var(--grn)':'var(--ac)';var bl=m.bracket==='W'?'<span class="badge bgrn">Winners</span>':'<span class="badge bamb">Losers</span>';matchCards+='<div class="card" style="border-left:3px solid '+bc+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-family:var(--fh);font-size:16px">Runde '+m.round+'</div>'+bl+'</div><div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center"><button class="btn bp" onclick="kdaSetWinner('+m.id+','+m.p1.id+')" style="text-align:center;padding:10px 6px">'+m.p1.emoji+' '+m.p1.name+'<br><span style="font-size:11px">gewinnt</span></button><div style="text-align:center;font-family:var(--fh);font-size:20px;color:var(--mut)">vs</div><button class="btn bp" onclick="kdaSetWinner('+m.id+','+m.p2.id+')" style="text-align:center;padding:10px 6px">'+m.p2.emoji+' '+m.p2.name+'<br><span style="font-size:11px">gewinnt</span></button></div></div>';});if(finished.length){var hist='';finished.slice(-5).reverse().forEach(function(m){hist+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2e2e3e22;font-size:13px"><span style="color:var(--grn)">'+m.winner.emoji+' '+m.winner.name+'</span><span style="color:var(--red)">&#10060; '+m.loser.emoji+' '+m.loser.name+'</span></div>';});matchCards+='<div class="card"><div style="font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Ergebnisse</div>'+hist+'</div>';}el.innerHTML=header+matchCards+'<button class="btn bg sm" style="margin-top:4px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Uebersicht</button>';}
+
+// Format-detection dispatcher — routes to new bracket renderer or legacy list renderer
+function renderKDASpiel(el, state) {
+  if (!state) { el.innerHTML = ''; return; }
+  if (state.bracket) {
+    renderKDABracket(el, state);
+  } else {
+    renderKDALegacy(el, state);
+  }
+}
+
+// Legacy renderer — original renderKDASpiel body preserved verbatim for old KDA games
+function renderKDALegacy(el, state){var sp=state;if(!sp){el.innerHTML='';return;}var losses={};sp.spieler.forEach(function(s){losses[s.id]=0;});sp.matches.forEach(function(m){if(m.done&&m.loser)losses[m.loser.id]=(losses[m.loser.id]||0)+1;});var statusRows=sp.spieler.map(function(s){var l=losses[s.id]||0,out=l>=2;var badge=out?'bred':l===0?'bgrn':'bamb';var label=out?'Ausgeschieden':l===0?'Ohne Niederlage':'1 Niederlage';return'<tr style="opacity:'+(out?0.4:1)+'"><td>'+s.emoji+' '+s.name+'</td><td style="text-align:right"><span class="badge '+badge+'">'+label+'</span></td></tr>';}).join('');var header='<div class="card"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">&#127942; Kegler des Abends</div><table class="stbl"><thead><tr><th>Spieler</th><th style="text-align:right">Status</th></tr></thead><tbody>'+statusRows+'</tbody></table></div>';if(sp.done){var w=sp.gewinner||sp.spieler[0];el.innerHTML='<div style="text-align:center;padding:24px 0 16px"><div style="font-size:48px">'+w.emoji+'</div><div style="font-family:var(--fh);font-size:32px;color:var(--ac);margin:8px 0">'+w.name+'<br>Kegler des Abends!</div></div>'+header+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurueck</button>';return;}var pending=sp.matches.filter(function(m){return !m.done;});var finished=sp.matches.filter(function(m){return m.done;});var matchCards='';if(sp.bye)matchCards+='<div class="card" style="border-left:3px solid var(--ac)"><div style="font-size:13px;color:var(--mut)">Freilos</div><div style="font-weight:600">'+sp.bye.emoji+' '+sp.bye.name+' kommt weiter</div></div>';pending.forEach(function(m){var bc=m.bracket==='W'?'var(--grn)':'var(--ac)';var bl=m.bracket==='W'?'<span class="badge bgrn">Winners</span>':'<span class="badge bamb">Losers</span>';matchCards+='<div class="card" style="border-left:3px solid '+bc+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-family:var(--fh);font-size:16px">Runde '+m.round+'</div>'+bl+'</div><div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center"><button class="btn bp" onclick="kdaSetWinner('+m.id+','+m.p1.id+')" style="text-align:center;padding:10px 6px">'+m.p1.emoji+' '+m.p1.name+'<br><span style="font-size:11px">gewinnt</span></button><div style="text-align:center;font-family:var(--fh);font-size:20px;color:var(--mut)">vs</div><button class="btn bp" onclick="kdaSetWinner('+m.id+','+m.p2.id+')" style="text-align:center;padding:10px 6px">'+m.p2.emoji+' '+m.p2.name+'<br><span style="font-size:11px">gewinnt</span></button></div></div>';});if(finished.length){var hist='';finished.slice(-5).reverse().forEach(function(m){hist+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2e2e3e22;font-size:13px"><span style="color:var(--grn)">'+m.winner.emoji+' '+m.winner.name+'</span><span style="color:var(--red)">&#10060; '+m.loser.emoji+' '+m.loser.name+'</span></div>';});matchCards+='<div class="card"><div style="font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Ergebnisse</div>'+hist+'</div>';}el.innerHTML=header+matchCards+'<button class="btn bg sm" style="margin-top:4px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Uebersicht</button>';}
+
+// Round label lookup (UI-SPEC copywriting contract)
+function kdaRoundLabel(slotId) {
+  var map = {
+    'W-R1': 'W · Runde 1', 'W-R2': 'W · Runde 2', 'W-R3': 'W · Runde 3',
+    'W-Semi': 'W · Halbfinale', 'W-Final': 'W · Finale',
+    'L-R1': 'L · Runde 1', 'L-R2': 'L · Runde 2', 'L-R3': 'L · Runde 3',
+    'L-Semi': 'L · Halbfinale', 'L-Final': 'L · Finale',
+    'GF': 'Großes Finale'
+  };
+  // Extract prefix from slot id e.g. 'W-R1-1' -> 'W-R1', 'GF-1' -> 'GF'
+  if (!slotId) return '';
+  var parts = slotId.split('-');
+  var key;
+  if (parts[0] === 'GF') {
+    key = 'GF';
+  } else if (parts.length >= 3) {
+    key = parts[0] + '-' + parts[1];
+  } else {
+    key = slotId;
+  }
+  return map[key] || key;
+}
+
+// Build a single bracket slot DOM element — uses textContent only (XSS guard)
+function buildBracketSlotEl(slot) {
+  var div = document.createElement('div');
+  div.className = 'bracket-slot' + (slot.isBye ? ' bye' : '') + (!slot.done && !slot.isBye && slot.p1 && slot.p2 ? ' active' : '');
+
+  if (slot.isBye) {
+    div.setAttribute('aria-label', 'Freilos — ' + (slot.winner ? slot.winner.name : '—'));
+  } else if (!slot.done && !slot.isBye && slot.p1 && slot.p2) {
+    div.setAttribute('role', 'button');
+    div.setAttribute('tabindex', '0');
+    div.setAttribute('aria-label', slot.p1.name + ' vs ' + slot.p2.name + ' — Jetzt spielen');
+    div.setAttribute('data-slot-id', slot.id);
+    div.onclick = (function(sid) { return function() { openKDAWurfModal(sid); }; })(slot.id);
+    div.onkeydown = (function(sid) { return function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openKDAWurfModal(sid); } }; })(slot.id);
+  } else if (slot.done) {
+    var p1IsWinner = slot.winner && slot.p1 && slot.winner.id === slot.p1.id;
+    div.setAttribute('aria-label', (slot.winner ? slot.winner.name : '—') + ' hat gewonnen');
+  }
+
+  var players = [slot.p1, slot.p2];
+  players.forEach(function(p, idx) {
+    var isWinner = slot.done && slot.winner && p && slot.winner.id === p.id;
+    var isLoser = slot.done && slot.loser && p && slot.loser.id === p.id;
+
+    var row = document.createElement('div');
+    row.className = 'bracket-player-row' + (isWinner ? ' winner-row' : '') + (isLoser ? ' loser-row' : '');
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'bracket-player-name';
+    if (p) {
+      nameSpan.textContent = p.emoji + ' ' + p.name;
+      nameSpan.style.color = isLoser ? 'var(--mut)' : 'var(--txt)';
+    } else {
+      nameSpan.textContent = '—';
+      nameSpan.style.color = 'var(--mut)';
+    }
+
+    var scoreSpan = document.createElement('span');
+    scoreSpan.className = 'bracket-player-score';
+    if (p && slot.throws && slot.throws.length > 0) {
+      var pThrows = slot.throws.filter(function(t) { return t.playerId === p.id; });
+      var total = pThrows.reduce(function(s, t) { return s + t.value; }, 0);
+      if (pThrows.length > 0) {
+        var scoreText = String(total);
+        if (!slot.done) { scoreText += ' ⚫'; }
+        scoreSpan.textContent = scoreText;
+        scoreSpan.style.color = isWinner ? 'var(--grn)' : isLoser ? 'var(--mut)' : 'var(--ac)';
+      } else {
+        scoreSpan.textContent = '—';
+        scoreSpan.style.color = 'var(--mut)';
+      }
+    } else {
+      scoreSpan.textContent = '—';
+      scoreSpan.style.color = 'var(--mut)';
+    }
+
+    row.appendChild(nameSpan);
+    row.appendChild(scoreSpan);
+    div.appendChild(row);
+
+    // Divider between rows for done slots
+    if (idx === 0 && slot.done) {
+      var divider = document.createElement('div');
+      divider.className = 'bracket-slot-divider';
+      div.appendChild(divider);
+    }
+  });
+
+  return div;
+}
+
+// Build bracket columns grouped by round for a given bracket type ('W' or 'L')
+function buildBracketColumns(slots, bracketType) {
+  var bracketSlots = slots.filter(function(s) { return s.bracket === bracketType; });
+  // Group by round
+  var roundMap = {};
+  var roundOrder = [];
+  bracketSlots.forEach(function(s) {
+    var r = s.round != null ? s.round : 0;
+    if (!roundMap[r]) { roundMap[r] = []; roundOrder.push(r); }
+    roundMap[r].push(s);
+  });
+  roundOrder.sort(function(a, b) { return a - b; });
+
+  var colsDiv = document.createElement('div');
+  colsDiv.className = 'bracket-cols';
+
+  roundOrder.forEach(function(r) {
+    var colDiv = document.createElement('div');
+    colDiv.className = 'bracket-col';
+
+    // Round label (derive from first slot id in this round)
+    var firstSlot = roundMap[r][0];
+    var labelDiv = document.createElement('div');
+    labelDiv.className = 'bracket-round-label';
+    labelDiv.textContent = kdaRoundLabel(firstSlot.id);
+    colDiv.appendChild(labelDiv);
+
+    roundMap[r].forEach(function(slot) {
+      colDiv.appendChild(buildBracketSlotEl(slot));
+    });
+    colsDiv.appendChild(colDiv);
+  });
+  return colsDiv;
+}
+
+// New bracket tree renderer for state.bracket format
+function renderKDABracket(el, state) {
+  var bracket = state.bracket;
+  var columns = (function() {
+    var ids = {};
+    bracket.forEach(function(s) { ids[s.bracket + '-' + s.round] = 1; });
+    return Object.keys(ids).length;
+  })();
+
+  var scrollContainer = document.createElement('div');
+  scrollContainer.className = 'kda-bracket-scroll';
+  scrollContainer.setAttribute('role', 'region');
+  scrollContainer.setAttribute('aria-label', 'Turnierbaum');
+
+  var innerDiv = document.createElement('div');
+  innerDiv.className = 'kda-bracket';
+  innerDiv.style.minWidth = 'max(640px,' + (columns * 160) + 'px)';
+
+  // Winner banner if tournament done
+  if (state.done && state.gewinner) {
+    var banner = document.createElement('div');
+    banner.className = 'kda-winner-banner';
+    banner.textContent = state.gewinner.emoji + ' ' + state.gewinner.name + ' — Kegler des Abends!';
+    innerDiv.appendChild(banner);
+  }
+
+  // Winner Bracket section
+  var wSlots = bracket.filter(function(s) { return s.bracket === 'W'; });
+  if (wSlots.length > 0) {
+    var wSection = document.createElement('div');
+    wSection.className = 'kda-bracket-section';
+    var wTitle = document.createElement('div');
+    wTitle.className = 'bracket-section-title';
+    wTitle.textContent = 'Winner Bracket';
+    wSection.appendChild(wTitle);
+    wSection.appendChild(buildBracketColumns(bracket, 'W'));
+    innerDiv.appendChild(wSection);
+  }
+
+  // Loser Bracket section
+  var lSlots = bracket.filter(function(s) { return s.bracket === 'L'; });
+  if (lSlots.length > 0) {
+    var lSection = document.createElement('div');
+    lSection.className = 'kda-bracket-section';
+    var lTitle = document.createElement('div');
+    lTitle.className = 'bracket-section-title';
+    lTitle.textContent = 'Loser Bracket';
+    lSection.appendChild(lTitle);
+    lSection.appendChild(buildBracketColumns(bracket, 'L'));
+    innerDiv.appendChild(lSection);
+  }
+
+  // Grand Final column
+  var gfSlots = bracket.filter(function(s) { return s.bracket === 'GF'; });
+  if (gfSlots.length > 0) {
+    var gfSection = document.createElement('div');
+    gfSection.className = 'kda-bracket-section';
+    var gfTitle = document.createElement('div');
+    gfTitle.className = 'bracket-section-title';
+    gfTitle.textContent = 'Großes Finale';
+    gfSection.appendChild(gfTitle);
+    var gfColsDiv = document.createElement('div');
+    gfColsDiv.className = 'bracket-cols';
+    var gfCol = document.createElement('div');
+    gfCol.className = 'bracket-col';
+    var gfLabel = document.createElement('div');
+    gfLabel.className = 'bracket-round-label';
+    gfLabel.textContent = 'Großes Finale';
+    gfCol.appendChild(gfLabel);
+    gfSlots.forEach(function(slot) {
+      gfCol.appendChild(buildBracketSlotEl(slot));
+    });
+    gfColsDiv.appendChild(gfCol);
+    gfSection.appendChild(gfColsDiv);
+    innerDiv.appendChild(gfSection);
+  }
+
+  // Back button
+  var backBtn = document.createElement('button');
+  backBtn.className = 'btn bg sm';
+  backBtn.style.marginTop = '8px';
+  backBtn.textContent = 'Zurück zur Übersicht';
+  backBtn.onclick = function() { S.aktSpiel = null; showTab('spiele'); };
+  innerDiv.appendChild(backBtn);
+
+  scrollContainer.appendChild(innerDiv);
+  el.replaceChildren(scrollContainer);
+}
+
+// Module-level state for throw modal
+var kdaWurfSlotId = null;
+var kdaWurfVals = {};
+
+function openKDAWurfModal(slotId) {
+  if (!S.aktSpiel || !S.aktSpiel.state || !S.aktSpiel.state.bracket) return;
+  var slot = S.aktSpiel.state.bracket.find(function(s) { return s.id === slotId; });
+  if (!slot) return;
+
+  // Set title
+  var titleEl = document.getElementById('m-kda-wurf-title');
+  if (titleEl) {
+    titleEl.textContent = slot.bracket === 'GF' ? 'Großes Finale' : kdaRoundLabel(slot.id);
+  }
+
+  // Set badge
+  var badgeEl = document.getElementById('m-kda-wurf-badge');
+  if (badgeEl) {
+    badgeEl.className = 'badge ' + (slot.bracket === 'W' ? 'bgrn' : 'bamb');
+    badgeEl.textContent = slot.bracket === 'W' ? 'Winner Bracket' : slot.bracket === 'L' ? 'Loser Bracket' : 'Großes Finale';
+  }
+
+  kdaWurfSlotId = slotId;
+  kdaWurfVals = {};
+  renderKDAWurfBody();
+  openM('m-kda-wurf');
+}
+
+function renderKDAWurfBody() {
+  var bodyEl = document.getElementById('m-kda-wurf-body');
+  if (!bodyEl || !S.aktSpiel || !S.aktSpiel.state || !S.aktSpiel.state.bracket) return;
+  var slot = S.aktSpiel.state.bracket.find(function(s) { return s.id === kdaWurfSlotId; });
+  if (!slot) return;
+
+  var isGF = slot.bracket === 'GF';
+  var throwsPerPlayer = isGF ? 2 : 1;
+
+  // Update confirm button label
+  var confirmBtn = document.getElementById('m-kda-wurf-confirm');
+  if (confirmBtn) {
+    confirmBtn.textContent = slot.tiebreak ? 'Stechwurf bestätigen' : (isGF ? 'Würfe bestätigen' : 'Wurf bestätigen');
+  }
+
+  bodyEl.replaceChildren();
+
+  // Tiebreak section header (shown above player grids when tiebreak is active)
+  if (slot.tiebreak) {
+    var tbHeader = document.createElement('div');
+    tbHeader.className = 'kda-wurf-tiebreak-header';
+    tbHeader.textContent = 'Stechen — Gleichstand!';
+    bodyEl.appendChild(tbHeader);
+  }
+
+  var players = [slot.p1, slot.p2].filter(Boolean);
+  players.forEach(function(p) {
+    var section = document.createElement('div');
+    section.className = 'kda-wurf-player-section';
+
+    var avatar = document.createElement('div');
+    avatar.className = 'kda-wurf-avatar';
+    avatar.textContent = p.emoji;
+
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'kda-wurf-player-name';
+    nameDiv.textContent = p.name;
+
+    section.appendChild(avatar);
+    section.appendChild(nameDiv);
+
+    for (var ti = 0; ti < throwsPerPlayer; ti++) {
+      var throwIdx = ti;
+      var key = p.id + '-' + throwIdx;
+
+      if (isGF) {
+        var throwLabel = document.createElement('div');
+        throwLabel.className = 'kda-wurf-throw-label';
+        throwLabel.textContent = 'Wurf ' + (throwIdx + 1);
+        section.appendChild(throwLabel);
+      }
+
+      var grid = document.createElement('div');
+      grid.className = 'kgrid';
+      grid.setAttribute('role', 'group');
+      grid.setAttribute('aria-label', 'Pins für ' + p.name);
+
+      for (var v = 0; v <= 9; v++) {
+        var btn = document.createElement('button');
+        btn.className = 'kb' + (kdaWurfVals[key] === v ? ' sel' : '');
+        btn.textContent = String(v);
+        btn.setAttribute('type', 'button');
+        (function(pid, tidx, val) {
+          btn.onclick = function() { kdaSelPin(pid, tidx, val); };
+        })(p.id, throwIdx, v);
+        grid.appendChild(btn);
+      }
+      section.appendChild(grid);
+    }
+
+    // Running total for GF
+    if (isGF) {
+      var total = 0;
+      for (var ti2 = 0; ti2 < throwsPerPlayer; ti2++) {
+        var k = p.id + '-' + ti2;
+        if (kdaWurfVals[k] !== undefined) total += kdaWurfVals[k];
+      }
+      var totalDiv = document.createElement('div');
+      totalDiv.className = 'kda-wurf-total';
+      totalDiv.textContent = 'Gesamt: ' + total;
+      section.appendChild(totalDiv);
+    }
+
+    bodyEl.appendChild(section);
+  });
+
+  // Update confirm button enabled state
+  var allSelected = allKDAPinsSelected(slot);
+  if (confirmBtn) {
+    confirmBtn.disabled = !allSelected;
+    confirmBtn.style.opacity = allSelected ? '1' : '.4';
+  }
+}
+
+function kdaSelPin(playerId, throwIdx, value) {
+  kdaWurfVals[playerId + '-' + throwIdx] = value;
+  renderKDAWurfBody();
+}
+
+function allKDAPinsSelected(slot) {
+  if (!slot || !slot.p1 || !slot.p2) return false;
+  var isGF = slot.bracket === 'GF';
+  var throwsPerPlayer = isGF ? 2 : 1;
+  var players = [slot.p1, slot.p2];
+  for (var i = 0; i < players.length; i++) {
+    for (var t = 0; t < throwsPerPlayer; t++) {
+      if (kdaWurfVals[players[i].id + '-' + t] === undefined) return false;
+    }
+  }
+  return true;
+}
+
+async function submitKDAWurfe() {
+  if (!S.aktSpiel || !S.aktSpiel.state || !S.aktSpiel.state.bracket) return;
+  var slot = S.aktSpiel.state.bracket.find(function(s) { return s.id === kdaWurfSlotId; });
+  if (!slot || !slot.p1 || !slot.p2) return;
+
+  var isGF = slot.bracket === 'GF';
+  var throwsPerPlayer = isGF ? 2 : 1;
+
+  // Build ordered throw list: p1 throws first (throwIdx 0..N), then p2 throws
+  // throw_index = sequential position in match.throws array
+  var currentThrowCount = slot.throws ? slot.throws.length : 0;
+  var throwList = [];
+  var players = [slot.p1, slot.p2];
+  for (var t = 0; t < throwsPerPlayer; t++) {
+    for (var i = 0; i < players.length; i++) {
+      var p = players[i];
+      var val = kdaWurfVals[p.id + '-' + t];
+      if (val !== undefined) {
+        throwList.push({ playerId: p.id, value: val });
+      }
+    }
+  }
+
+  for (var j = 0; j < throwList.length; j++) {
+    var entry = throwList[j];
+    var throwIndex = currentThrowCount + j;
+    var data = await submitThrow(entry.playerId, throwIndex, entry.value, undefined);
+    if (!data) return;
+    S.aktSpiel.state = data.state;
+    if (data.finished) {
+      closeM('m-kda-wurf');
+      handleGameFinished(data.state);
+      return;
+    }
+    renderSpielenTab();
+  }
+
+  closeM('m-kda-wurf');
+}
 
 // Statistik
 async function renderStats() {
