@@ -9,6 +9,14 @@ const players = [
   { id: 2, name: 'B', emoji: 'B', team: 'O', role: 'jaeger' }
 ];
 
+// KDA requires minimum 4 players (new DE engine, D-12)
+const kdaPlayers = [
+  { id: 1, name: 'A', emoji: 'A' },
+  { id: 2, name: 'B', emoji: 'B' },
+  { id: 3, name: 'C', emoji: 'C' },
+  { id: 4, name: 'D', emoji: 'D' }
+];
+
 const EXPECTED_KEYS = [
   'viergewinnt', 'fuchsjagd', 'dreiVollen', 'grosseHaus',
   'kleineHaus', 'plusMinus', 'anker', 'kda', 'bilderkegel'
@@ -55,9 +63,10 @@ test('I3: each module id matches its index key', () => {
 test('I4: all modules can be initialized and return isFinished=false', () => {
   for (const key of EXPECTED_KEYS) {
     const mod = gameTypes[key];
-    // kda and anker accept optional config
+    // kda requires min 4 players (new DE engine, D-12) and accepts optional config
+    const initPlayers = key === 'kda' ? kdaPlayers : players;
     const config = key === 'kda' ? { seed: 'test' } : undefined;
-    const state = config !== undefined ? mod.initState(players, config) : mod.initState(players);
+    const state = config !== undefined ? mod.initState(initPlayers, config) : mod.initState(initPlayers);
     assert.equal(
       mod.isFinished(state),
       false,
@@ -83,8 +92,10 @@ test('I5: applyThrow does not mutate input state for all modules', () => {
 
   for (const key of EXPECTED_KEYS) {
     const mod = gameTypes[key];
+    // kda requires min 4 players (new DE engine, D-12)
+    const initPlayers = key === 'kda' ? kdaPlayers : players;
     const config = key === 'kda' ? { seed: 'test' } : undefined;
-    const state = config !== undefined ? mod.initState(players, config) : mod.initState(players);
+    const state = config !== undefined ? mod.initState(initPlayers, config) : mod.initState(initPlayers);
     const snap = JSON.parse(JSON.stringify(state));
 
     const { value, meta } = throwValues[key];
@@ -92,10 +103,10 @@ test('I5: applyThrow does not mutate input state for all modules', () => {
     // Determine the correct playerId/matchId argument
     let firstArgId;
     if (key === 'kda') {
-      // For KDA: first arg is matchId
-      firstArgId = state.matches[0] ? state.matches[0].id : 1;
-      const winnerId = state.matches[0] ? state.matches[0].p1.id : 1;
-      mod.applyThrow(state, firstArgId, winnerId);
+      // For new KDA DE engine: first arg is player_id of a player in an active bracket match
+      const activeMatch = state.bracket.find(m => !m.done && !m.isBye && m.p1 && m.p2);
+      const playerId = activeMatch ? activeMatch.p1.id : 1;
+      mod.applyThrow(state, playerId, value);
     } else if (key === 'fuchsjagd') {
       // Fuchs has id=1 (role:fuchs player)
       mod.applyThrow(state, 1, value, meta);
