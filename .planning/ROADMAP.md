@@ -40,8 +40,8 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   4. TV screen shows the live bracket state in real time via Socket.io without requiring a page reload
 **Plans**: 4 plans
 Plans:
-- [ ] 06-01-PLAN.md — Wave 0: Rewrite KDA test suite (RED state — DE engine contract)
-- [ ] 06-02-PLAN.md — Wave 1: Implement DE bracket engine (initState + applyThrow + getFinalResults)
+- [x] 06-01-PLAN.md — Wave 0: Rewrite KDA test suite (RED state — DE engine contract)
+- [x] 06-02-PLAN.md — Wave 1: Implement DE bracket engine (initState + applyThrow + getFinalResults)
 - [ ] 06-03-PLAN.md — Wave 2: Tablet UI — bracket tree renderer + throw modal + start dialog validation
 - [ ] 06-04-PLAN.md — Wave 2: TV — renderKDABracket + renderGame KDA branch
 
@@ -92,7 +92,7 @@ Plans:
 | 3. Frontend Wiring | v1.0 | 3/3 | Complete | 2026-05-21 |
 | 4. Club Features | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 5. Production Deployment | v1.0 | 2/2 | Complete | 2026-05-22 |
-| 6. Turnierbaum | v2.0 | 0/4 | Not started | - |
+| 6. Turnierbaum | v2.0 | 2/4 | In Progress|  |
 | 7. Highlights & TV-Layouts | v2.0 | 0/? | Not started | - |
 | 8. Statistiken & Rückblick | v2.0 | 0/? | Not started | - |
 | 9. Polish | v2.0 | 0/? | Not started | - |
