@@ -284,26 +284,56 @@ function buildBracket(seededPlayers) {
 // resolveByeSlots: auto-advance W-R1 slots where the padded player slot is
 // null (i.e., only one player was assigned — no opponent).
 // Only W-R1 slots can be byes (null padding only occurs there).
-// Downstream slots (W-R2, L-bracket, etc.) are real matches waiting for
-// two players to arrive through routing — they are NOT byes.
 // ---------------------------------------------------------------------------
 
 function resolveByeSlots(bracket) {
   for (const slot of bracket) {
     if (!slot.done && slot.round === 1 && slot.bracket === 'W') {
       if (slot.p1 && (slot.p2 === null || slot.p2 === undefined)) {
-        // p1 has no opponent → bye
         slot.isBye = true;
         slot.done = true;
         slot.winner = slot.p1;
         advancePlayer(bracket, slot.advancesWinnerTo, slot.winner);
-        // Note: losers from bye slots do NOT go to the loser bracket
       } else if (slot.p2 && (slot.p1 === null || slot.p1 === undefined)) {
-        // p2 has no opponent → bye (unusual but safe)
         slot.isBye = true;
         slot.done = true;
         slot.winner = slot.p2;
         advancePlayer(bracket, slot.advancesWinnerTo, slot.winner);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// autoResolveByes: after a match resolves, any downstream slot that has
+// exactly one player and no remaining feeder slots can ever send a second
+// player becomes a bye (e.g. L-R1-2 when the corresponding W-R1 was a bye).
+// Runs iteratively until stable so cascading byes are handled correctly.
+// ---------------------------------------------------------------------------
+
+function autoResolveByes(bracket) {
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const slot of bracket) {
+      if (slot.done || slot.isBye) continue;
+      const hasP1 = slot.p1 != null;
+      const hasP2 = slot.p2 != null;
+      if (hasP1 === hasP2) continue; // 0 or 2 players — nothing to do
+      const player = hasP1 ? slot.p1 : slot.p2;
+      // All slots that could still send a player into this slot
+      const feeders = bracket.filter(s =>
+        s.advancesWinnerTo === slot.id || s.advancesLoserTo === slot.id
+      );
+      if (feeders.every(s => s.done)) {
+        // No more players can arrive — treat this slot as a bye
+        slot.isBye = true;
+        slot.done = true;
+        slot.winner = player;
+        slot.p1 = player;
+        slot.p2 = null;
+        advancePlayer(bracket, slot.advancesWinnerTo, slot.winner);
+        changed = true;
       }
     }
   }
@@ -339,10 +369,8 @@ module.exports = {
 
     const bracket = buildBracket(seededPlayers);
 
-    // Assign null-padded players into bracket slots that reference them
-    // (buildBracket already does this for non-null; null slots become byes)
-    // Auto-resolve bye slots
     resolveByeSlots(bracket);
+    autoResolveByes(bracket);
 
     return {
       bracket,
@@ -398,6 +426,8 @@ module.exports = {
         if (match.advancesLoserTo) {
           advancePlayer(s.bracket, match.advancesLoserTo, match.loser);
         }
+        // Resolve any downstream slot that now has 1 player and no more feeders
+        autoResolveByes(s.bracket);
 
         // Check tournament completion
         const gf = s.bracket.find(m => m.bracket === 'GF');

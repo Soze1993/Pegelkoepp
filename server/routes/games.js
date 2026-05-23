@@ -78,7 +78,11 @@ router.post('/', requireSession, (req, res) => {
     ...p,
     role: (roles && roles[String(p.id)]) || null
   }));
-  const state = gameModule.initState(playersWithRole, config);
+  // KDA uses game_id as seed so reconstruction after server restart is deterministic
+  const configWithSeed = gameModule.id === 'kda'
+    ? Object.assign({}, config, { seed: String(gameId) })
+    : config;
+  const state = gameModule.initState(playersWithRole, configWithSeed);
   activeGames.set(gameId, state);
 
   // Broadcast to all connected TVs so they auto-switch to the new game (D-11, D-10)
@@ -252,7 +256,8 @@ function reconstructState(game) {
     'SELECT player_id, throw_index, value, meta FROM throws ' +
     'WHERE game_id = ? ORDER BY id ASC'
   ).all(game.id);
-  let state = gameModule.initState(players);
+  const reconstructConfig = gameModule.id === 'kda' ? { seed: String(game.id) } : {};
+  let state = gameModule.initState(players, reconstructConfig);
   for (const t of throws) {
     const parsedMeta = t.meta ? JSON.parse(t.meta) : undefined;
     state = gameModule.applyThrow(state, t.player_id, t.value, parsedMeta);
