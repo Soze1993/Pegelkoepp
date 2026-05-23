@@ -189,19 +189,22 @@ function renderKDABracket(state) {
 
   container.appendChild(topRow);
 
-  // --- Grand Final: centered at bottom ---
+  // --- Grand Final: full-width stage at bottom ---
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   if (gfSlot) {
-    var gfSection = document.createElement('div');
-    gfSection.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:8px';
+    var gfStage = document.createElement('div');
+    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:12px;border-top:2px solid var(--ac);width:100%';
 
     var gfLabel = document.createElement('div');
     gfLabel.textContent = 'Großes Finale';
-    gfLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--ac);line-height:1';
-    gfSection.appendChild(gfLabel);
+    gfLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:32px;color:var(--ac);line-height:1;letter-spacing:0.06em;text-transform:uppercase';
+    gfStage.appendChild(gfLabel);
 
-    gfSection.appendChild(buildTVSlotEl(gfSlot, Math.round(slotWidth * 1.3), Math.round(slotHeight * 1.25)));
-    container.appendChild(gfSection);
+    var gfSlotEl = buildTVSlotEl(gfSlot, Math.round(slotWidth * 2), Math.round(slotHeight * 1.3));
+    // Extra glow for the finale slot
+    gfSlotEl.style.boxShadow = (gfSlotEl.style.boxShadow || '') + ';0 0 32px #e8b84b44';
+    gfStage.appendChild(gfSlotEl);
+    container.appendChild(gfStage);
   }
 
   gameEl.replaceChildren(container);
