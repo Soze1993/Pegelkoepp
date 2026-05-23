@@ -104,27 +104,26 @@ function renderKDABracket(state) {
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
-  // Determine slot size from W-R1 match count
   var wR1Count = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; }).length;
   var slotWidth  = wR1Count <= 2 ? 200 : wR1Count <= 4 ? 160 : 140;
   var slotHeight = wR1Count <= 2 ?  80 : wR1Count <= 4 ?  72 :  64;
 
-  // Outer container
+  // Outer container: 2-column grid — W bracket left, L bracket + GF right
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'width:100vw;height:100vh;overflow:hidden;background:var(--bg);padding:32px;box-sizing:border-box;display:grid;gap:24px';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr;gap:24px;overflow:hidden';
 
-  // --- W bracket section ---
+  // --- W bracket (left column) ---
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;min-width:0';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
-  wLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:36px;color:var(--ac);';
+  wLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--ac);line-height:1';
   wSection.appendChild(wLabel);
 
   var wRoundsRow = document.createElement('div');
-  wRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:16px;align-items:flex-start';
+  wRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:12px;align-items:flex-start;flex:1';
 
   var wMatches = state.bracket.filter(function(m) { return m.bracket === 'W'; });
   var wRounds = Array.from(new Set(wMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
@@ -133,11 +132,11 @@ function renderKDABracket(state) {
   wRounds.forEach(function(round) {
     var col = document.createElement('div');
     col.className = 'tv-bracket-col';
-    col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:8px';
+    col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:6px';
 
     var roundLabel = document.createElement('div');
     roundLabel.textContent = kdaTVRoundLabel('W', round, wTotalRounds);
-    roundLabel.style.cssText = 'font-size:16px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:4px';
+    roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap';
     col.appendChild(roundLabel);
 
     var roundMatches = wMatches.filter(function(m) { return m.round === round; });
@@ -150,19 +149,22 @@ function renderKDABracket(state) {
   wSection.appendChild(wRoundsRow);
   container.appendChild(wSection);
 
-  // --- L bracket section ---
+  // --- L bracket + GF (right column) ---
+  var rightSection = document.createElement('div');
+  rightSection.style.cssText = 'display:flex;flex-direction:column;gap:12px;min-width:0';
+
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   if (lMatches.length > 0) {
     var lSection = document.createElement('div');
-    lSection.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px';
 
     var lLabel = document.createElement('div');
     lLabel.textContent = 'Loser Bracket';
-    lLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:36px;color:var(--ac);';
+    lLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--ac);line-height:1';
     lSection.appendChild(lLabel);
 
     var lRoundsRow = document.createElement('div');
-    lRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:16px;align-items:flex-start';
+    lRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:12px;align-items:flex-start';
 
     var lRounds = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
     var lTotalRounds = lRounds.length;
@@ -170,11 +172,11 @@ function renderKDABracket(state) {
     lRounds.forEach(function(round) {
       var col = document.createElement('div');
       col.className = 'tv-bracket-col';
-      col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:8px';
+      col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:6px';
 
       var roundLabel = document.createElement('div');
       roundLabel.textContent = kdaTVRoundLabel('L', round, lTotalRounds);
-      roundLabel.style.cssText = 'font-size:16px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:4px';
+      roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap';
       col.appendChild(roundLabel);
 
       var roundMatches = lMatches.filter(function(m) { return m.round === round; });
@@ -185,24 +187,25 @@ function renderKDABracket(state) {
       lRoundsRow.appendChild(col);
     });
     lSection.appendChild(lRoundsRow);
-    container.appendChild(lSection);
+    rightSection.appendChild(lSection);
   }
 
-  // --- Grand Final column ---
+  // --- Grand Final ---
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   if (gfSlot) {
     var gfSection = document.createElement('div');
-    gfSection.style.cssText = 'display:flex;flex-direction:column;gap:8px';
+    gfSection.style.cssText = 'display:flex;flex-direction:column;gap:4px';
 
     var gfLabel = document.createElement('div');
     gfLabel.textContent = 'Großes Finale';
-    gfLabel.style.cssText = 'font-size:16px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:4px';
+    gfLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--ac);line-height:1';
     gfSection.appendChild(gfLabel);
 
     gfSection.appendChild(buildTVSlotEl(gfSlot, slotWidth, Math.round(slotHeight * 1.25)));
-    container.appendChild(gfSection);
+    rightSection.appendChild(gfSection);
   }
 
+  container.appendChild(rightSection);
   gameEl.replaceChildren(container);
 }
 
@@ -211,64 +214,75 @@ function buildTVSlotEl(slot, w, h) {
   var el = document.createElement('div');
   el.className = 'tv-bracket-slot';
 
-  // Active: both players assigned, match not finished
   var isActive = !slot.done && !slot.isBye && slot.p1 && slot.p2;
+  // Bye slots: single-player, compact height
+  var byeH = Math.round(h * 0.55);
+  var elH = slot.isBye ? byeH : h;
 
   if (isActive) {
-    el.style.cssText = 'width:' + w + 'px;height:' + h + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:8px 12px;box-sizing:border-box;border:2px solid var(--ac);box-shadow:0 0 16px #e8b84b33';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px 12px;box-sizing:border-box;border:2px solid var(--ac);box-shadow:0 0 16px #e8b84b33';
   } else if (slot.isBye) {
-    el.style.cssText = 'width:' + w + 'px;height:' + h + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:8px 12px;box-sizing:border-box;border:1px dashed var(--brd);opacity:0.45';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:6px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:4px 12px;box-sizing:border-box;border:1px dashed var(--brd);opacity:0.5';
   } else {
-    el.style.cssText = 'width:' + w + 'px;height:' + h + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:8px 12px;box-sizing:border-box;border:1px solid var(--brd)';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px 12px;box-sizing:border-box;border:1px solid var(--brd)';
   }
 
-  // Handle bye slot with a declared winner
+  // --- Bye slot: single row with name + BYE badge ---
+  if (slot.isBye) {
+    var p = slot.winner || slot.p1;
+    var byeName = document.createElement('span');
+    byeName.textContent = p ? ((p.emoji != null ? p.emoji : '') + ' ' + p.name) : '—';  // textContent — XSS safe (T-06-04-01)
+    byeName.style.cssText = 'font-size:18px;font-weight:600;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    el.appendChild(byeName);
+
+    var byeBadge = document.createElement('span');
+    byeBadge.textContent = 'BYE';
+    byeBadge.style.cssText = 'font-size:11px;font-weight:700;color:var(--mut);background:var(--brd);border-radius:4px;padding:2px 5px;flex-shrink:0;margin-left:6px;letter-spacing:0.05em';
+    el.appendChild(byeBadge);
+    return el;
+  }
+
+  // --- Normal slot: two player rows ---
   var players = [slot.p1, slot.p2];
-  if (slot.isBye && slot.winner) {
-    players = [slot.winner, null];
-  }
 
-  players.forEach(function(p, idx) {
+  players.forEach(function(p) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;min-width:0';
 
     var nameSpan = document.createElement('span');
     if (p) {
       nameSpan.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe (T-06-04-01)
-      nameSpan.style.cssText = 'font-size:22px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      nameSpan.style.cssText = 'font-size:20px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     } else {
-      nameSpan.textContent = '—';  // em dash for empty slot
-      nameSpan.style.cssText = 'font-size:22px;font-weight:600;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      // Empty: waiting for player to arrive
+      nameSpan.textContent = '·  ·  ·';
+      nameSpan.style.cssText = 'font-size:14px;font-weight:400;color:var(--mut);flex:1;min-width:0;letter-spacing:4px';
     }
 
     var scoreSpan = document.createElement('span');
-    scoreSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
+    scoreSpan.style.cssText = 'font-size:26px;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
 
     if (p && slot.throws) {
       var playerThrows = slot.throws.filter(function(t) { return t.playerId === p.id; });
       if (playerThrows.length === 0) {
-        // No throws yet
         scoreSpan.textContent = '—';
         scoreSpan.style.color = 'var(--mut)';
       } else {
         var sum = playerThrows.reduce(function(acc, t) { return acc + (typeof t.value === 'number' ? t.value : 0); }, 0);
         if (!slot.done) {
-          // In-progress: match ongoing
-          scoreSpan.textContent = String(sum) + ' ⚫';  // ⚫
+          scoreSpan.textContent = String(sum) + ' ⚫';
           scoreSpan.style.color = 'var(--ac)';
         } else if (slot.winner && slot.winner.id === p.id) {
-          // Winner
           scoreSpan.textContent = String(sum);
           scoreSpan.style.color = 'var(--grn)';
         } else {
-          // Loser
           scoreSpan.textContent = String(sum);
           scoreSpan.style.color = 'var(--red)';
           scoreSpan.style.opacity = '0.6';
         }
       }
     } else {
-      scoreSpan.textContent = '—';
+      scoreSpan.textContent = p ? '—' : '';
       scoreSpan.style.color = 'var(--mut)';
     }
 

@@ -319,22 +319,27 @@ function autoResolveByes(bracket) {
       if (slot.done || slot.isBye) continue;
       const hasP1 = slot.p1 != null;
       const hasP2 = slot.p2 != null;
-      if (hasP1 === hasP2) continue; // 0 or 2 players — nothing to do
-      const player = hasP1 ? slot.p1 : slot.p2;
+      if (hasP1 && hasP2) continue; // 2 players — real match, skip
       // All slots that could still send a player into this slot
       const feeders = bracket.filter(s =>
         s.advancesWinnerTo === slot.id || s.advancesLoserTo === slot.id
       );
-      if (feeders.every(s => s.done)) {
-        // No more players can arrive — treat this slot as a bye
+      if (!feeders.every(s => s.done)) continue;
+      // All feeders are done — no more players will ever arrive
+      if (!hasP1 && !hasP2) {
+        // 0 players: mark done so downstream slots don't wait, but not isBye (no player involved)
+        slot.done = true;
+      } else {
+        // 1 player: treat as bye, advance them
+        const player = hasP1 ? slot.p1 : slot.p2;
         slot.isBye = true;
         slot.done = true;
         slot.winner = player;
         slot.p1 = player;
         slot.p2 = null;
         advancePlayer(bracket, slot.advancesWinnerTo, slot.winner);
-        changed = true;
       }
+      changed = true;
     }
   }
 }
