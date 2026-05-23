@@ -1,18 +1,14 @@
 ---
-status: partial
+status: complete
 phase: 06-turnierbaum
 source: 06-01-SUMMARY.md, 06-02-SUMMARY.md, 06-03-SUMMARY.md, 06-04-SUMMARY.md
 started: 2026-05-23T00:00:00.000Z
-updated: 2026-05-23T00:00:00.000Z
+updated: 2026-05-23T12:00:00.000Z
 ---
 
 ## Current Test
 
-number: 8
-name: TV — Bracket Tree Displayed Live
-expected: |
-  TV shows bracket tree with live updates. Known issue: name overflow on 1920x1080.
-awaiting: user response — session ended, resume next session
+[testing complete]
 
 ## Tests
 
@@ -91,15 +87,14 @@ total: 8
 passed: 4
 fixed: 1
 issues: 1
-pending: 1
+pending: 0
 skipped: 2
-skipped: 0
 blocked: 0
 
 ## Gaps
 
 - truth: "submitKDAWurfe submits with correct game-wide throw_index per player across all bracket matches"
-  status: failed
+  status: fixed
   reason: "User reported: 'Doppelter Wurf' (409) when submitting throws in L-bracket"
   severity: major
   test: 6
@@ -109,3 +104,17 @@ blocked: 0
       issue: "submitKDAWurfe: replaced currentThrowCount+j with kdaPlayerThrowCount(bracket, playerId) — counts all throws for the player across the entire bracket"
   missing: []
   fix_commit: "cfc2347 (client), 9e483c4 (server)"
+
+- truth: "TV bracket tree renders player names within slot borders at 1920x1080 without overflow"
+  status: failed
+  reason: "User reported: Player names overflow/don't fit within slot borders on TV at 1920x1080"
+  severity: major
+  test: 8
+  root_cause: "buildTVSlotEl in tv.js:238 — nameSpan has no overflow:hidden/text-overflow:ellipsis/white-space:nowrap. The flex row (justify-content:space-between) does not constrain the name span, so long names push past the fixed slot width (140–200px). Fix: add overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0 to nameSpan."
+  artifacts:
+    - path: "Claude/public/tv.js"
+      issue: "buildTVSlotEl nameSpan (line 238) missing overflow/truncation CSS — name overflows slot"
+  missing:
+    - "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0 on nameSpan"
+    - "flex-shrink:0 on scoreSpan to prevent score from being squeezed"
+  debug_session: ""

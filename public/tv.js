@@ -230,19 +230,19 @@ function buildTVSlotEl(slot, w, h) {
 
   players.forEach(function(p, idx) {
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center';
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;min-width:0';
 
     var nameSpan = document.createElement('span');
     if (p) {
       nameSpan.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe (T-06-04-01)
-      nameSpan.style.cssText = 'font-size:22px;font-weight:600;color:var(--txt)';
+      nameSpan.style.cssText = 'font-size:22px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     } else {
       nameSpan.textContent = '—';  // em dash for empty slot
-      nameSpan.style.cssText = 'font-size:22px;font-weight:600;color:var(--mut)';
+      nameSpan.style.cssText = 'font-size:22px;font-weight:600;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     }
 
     var scoreSpan = document.createElement('span');
-    scoreSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif)';
+    scoreSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
 
     if (p && slot.throws) {
       var playerThrows = slot.throws.filter(function(t) { return t.playerId === p.id; });

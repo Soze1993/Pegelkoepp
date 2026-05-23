@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-05-23T20:19:29.919Z"
-last_activity: "2026-05-23 — 06-04 complete: KDA bracket tree TV renderer added to tv.js"
+status: verifying
+stopped_at: Phase 6 all plans executed — pending verification
+last_updated: "2026-05-23T00:00:00.000Z"
+last_activity: "2026-05-23 — Phase 6 fully executed: all 4 plans complete (test suite, DE engine, tablet UI, TV display)"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 6 — Turnierbaum (Wave 2 complete — 06-03 and 06-04 both done)
-Plan: 06-03 completed (Wave 2 tablet UI — bracket tree + throw modal)
-Status: Executing — Wave 2 fully complete (06-03 tablet UI + 06-04 TV display)
-Last activity: 2026-05-23 — 06-03 complete: DE bracket tree UI, throw-entry modal, format-detection switch added to index.html
+Phase: 6 — Turnierbaum (ALL PLANS COMPLETE — ready for verification)
+Plan: 06-04 (final wave — Wave 2 parallel complete)
+Status: Verifying — all 4 plans executed, 391 tests pass, awaiting /gsd-verify-work 6
+Last activity: 2026-05-23 — Phase 6 complete: DE engine (Wave 1), test suite (Wave 0), tablet UI (Wave 2 06-03), TV display (Wave 2 06-04)
 
 Progress bar: [----------] 0% (0/4 phases)
 
@@ -55,8 +55,8 @@ Progress bar: [----------] 0% (0/4 phases)
 
 ## Session Continuity
 
-Last session: 2026-05-23T20:30:00Z
-Stopped at: 06-03 complete — DE bracket tree UI + throw-entry modal added to index.html
+Last session: 2026-05-23
+Stopped at: All 4 plans executed — 391 tests GREEN
 Resume file: None
-Next: Wave 2 complete. Run 06-05 (if planned) or proceed to next phase.
+Next: Run `/gsd-verify-work 6` to verify phase goal achievement, then proceed to next milestone phase.
 Archive: `.planning/milestones/`
