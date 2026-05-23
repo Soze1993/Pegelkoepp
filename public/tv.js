@@ -111,11 +111,11 @@ function renderKDABracket(state) {
   // Outer container: flex column — top row (W + L side by side), GF centered at bottom
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;overflow:hidden';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:grid;grid-template-rows:2fr 1fr;gap:0;overflow:hidden';
 
   // --- Top row: W bracket (left) + L bracket (right) ---
   var topRow = document.createElement('div');
-  topRow.style.cssText = 'display:flex;flex-direction:row;gap:24px;flex:1;min-height:0';
+  topRow.style.cssText = 'display:flex;flex-direction:row;gap:24px;min-height:0;align-items:flex-start;padding-bottom:12px';
 
   // W bracket
   var wSection = document.createElement('div');
@@ -193,7 +193,7 @@ function renderKDABracket(state) {
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   if (gfSlot) {
     var gfStage = document.createElement('div');
-    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:12px;border-top:2px solid var(--ac);width:100%';
+    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-top:12px;border-top:2px solid var(--ac);width:100%';
 
     var gfLabel = document.createElement('div');
     gfLabel.textContent = 'Großes Finale';
