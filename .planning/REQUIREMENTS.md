@@ -72,7 +72,7 @@
 | HIGHLIGHT-04 | Phase 7 | Pending |
 | TOURNAMENT-01 | Phase 6 | Complete |
 | TOURNAMENT-02 | Phase 6 | Complete |
-| TOURNAMENT-03 | Phase 6 | Pending |
+| TOURNAMENT-03 | Phase 6 | Complete |
 | TV-01 | Phase 7 | Pending |
 | SHARE-01 | Phase 9 | Pending |
 | OFFLINE-01 | Phase 9 | Pending |

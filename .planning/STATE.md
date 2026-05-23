@@ -4,13 +4,13 @@ milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
 status: executing
 stopped_at: Phase 6 context gathered
-last_updated: "2026-05-23T20:14:29.422Z"
+last_updated: "2026-05-23T20:18:38.335Z"
 last_activity: "2026-05-23 — Phase 6 planned (4 plans: DE engine, test suite, tablet UI, TV display)"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 4
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 6 — Turnierbaum (planned — 4 plans in 3 waves, ready to execute)
-Plan: 06-01 (Wave 0), 06-02 (Wave 1), 06-03/04 (Wave 2, parallel)
-Status: Ready to execute
-Last activity: 2026-05-23 — Phase 6 planned (4 plans: DE engine, test suite, tablet UI, TV display)
+Phase: 6 — Turnierbaum (Wave 2 complete — 06-04 done, 06-03 parallel)
+Plan: 06-04 completed (Wave 2 TV display)
+Status: Executing — Wave 2 parallel complete (06-04); 06-03 tablet UI parallel plan
+Last activity: 2026-05-23 — 06-04 complete: KDA bracket tree TV renderer added to tv.js
 
 Progress bar: [----------] 0% (0/4 phases)
 
@@ -36,7 +36,8 @@ Progress bar: [----------] 0% (0/4 phases)
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table.
+- TV renderGame now checks state.bracket BEFORE state.players guard — KDA games render bracket tree; all other game types unchanged
+- All decisions logged in PROJECT.md Key Decisions table.
 
 ### Deferred Items
 
@@ -51,7 +52,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-05-23T20:14:29.413Z
+Last session: 2026-05-23T20:18:38.328Z
 Stopped at: Phase 6 context gathered
 Resume file: None
 Next: `/gsd:plan-phase 6` to plan Turnierbaum phase
