@@ -15,6 +15,7 @@ module.exports = {
       startW: 0,
       jIdx: 0,
       jPhase: 'jaeger',
+      finalRound: false,
       done: false,
       winner: null
     };
@@ -43,34 +44,33 @@ module.exports = {
         j.w.push(n);
         s.fp -= n;
         if (n === 0) j.pudel++;
-        const jG = s.jaeger.reduce((sum, jj) => sum + jj.w.length, 0);
         if (s.fp <= 0) {
           s.done = true;
           s.winner = 'jaeger';
           return s;
         }
-        if (s.jIdx >= s.jaeger.length - 1 && jG >= 6) {
-          s.done = true;
-          s.winner = 'fuchs';
-          return s;
+        s.jIdx++;
+        if (s.jIdx >= s.jaeger.length) {
+          if (s.finalRound) {
+            // All Jäger had their final throw — Fuchs wins
+            s.done = true;
+            s.winner = 'fuchs';
+            return s;
+          }
+          s.jPhase = 'fuchs';
+          s.jIdx = 0;
         }
-        s.jPhase = 'fuchs';
       } else {
         // jPhase === 'fuchs'
         s.fuchs.w.push(n);
         s.fp += n;
         if (n === 0) s.fuchs.pudel++;
-        s.jIdx++;
-        if (s.jIdx >= s.jaeger.length) {
-          const tot = s.jaeger.reduce((sum, jj) => sum + jj.w.length, 0);
-          if (tot >= 6) {
-            s.done = true;
-            s.winner = 'fuchs';
-            return s;
-          }
-          s.jIdx = 0;
-        }
         s.jPhase = 'jaeger';
+        s.jIdx = 0;
+        // After Fuchs's 6th jagd throw, next Jäger round is the final one
+        if (s.fuchs.w.length - 2 >= 6) {
+          s.finalRound = true;
+        }
       }
     }
 
