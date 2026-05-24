@@ -41,7 +41,7 @@ io.on('connection', (socket) => {
     const game = db.prepare('SELECT * FROM games WHERE id = ?').get(activeGame.id);
     const state = activeGames.get(activeGame.id) || reconstructState(game);
     socket.join(`game:${activeGame.id}`);
-    socket.emit('game:state', { gameId: activeGame.id, state, idle: false });
+    socket.emit('game:state', { gameId: activeGame.id, state, idle: false, type_key: game.type_key });
   } else {
     // Idle screen: no active game (D-04)
     // Query the most recently finished game and derive the winner name (plan 02-04 Task 2)

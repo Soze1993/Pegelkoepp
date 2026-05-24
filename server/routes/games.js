@@ -192,7 +192,7 @@ router.post('/:id/throws', requireSession, (req, res) => {
           lastWinner = row ? row.name : null;
         }
       } catch (e) { /* non-fatal */ }
-      io.to(`game:${gameId}`).emit('game:finished', { state: newState, lastWinner });
+      io.to(`game:${gameId}`).emit('game:finished', { state: newState, lastWinner, typeKey: game.type_key });
     }
   }
 
