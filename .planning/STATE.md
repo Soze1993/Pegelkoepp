@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: verifying
-stopped_at: Phase 6 all plans executed — pending verification
-last_updated: "2026-05-23T00:00:00.000Z"
-last_activity: "2026-05-23 — Phase 6 fully executed: all 4 plans complete (test suite, DE engine, tablet UI, TV display)"
+status: discussing
+stopped_at: Phase 7 context gathered
+last_updated: "2026-05-24T00:00:00.000Z"
+last_activity: "2026-05-24 — Phase 7 context gathered: TV overlays, player table symbols, TV layout variants"
 progress:
   total_phases: 4
   completed_phases: 1
