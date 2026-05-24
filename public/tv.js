@@ -42,6 +42,9 @@ function renderIdle(lastWinner) {
 
 function renderGame(state) {
   if (state && state.bracket) { renderKDABracket(state); return; }  // KDA: before state.players guard
+  if (currentTypeKey === 'bilderkegel') { renderBilderkegelTV(state); return; }  // BK layout (must precede !players guard)
+  if (currentTypeKey === 'fuchsjagd')   { renderFuchsjagdTV(state); return; }   // FJ layout
+  if (currentTypeKey === 'viergewinnt') { renderViergewinntTV(state); return; } // VG layout
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -362,6 +365,227 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   gameEl.replaceChildren(overlayEl);
 
   setTimeout(function() { renderIdle(lastWinner || null); }, 10000);
+}
+
+// Bilderkegeln TV layout — player list with loser row highlighted in red
+function renderBilderkegelTV(state) {
+  if (!state || !state.players) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var container = document.createElement('div');
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:2vw;box-sizing:border-box';
+
+  // Determine if game has started (any bildPts entry is non-null or aktBildIdx > 0)
+  var gameStarted = (state.aktBildIdx > 0) ||
+    state.players.some(function(p) {
+      return (p.bildPts || []).some(function(v) { return v !== null; });
+    });
+
+  // Find loser (player with minimum bkTotal) — only highlight after game has started
+  var minTotal = null;
+  var loserIdx  = -1;
+  if (gameStarted) {
+    state.players.forEach(function(p, idx) {
+      var tot = bkTotal(p);
+      if (minTotal === null || tot < minTotal) {
+        minTotal = tot;
+        loserIdx  = idx;
+      }
+    });
+  }
+
+  var ul = document.createElement('ul');
+  ul.style.cssText = 'list-style:none;margin:0;padding:0;width:100%';
+
+  state.players.forEach(function(player, idx) {
+    var li = document.createElement('li');
+    li.className = 'player-row';
+
+    if (idx === loserIdx) {
+      // Loser row highlight (UI-SPEC BK loser row)
+      li.style.cssText = 'border-left:4px solid var(--red);background:rgba(224,82,82,0.07);padding-left:calc(2vw - 4px)';
+    }
+
+    var nameEl = document.createElement('span');
+    nameEl.className = 'player-name';
+    nameEl.textContent = (player.emoji != null ? player.emoji : '') + ' ' + player.name;  // textContent — XSS safe (T-07-03-04)
+
+    var scoreEl = document.createElement('span');
+    scoreEl.className = 'player-score';
+    scoreEl.textContent = bkTotal(player);  // textContent — safe
+
+    li.appendChild(nameEl);
+    li.appendChild(scoreEl);
+    ul.appendChild(li);
+  });
+
+  container.appendChild(ul);
+  gameEl.replaceChildren(container);
+}
+
+// Fuchsjagd TV layout — split Fuchs/Jäger panels
+function renderFuchsjagdTV(state) {
+  if (!state) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var container = document.createElement('div');
+  container.className = 'fj-tv-layout';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:row;align-items:center;padding:2vw;box-sizing:border-box;gap:0';
+
+  // --- LEFT PANEL: Fuchs ---
+  var fuchsPanel = document.createElement('div');
+  fuchsPanel.className = 'fj-fuchs-panel';
+  fuchsPanel.style.cssText = 'flex:1;background:var(--card);border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px';
+
+  var fuchsLabel = document.createElement('div');
+  fuchsLabel.className = 'fj-role-label';
+  fuchsLabel.textContent = 'FUCHS';
+  fuchsLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);letter-spacing:2px';
+
+  var fuchsName = document.createElement('div');
+  fuchsName.className = 'fj-player-name';
+  fuchsName.textContent = (state.fuchs.emoji != null ? state.fuchs.emoji : '') + ' ' + state.fuchs.name;  // textContent — XSS safe (T-07-03-02)
+  fuchsName.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--txt);line-height:1';
+
+  var fuchsThrows = document.createElement('div');
+  fuchsThrows.className = 'fj-throw-list';
+  fuchsThrows.textContent = state.fuchs.w && state.fuchs.w.length > 0 ? state.fuchs.w.join(', ') : '—';
+  fuchsThrows.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);color:var(--mut)';
+
+  var fuchsScore = document.createElement('div');
+  fuchsScore.className = 'fj-score';
+  fuchsScore.textContent = 'Noch: ' + String(state.fp != null ? state.fp : '—');  // textContent — safe
+  fuchsScore.style.cssText = 'font-size:72px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--ac);line-height:1';
+
+  fuchsPanel.appendChild(fuchsLabel);
+  fuchsPanel.appendChild(fuchsName);
+  fuchsPanel.appendChild(fuchsThrows);
+  fuchsPanel.appendChild(fuchsScore);
+
+  // --- VERTICAL DIVIDER ---
+  var divider = document.createElement('div');
+  divider.className = 'fj-vs-divider';
+  divider.style.cssText = 'width:1px;background:var(--brd);height:80vh;align-self:center;margin:0 24px;flex-shrink:0';
+
+  // --- RIGHT PANEL: Jäger ---
+  var jaegerPanel = document.createElement('div');
+  jaegerPanel.className = 'fj-jaeger-panel';
+  jaegerPanel.style.cssText = 'flex:1;background:var(--card);border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px';
+
+  var jaegerLabel = document.createElement('div');
+  jaegerLabel.className = 'fj-role-label';
+  jaegerLabel.textContent = 'JÄGER';
+  jaegerLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);letter-spacing:2px';
+
+  jaegerPanel.appendChild(jaegerLabel);
+
+  var jaeger = state.jaeger || [];
+  jaeger.forEach(function(j) {
+    var row = document.createElement('div');
+    row.className = 'fj-jaeger-row';
+    row.style.cssText = 'display:flex;justify-content:space-between;width:100%;padding:8px 0';
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'fj-jaeger-name';
+    nameSpan.textContent = (j.emoji != null ? j.emoji : '') + ' ' + j.name;  // textContent — XSS safe (T-07-03-02)
+    nameSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--txt)';
+
+    var contribSpan = document.createElement('span');
+    contribSpan.className = 'fj-jaeger-contrib';
+    contribSpan.textContent = String((j.w || []).reduce(function(a, b) { return a + b; }, 0));  // textContent — safe
+    contribSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--mut)';
+
+    row.appendChild(nameSpan);
+    row.appendChild(contribSpan);
+    jaegerPanel.appendChild(row);
+  });
+
+  container.appendChild(fuchsPanel);
+  container.appendChild(divider);
+  container.appendChild(jaegerPanel);
+  gameEl.replaceChildren(container);
+}
+
+// Viergewinnt TV layout — Team X / VS / Team O
+function renderViergewinntTV(state) {
+  if (!state) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var container = document.createElement('div');
+  container.className = 'vg-tv-layout';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:row;align-items:center;justify-content:center;padding:2vw;gap:32px;box-sizing:border-box';
+
+  // Helper to build a team panel
+  function buildTeamPanel(players, teamColor, teamLabel, isWinner, isLoser) {
+    var panel = document.createElement('div');
+    panel.className = 'vg-team-panel';
+    panel.style.cssText = 'flex:1;background:var(--card);border-radius:12px;padding:24px;border-left:4px solid ' + teamColor + ';display:flex;flex-direction:column;gap:8px';
+
+    if (isWinner) {
+      panel.style.border = '2px solid ' + teamColor;
+    } else if (isLoser) {
+      panel.style.opacity = '0.6';
+    }
+
+    var label = document.createElement('div');
+    label.className = 'vg-team-label';
+    label.textContent = teamLabel;  // textContent — safe (fixed string)
+    label.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:' + teamColor;
+    panel.appendChild(label);
+
+    (players || []).forEach(function(p) {
+      var row = document.createElement('div');
+      row.className = 'vg-player-row';
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center';
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'vg-player-emoji-name';
+      nameSpan.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe (T-07-03-03)
+      nameSpan.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--txt)';
+
+      var scoreSpan = document.createElement('span');
+      scoreSpan.className = 'vg-player-score';
+      scoreSpan.textContent = '—';  // Viergewinnt has no per-player throw totals in state
+      scoreSpan.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);color:' + teamColor;
+
+      row.appendChild(nameSpan);
+      row.appendChild(scoreSpan);
+      panel.appendChild(row);
+    });
+
+    return panel;
+  }
+
+  var winner = state.winner;  // 'X', 'O', 'draw', or undefined
+
+  var teamXPanel = buildTeamPanel(
+    state.tX,
+    'var(--tX)',
+    'TEAM X',
+    winner === 'X',
+    winner === 'O'
+  );
+
+  var vsCenter = document.createElement('div');
+  vsCenter.className = 'vg-vs-center';
+  vsCenter.textContent = 'VS';  // textContent — safe (fixed string)
+  vsCenter.style.cssText = 'align-self:center;font-size:72px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--mut)';
+
+  var teamOPanel = buildTeamPanel(
+    state.tO,
+    'var(--tO)',
+    'TEAM O',
+    winner === 'O',
+    winner === 'X'
+  );
+
+  container.appendChild(teamXPanel);
+  container.appendChild(vsCenter);
+  container.appendChild(teamOPanel);
+  gameEl.replaceChildren(container);
 }
 
 // Round label copywriting (06-UI-SPEC.md lines 340–368)
