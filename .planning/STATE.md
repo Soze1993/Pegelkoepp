@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: complete
-stopped_at: Phase 7 complete — all 4 plans executed, 202 tests GREEN
-last_updated: "2026-05-24T00:00:00.000Z"
-last_activity: "2026-05-24 — Phase 7 executed: Wave 0 RED stubs, Wave 1 backend highlights route + typeKey, Wave 2 TV overlays + tablet symbol injection"
+status: verifying
+stopped_at: Phase 7 — 07-07 complete (TV fixes: overlay timeout, GAME_NAMES, BK Bild, highlights bar, VG 9-col board)
+last_updated: "2026-05-24T12:00:00.000Z"
+last_activity: "2026-05-24 — 07-07 executed: 5 TV frontend fixes applied to public/tv.js"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 12
+  completed_plans: 12
   percent: 50
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 7 — Highlights & TV-Layouts (COMPLETE)
-Plan: 07-04 (final plan — Wave 2 complete)
-Status: All 4 plans executed — 202 tests GREEN — ready for /gsd-verify-work 7
-Last activity: 2026-05-24 — Phase 7 executed: all 4 plans complete across 3 waves
+Phase: 7 — Highlights & TV-Layouts
+Plan: 07-07 (TV frontend fixes)
+Status: 07-07 complete — 404 tests GREEN — overlayTimeoutId, GAME_NAMES, BK Bild, highlights bar, VG 9-col board
+Last activity: 2026-05-24 — 07-07 complete: 5 TV fixes applied to public/tv.js (commit 4d67390)
 
 Progress bar: [----------] 0% (0/4 phases)
 
