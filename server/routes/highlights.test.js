@@ -145,7 +145,6 @@ function insertFinishedKDAGame(p1Id, p2Id, p3Id, p4Id, finishedAt) {
   const kda = require('../game-types/kegler-des-abends');
 
   // Build players array — KDA initState shuffles them randomly.
-  // We use a seed so the bracket is deterministic.
   const players = [
     { id: p1Id, name: 'P1', emoji: '1' },
     { id: p2Id, name: 'P2', emoji: '2' },
@@ -153,14 +152,25 @@ function insertFinishedKDAGame(p1Id, p2Id, p3Id, p4Id, finishedAt) {
     { id: p4Id, name: 'P4', emoji: '4' }
   ];
 
-  // Use a fixed seed to get a deterministic bracket
-  let state = kda.initState(players, { seed: 'test-hl11' });
+  // Insert the game FIRST so we have the gameId.
+  // reconstructState uses String(game.id) as the KDA bracket seed — we must
+  // use the same seed here so the throw sequence matches on reconstruction.
+  const stmt = finishedAt
+    ? db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('kda', 'finished', ?)")
+    : db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('kda', 'finished', datetime('now'))");
+  const gameResult = finishedAt ? stmt.run(finishedAt) : stmt.run();
+  const gameId = gameResult.lastInsertRowid;
 
-  // Play out the tournament: for each undone match, give the first-seated player
-  // 5 throws (value=5) and the second-seated player 3 throws (value=3), alternating.
-  // We keep applying throws until state.done.
+  // Insert game_players (seat = index in players array)
+  players.forEach((p, seat) => {
+    db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)').run(gameId, p.id, seat);
+  });
+
+  // Use String(gameId) as seed to match reconstructState exactly
+  let state = kda.initState(players, { seed: String(gameId) });
+
+  // Play out the tournament: for each undone match, give match.p1 high scores and match.p2 low scores.
   const throwRows = [];
-  let globalIdx = 0;
 
   while (!state.done) {
     // Find the next undone, non-bye, fully-seated match
@@ -169,9 +179,8 @@ function insertFinishedKDAGame(p1Id, p2Id, p3Id, p4Id, finishedAt) {
     );
     if (!match) break;
 
-    // Give p1 high, p2 low (2 throws each for normal slots, 4 for GF)
+    // Determine required throw count
     const required = match.throwsRequired || (match.bracket === 'GF' ? 4 : 2);
-    // p1 gets required/2 throws of value 5, p2 gets required/2 throws of value 1
     const halfReq = required / 2;
     for (let i = 0; i < halfReq; i++) {
       throwRows.push({ playerId: match.p1.id, value: 5 });
@@ -186,18 +195,6 @@ function insertFinishedKDAGame(p1Id, p2Id, p3Id, p4Id, finishedAt) {
   }
 
   const winnerId = state.gewinner.id;
-
-  // Insert the game in DB
-  const stmt = finishedAt
-    ? db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('kda', 'finished', ?)")
-    : db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('kda', 'finished', datetime('now'))");
-  const gameResult = finishedAt ? stmt.run(finishedAt) : stmt.run();
-  const gameId = gameResult.lastInsertRowid;
-
-  // Insert game_players (seat = index in players array)
-  players.forEach((p, seat) => {
-    db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)').run(gameId, p.id, seat);
-  });
 
   // Insert throws in order
   throwRows.forEach((t, idx) => {

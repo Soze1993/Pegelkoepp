@@ -64,6 +64,7 @@ app.use('/api/players', require('./routes/players'));
 app.use('/api/games', require('./routes/games'));
 app.use('/api/abende',     require('./routes/abende'));
 app.use('/api/stats',      require('./routes/stats'));
+app.use('/api/highlights', require('./routes/highlights'));
 app.use('/api/game-types', require('./routes/game-types'));
 
 // --- Error middleware — LAST (Express 5: async errors auto-forwarded, no express-async-errors needed) ---
