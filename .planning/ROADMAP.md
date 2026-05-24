@@ -55,8 +55,12 @@ Plans:
   3. After a "Bilderkegeln" game ends, the player with the fewest points has a loser symbol in their table row
   4. After a "Bilderkegeln" game ends, the TV shows a full-screen end overlay naming the Bilderkegeln loser
   5. For each active game type, the TV displays a layout adapted to that game type's data (score display, bracket, etc.)
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
+Plans:
+- [ ] 07-01-PLAN.md — Wave 0: Test stubs (RED state — highlights.test.js + games.test.js typeKey extension)
+- [ ] 07-02-PLAN.md — Wave 1: Backend — highlights.js route + app.js registration + typeKey in game:finished + type_key in game:state
+- [ ] 07-03-PLAN.md — Wave 2: TV — renderEndOverlay + renderBilderkegelTV + renderFuchsjagdTV + renderViergewinntTV + currentTypeKey
+- [ ] 07-04-PLAN.md — Wave 2: Tablet — symbol injection in all renderers + showWinnerBanner XSS fix + fetch-on-load
 
 ### Phase 8: Statistiken & Rückblick
 **Goal**: Players can explore deep statistics — year leaderboard, streaks, head-to-head, historical award counts — and see a recap of the last club evening on the homepage
@@ -93,6 +97,6 @@ Plans:
 | 4. Club Features | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 5. Production Deployment | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 6. Turnierbaum | v2.0 | 3/4 | In Progress|  |
-| 7. Highlights & TV-Layouts | v2.0 | 0/? | Not started | - |
+| 7. Highlights & TV-Layouts | v2.0 | 0/4 | Not started | - |
 | 8. Statistiken & Rückblick | v2.0 | 0/? | Not started | - |
 | 9. Polish | v2.0 | 0/? | Not started | - |
