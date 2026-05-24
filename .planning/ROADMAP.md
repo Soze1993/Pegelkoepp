@@ -23,7 +23,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 ### v2.0 Statistiken, Highlights & Turnierbaum
 
 - [ ] **Phase 6: Turnierbaum** — Double-Elimination bracket engine for "Kegler des Abends" game type (4–12 players)
-- [ ] **Phase 7: Highlights & TV-Layouts** — End-of-game winner/loser overlays on TV and symbols in player table, game-type-specific TV layouts
+- [x] **Phase 7: Highlights & TV-Layouts** — End-of-game winner/loser overlays on TV and symbols in player table, game-type-specific TV layouts (completed 2026-05-24)
 - [ ] **Phase 8: Statistiken & Rückblick** — Year leaderboard, streaks, head-to-head stats, historical award counts, last-evening recap on homepage
 - [ ] **Phase 9: Polish** — WhatsApp share link and self-hosted fonts for offline venue operation
 
@@ -57,10 +57,10 @@ Plans:
   5. For each active game type, the TV displays a layout adapted to that game type's data (score display, bracket, etc.)
 **Plans**: 4 plans
 Plans:
-- [ ] 07-01-PLAN.md — Wave 0: Test stubs (RED state — highlights.test.js + games.test.js typeKey extension)
-- [ ] 07-02-PLAN.md — Wave 1: Backend — highlights.js route + app.js registration + typeKey in game:finished + type_key in game:state
-- [ ] 07-03-PLAN.md — Wave 2: TV — renderEndOverlay + renderBilderkegelTV + renderFuchsjagdTV + renderViergewinntTV + currentTypeKey
-- [ ] 07-04-PLAN.md — Wave 2: Tablet — symbol injection in all renderers + showWinnerBanner XSS fix + fetch-on-load
+- [x] 07-01-PLAN.md — Wave 0: Test stubs (RED state — highlights.test.js + games.test.js typeKey extension)
+- [x] 07-02-PLAN.md — Wave 1: Backend — highlights.js route + app.js registration + typeKey in game:finished + type_key in game:state
+- [x] 07-03-PLAN.md — Wave 2: TV — renderEndOverlay + renderBilderkegelTV + renderFuchsjagdTV + renderViergewinntTV + currentTypeKey
+- [x] 07-04-PLAN.md — Wave 2: Tablet — symbol injection in all renderers + showWinnerBanner XSS fix + fetch-on-load
 
 ### Phase 8: Statistiken & Rückblick
 **Goal**: Players can explore deep statistics — year leaderboard, streaks, head-to-head, historical award counts — and see a recap of the last club evening on the homepage
