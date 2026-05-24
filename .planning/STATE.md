@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: discussing
-stopped_at: Phase 7 context gathered
+status: planned
+stopped_at: Phase 7 plans created — 4 plans ready for execution
 last_updated: "2026-05-24T00:00:00.000Z"
-last_activity: "2026-05-24 — Phase 7 context gathered: TV overlays, player table symbols, TV layout variants"
+last_activity: "2026-05-24 — Phase 7 planned: 4 plans in 3 waves (Wave 0 tests, Wave 1 backend, Wave 2 TV + tablet parallel)"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 6 — Turnierbaum (ALL PLANS COMPLETE — ready for verification)
-Plan: 06-04 (final wave — Wave 2 parallel complete)
-Status: Verifying — all 4 plans executed, 391 tests pass, awaiting /gsd-verify-work 6
-Last activity: 2026-05-23 — Phase 6 complete: DE engine (Wave 1), test suite (Wave 0), tablet UI (Wave 2 06-03), TV display (Wave 2 06-04)
+Phase: 7 — Highlights & TV-Layouts (PLANNED — ready for execution)
+Plan: 07-04 (Wave 2 parallel with 07-03)
+Status: Planned — 4 plans verified, ready for /gsd:execute-phase 7
+Last activity: 2026-05-24 — Phase 7 planned: Wave 0 test stubs, Wave 1 backend (highlights endpoint + typeKey), Wave 2 TV overlays + tablet symbols
 
 Progress bar: [----------] 0% (0/4 phases)
 

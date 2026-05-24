@@ -97,6 +97,6 @@ Plans:
 | 4. Club Features | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 5. Production Deployment | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 6. Turnierbaum | v2.0 | 3/4 | In Progress|  |
-| 7. Highlights & TV-Layouts | v2.0 | 0/4 | Not started | - |
+| 7. Highlights & TV-Layouts | v2.0 | 0/4 | Planned | - |
 | 8. Statistiken & Rückblick | v2.0 | 0/? | Not started | - |
 | 9. Polish | v2.0 | 0/? | Not started | - |
