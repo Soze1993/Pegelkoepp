@@ -105,3 +105,40 @@ test('D3: wuerfe grows 1 per throw; player advances only after 3rd throw', () =>
   state = dreiVollen.applyThrow(state, 1, 2);
   assert.equal(state.aktSpIdx, 1, 'Advances to player 2 after 3 throws');
 });
+
+// DV1: initState returns unfinished state
+test('DV1: initState returns unfinished state', () => {
+  const s = dreiVollen.initState(players2);
+  assert.equal(dreiVollen.isFinished(s), false);
+  assert.equal(s.stechen, false);
+});
+
+// DV2: tie triggers stechen state
+test('DV2: tie triggers stechen state', () => {
+  let s = dreiVollen.initState(players2);
+  // Both players score 15
+  s = dreiVollen.applyThrow(s, 1, 5); s = dreiVollen.applyThrow(s, 1, 5); s = dreiVollen.applyThrow(s, 1, 5);
+  s = dreiVollen.applyThrow(s, 2, 5); s = dreiVollen.applyThrow(s, 2, 5); s = dreiVollen.applyThrow(s, 2, 5);
+  assert.equal(s.done, false, 'not done on tie');
+  assert.equal(s.stechen, true, 'stechen flag set');
+  assert.deepEqual(s.stechenPlayers.sort(), [1, 2]);
+});
+
+// DV3: applyThrow does not mutate input
+test('DV3: applyThrow does not mutate input', () => {
+  const s = dreiVollen.initState(players2);
+  const snap = JSON.parse(JSON.stringify(s));
+  dreiVollen.applyThrow(s, 1, 5);
+  assert.deepEqual(s, snap);
+});
+
+// DV4: skipStechen marks done and no winner
+test('DV4: skipStechen marks done and no winner', () => {
+  let s = dreiVollen.initState(players2);
+  s = dreiVollen.applyThrow(s, 1, 5); s = dreiVollen.applyThrow(s, 1, 5); s = dreiVollen.applyThrow(s, 1, 5);
+  s = dreiVollen.applyThrow(s, 2, 5); s = dreiVollen.applyThrow(s, 2, 5); s = dreiVollen.applyThrow(s, 2, 5);
+  s = dreiVollen.skipStechen(s);
+  assert.equal(s.done, true);
+  const results = dreiVollen.getFinalResults(s);
+  assert.ok(results.every(r => r.winner === false), 'no winner when skipped');
+});

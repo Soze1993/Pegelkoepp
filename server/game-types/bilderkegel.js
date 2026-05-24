@@ -3,11 +3,12 @@
 // BK_BILDER — ported verbatim from HTML line 303
 const BK_BILDER = [
   { id: 'volle', name: 'Volle', pins: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
-  { id: 'kleeblatt', name: 'Kleeblatt', pins: [2, 3, 4, 6, 7, 8, 9] },
+  { id: 'kleeblatt', name: 'Kleeblatt', pins: [2, 3, 4, 6, 7, 8] },
   { id: 'hint_kranz', name: 'Hint. Kranz', pins: [4, 6, 7, 8, 9] },
   { id: 'damen', name: 'Damen', pins: [2, 3, 7, 8] },
   { id: 'bauern', name: 'Bauern', pins: [4, 6] }
 ];
+const BK_MAX = [12, 6, 5, 4, 2]; // max score per Bild index
 
 function bkTotal(p) {
   return p.bildPts.reduce((a, b) => a + (b !== null ? b : 0), 0);
@@ -43,8 +44,10 @@ module.exports = {
     p.wuerfe[s.aktBildIdx].push(value);
     s.aktWurfNr++;
 
-    if (s.aktWurfNr >= 2) {
-      // Compute bildPts after 2 throws
+    // After push and aktWurfNr++: aktWurfNr===1 means first throw just recorded
+    const maxReachedEarly = s.aktWurfNr === 1 && s.aktBildIdx > 0 && value >= BK_MAX[s.aktBildIdx];
+    if (s.aktWurfNr >= 2 || maxReachedEarly) {
+      // Compute bildPts after throws are done
       p.bildPts[s.aktBildIdx] = p.wuerfe[s.aktBildIdx].reduce((a, b) => a + b, 0);
       s.aktWurfNr = 0;
       s.aktSpIdx++;

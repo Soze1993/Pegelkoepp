@@ -116,21 +116,28 @@ test('BK4: isFinished returns true after all players complete all 5 pictures', (
 });
 
 // BK5: getFinalResults — highest is winner, lowest is payer
-test('BK5: highest total = winner:true, lowest total = payer:true; 50 vs 30', () => {
+// Uses values below max per Bild to ensure 2 throws always:
+// Volle max=12 (use 4+4=8), Kleeblatt max=6 (use 2+2=4), Hint.Kranz max=5 (use 2+2=4),
+// Damen max=4 (use 1+1=2), Bauern max=2 (use 1+0=1; 1 throw won't trigger early since value<max)
+// P1 total: 4+4+4+2+1=15 ... let's use safe values 3+3 per pic but cap aware
+// Safe: use value 1 per throw — never reaches any max early
+test('BK5: highest total = winner:true, lowest total = payer:true', () => {
   let state = bilderkegel.initState(players2);
-  // P1: 5+5 per pic = 10 per pic * 5 = 50
-  // P2: 3+3 per pic = 6 per pic * 5 = 30
+  // P1: 3+3 per pic, but Bauern max=2 so throw1=1, throw2=1 (both below max=2... wait max is 2 pins which means 1+1=2)
+  // Actually: use throw values 1 for P1 and 0 for P2 — safe everywhere
+  // P1: 2 throws of 1 per pic = 2 per pic * 5 pics = 10 total
+  // P2: 2 throws of 0 per pic = 0 per pic * 5 pics = 0 total
   for (let pic = 0; pic < 5; pic++) {
-    state = bilderkegel.applyThrow(state, 1, 5);
-    state = bilderkegel.applyThrow(state, 1, 5);
-    state = bilderkegel.applyThrow(state, 2, 3);
-    state = bilderkegel.applyThrow(state, 2, 3);
+    state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 2, 0);
+    state = bilderkegel.applyThrow(state, 2, 0);
   }
   const results = bilderkegel.getFinalResults(state);
   const p1 = results.find(r => r.playerId === 1);
   const p2 = results.find(r => r.playerId === 2);
-  assert.equal(p1.score, 50);
-  assert.equal(p2.score, 30);
+  assert.equal(p1.score, 10, 'P1 scores 10');
+  assert.equal(p2.score, 0, 'P2 scores 0');
   assert.equal(p1.winner, true);
   assert.equal(p1.payer, false);
   assert.equal(p2.winner, false);
@@ -145,4 +152,30 @@ test('BK6: Pudel value=0 contributes 0 to bildPts and increments pudel counter',
   const p = state.players.find(p => p.id === 1);
   assert.equal(p.pudel, 1, 'pudel counter incremented');
   assert.equal(p.bildPts[0], 5, 'bildPts = 0 + 5 = 5');
+});
+
+// BK7: Kleeblatt max=6 in 1 throw — no second throw
+test('BK7: Kleeblatt (bildIdx=1) max score in first throw skips second throw', () => {
+  const player = { id: 1, name: 'A', emoji: 'A' };
+  let state = bilderkegel.initState([player]);
+  // Complete Volle (pic 0) first: 2 throws
+  state = bilderkegel.applyThrow(state, 1, 5);
+  state = bilderkegel.applyThrow(state, 1, 4);
+  // Now on Kleeblatt (pic 1), max = 6 pins
+  assert.equal(state.aktBildIdx, 1, 'on Kleeblatt');
+  state = bilderkegel.applyThrow(state, 1, 6); // max score — should auto-advance
+  assert.equal(state.aktBildIdx, 2, 'advanced to next Bild without second throw');
+  assert.equal(state.aktWurfNr, 0, 'wurfNr reset');
+});
+
+// BK8: Volle always gets 2 throws even if throw 1 = 9
+test('BK8: Volle (bildIdx=0) always gets 2 throws even with max pins', () => {
+  const player = { id: 1, name: 'A', emoji: 'A' };
+  let state = bilderkegel.initState([player]);
+  // Volle: max possible is 9 (9 pins) but BK_MAX[0]=12 so 2 throws always
+  state = bilderkegel.applyThrow(state, 1, 9);
+  assert.equal(state.aktBildIdx, 0, 'still on Volle after 9 pins');
+  assert.equal(state.aktWurfNr, 1, 'still on throw 2');
+  state = bilderkegel.applyThrow(state, 1, 3);
+  assert.equal(state.aktBildIdx, 1, 'moved to Kleeblatt after 2nd throw');
 });
