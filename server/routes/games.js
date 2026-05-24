@@ -235,6 +235,46 @@ router.post('/:id/undo', requireSession, (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// POST /api/games/:id/skip-stechen — skip tiebreaker, no winner (dreiVollen)
+// ---------------------------------------------------------------------------
+router.post('/:id/skip-stechen', requireSession, (req, res) => {
+  const gameId = Number(req.params.id);
+  const game = db.prepare("SELECT * FROM games WHERE id = ? AND status = 'active'").get(gameId);
+  if (!game) return res.status(404).json({ error: 'Game not found or not active' });
+
+  const gameModule = gameTypes[game.type_key];
+  if (!gameModule || typeof gameModule.skipStechen !== 'function') {
+    return res.status(400).json({ error: 'Game type does not support skipStechen' });
+  }
+
+  const state = activeGames.get(gameId) || reconstructState(game);
+  const newState = gameModule.skipStechen(state);
+  activeGames.set(gameId, newState);
+
+  const finished = gameModule.isFinished(newState);
+  if (finished) {
+    db.prepare("UPDATE games SET status = 'finished', finished_at = datetime('now') WHERE id = ?").run(game.id);
+    activeGames.delete(gameId);
+  }
+
+  const io = req.app.locals.io;
+  if (io && finished) {
+    let lastWinner = null;
+    try {
+      const results = gameModule.getFinalResults(newState);
+      const winnerEntry = results.find(r => r.winner);
+      if (winnerEntry) {
+        const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
+        lastWinner = row ? row.name : null;
+      }
+    } catch (e) { /* stechenSkipped — no winner */ }
+    io.to(`game:${gameId}`).emit('game:finished', { state: newState, lastWinner, typeKey: game.type_key });
+  }
+
+  res.json({ state: newState, finished });
+});
+
+// ---------------------------------------------------------------------------
 // reconstructState — rebuild game state from DB (throws + players)
 //
 // NOTE: The throws table does not yet store throw metadata (e.g., the slot for

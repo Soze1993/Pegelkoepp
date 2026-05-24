@@ -85,12 +85,12 @@ function renderIdle(lastWinner) {
     var bar = document.createElement('div');
     bar.id = 'tv-highlights-bar';
     bar.style.cssText = 'font-size:1.5vw;color:var(--mut);margin-top:16px;text-align:center';
-    var hasKda = tvHighlights.kdaChampionName;
-    var hasBk  = tvHighlights.bkLoserName;
+    var hasKda = tvHighlights.kda_champion && tvHighlights.kda_champion.name;
+    var hasBk  = tvHighlights.bk_loser  && tvHighlights.bk_loser.name;
     if (hasKda || hasBk) {
       if (hasKda) {
         var s1 = document.createElement('span');
-        s1.textContent = 'KDA-Sieger: ' + tvHighlights.kdaChampionName;  // textContent — XSS safe
+        s1.textContent = 'KDA-Sieger: ' + tvHighlights.kda_champion.name;  // textContent — XSS safe
         bar.appendChild(s1);
       }
       if (hasKda && hasBk) {
@@ -100,7 +100,7 @@ function renderIdle(lastWinner) {
       }
       if (hasBk) {
         var s2 = document.createElement('span');
-        s2.textContent = 'BK-Verlierer: ' + tvHighlights.bkLoserName;  // textContent — XSS safe
+        s2.textContent = 'BK-Verlierer: ' + tvHighlights.bk_loser.name;  // textContent — XSS safe
         bar.appendChild(s2);
       }
       idleEl.appendChild(bar);
