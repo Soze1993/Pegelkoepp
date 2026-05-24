@@ -7,6 +7,42 @@ const playerListEl = document.getElementById('playerList');
 const lastWinnerEl = document.getElementById('lastWinnerText');
 
 var currentTypeKey = null;  // set on game:started and game:state — used by renderGame dispatcher
+var overlayTimeoutId = null;
+var tvHighlights = null;
+
+var GAME_NAMES = {
+  'bilderkegel': 'Bilderkegel',
+  'fuchsjagd': 'Fuchsjagd',
+  'viergewinnt': 'Vier Gewinnt',
+  'kda': 'Kegler des Abends',
+  'dreiVollen': 'Drei in die Vollen',
+  'anker': 'Anker',
+  'grosseHausnummer': 'Große Hausnummer',
+  'kleineHausnummer': 'Kleine Hausnummer',
+  'plusMinusMal': 'Plus Minus Mal'
+};
+
+function makeGameNameHeader() {
+  var el = document.createElement('div');
+  el.className = 'tv-game-name-hdr';
+  el.textContent = (currentTypeKey && GAME_NAMES[currentTypeKey]) || '';
+  el.style.cssText = 'font-family:var(--fb,"DM Sans",sans-serif);font-size:2.5vw;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;text-align:center';
+  return el;
+}
+
+function kegelSVGtv(activePins, w, h) {
+  var px = {1:[40,88],2:[24,68],3:[56,68],4:[8,48],5:[40,48],6:[72,48],7:[24,28],8:[56,28],9:[40,8]};
+  var circles = '';
+  for (var pin = 1; pin <= 9; pin++) {
+    var xy = px[pin], act = activePins.indexOf(pin) >= 0;
+    circles += '<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="11" fill="'+(act?'#fff':'#333')+'" stroke="'+(act?'var(--ac)':'#555')+'" stroke-width="2"/>';
+  }
+  return '<svg viewBox="0 0 80 100" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">'+circles+'</svg>';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('/api/highlights/current').then(function(r){ return r.json(); }).then(function(d){ tvHighlights = d; }).catch(function(){});
+});
 
 const socket = io();  // same-origin; socket.io.js auto-served at /socket.io/socket.io.js
 
@@ -29,18 +65,53 @@ socket.on('game:started', function({ state, gameId, type_key }) {
 });
 socket.on('game:finished', function({ state, lastWinner, typeKey }) {
   renderEndOverlay(typeKey, state, lastWinner);
+  fetch('/api/highlights/current').then(function(r){ return r.json(); }).then(function(d){ tvHighlights = d; }).catch(function(){});
 });
 
 function renderIdle(lastWinner) {
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
   gameEl.classList.remove('active');
   idleEl.style.display = 'flex';
   // textContent only — no innerHTML (XSS prevention T-02-02)
   lastWinnerEl.textContent = lastWinner
     ? 'Letzter Sieger: ' + lastWinner
     : 'Noch kein Spiel gespielt';
+
+  // Highlights bar
+  var existingBar = document.getElementById('tv-highlights-bar');
+  if (existingBar) existingBar.remove();
+
+  if (tvHighlights) {
+    var bar = document.createElement('div');
+    bar.id = 'tv-highlights-bar';
+    bar.style.cssText = 'font-size:1.5vw;color:var(--mut);margin-top:16px;text-align:center';
+    var hasKda = tvHighlights.kdaChampionName;
+    var hasBk  = tvHighlights.bkLoserName;
+    if (hasKda || hasBk) {
+      if (hasKda) {
+        var s1 = document.createElement('span');
+        s1.textContent = 'KDA-Sieger: ' + tvHighlights.kdaChampionName;  // textContent — XSS safe
+        bar.appendChild(s1);
+      }
+      if (hasKda && hasBk) {
+        var sep = document.createElement('span');
+        sep.textContent = '   |   ';
+        bar.appendChild(sep);
+      }
+      if (hasBk) {
+        var s2 = document.createElement('span');
+        s2.textContent = 'BK-Verlierer: ' + tvHighlights.bkLoserName;  // textContent — XSS safe
+        bar.appendChild(s2);
+      }
+      idleEl.appendChild(bar);
+    }
+  }
 }
 
 function renderGame(state) {
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  // Remove any stale game name headers from previous renders
+  gameEl.querySelectorAll('.tv-game-name-hdr').forEach(function(e) { e.remove(); });
   if (state && state.bracket) { renderKDABracket(state); return; }  // KDA: before state.players guard
   if (currentTypeKey === 'bilderkegel') { renderBilderkegelTV(state); return; }  // BK layout (must precede !players guard)
   if (currentTypeKey === 'fuchsjagd')   { renderFuchsjagdTV(state); return; }   // FJ layout
@@ -48,6 +119,10 @@ function renderGame(state) {
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
+
+  // Add game name header for generic renderer
+  var gnEl = makeGameNameHeader();
+  gameEl.insertBefore(gnEl, gameEl.firstChild);
 
   // Re-render player list (D-01 full-width rows)
   playerListEl.replaceChildren();  // clear safely without innerHTML
@@ -321,9 +396,10 @@ function getBKLoserName(state) {
 
 // End-of-game full-screen overlay (UI-SPEC: tv-end-overlay)
 function renderEndOverlay(typeKey, state, lastWinner) {
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
   // Unknown game type: skip overlay, go idle after short delay
   if (typeKey !== 'kda' && typeKey !== 'bilderkegel') {
-    setTimeout(function() { renderIdle(lastWinner || null); }, 3000);
+    overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 3000);
     return;
   }
 
@@ -364,7 +440,7 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   gameEl.classList.add('active');
   gameEl.replaceChildren(overlayEl);
 
-  setTimeout(function() { renderIdle(lastWinner || null); }, 10000);
+  overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 10000);
 }
 
 // Bilderkegeln TV layout — player list with loser row highlighted in red
@@ -375,6 +451,40 @@ function renderBilderkegelTV(state) {
 
   var container = document.createElement('div');
   container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:2vw;box-sizing:border-box';
+
+  // Current Bild display
+  var BK_BILDER_TV = [
+    {id:'volle',name:'Volle',pins:[1,2,3,4,5,6,7,8,9]},
+    {id:'kleeblatt',name:'Kleeblatt',pins:[2,3,4,6,7,8]},
+    {id:'hint_kranz',name:'Hint. Kranz',pins:[4,6,7,8,9]},
+    {id:'damen',name:'Damen',pins:[2,3,7,8]},
+    {id:'bauern',name:'Bauern',pins:[4,6]}
+  ];
+
+  if (!state.done && state.aktBildIdx >= 0 && state.aktBildIdx < BK_BILDER_TV.length) {
+    var bildInfo = BK_BILDER_TV[state.aktBildIdx];
+
+    var bildSection = document.createElement('div');
+    bildSection.style.cssText = 'text-align:center;margin-bottom:16px';
+
+    var bildNameEl = document.createElement('div');
+    bildNameEl.textContent = bildInfo.name;  // textContent — safe (static data)
+    bildNameEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:8vw;color:var(--ac);line-height:1';
+
+    var bildNumEl = document.createElement('div');
+    bildNumEl.textContent = 'Bild ' + (state.aktBildIdx + 1) + '/5';  // textContent — safe
+    bildNumEl.style.cssText = 'font-size:2vw;color:var(--mut);margin-top:4px';
+
+    // Pin SVG for TV (white pins on dark)
+    var svgEl = document.createElement('div');
+    svgEl.innerHTML = kegelSVGtv(bildInfo.pins, 120, 150);  // SVG built from static pin data — no user input
+    svgEl.style.cssText = 'margin:8px auto';
+
+    bildSection.appendChild(bildNameEl);
+    bildSection.appendChild(svgEl);
+    bildSection.appendChild(bildNumEl);
+    container.appendChild(bildSection);
+  }
 
   // Determine if game has started (any bildPts entry is non-null or aktBildIdx > 0)
   var gameStarted = (state.aktBildIdx > 0) ||
@@ -421,6 +531,7 @@ function renderBilderkegelTV(state) {
   });
 
   container.appendChild(ul);
+  container.insertBefore(makeGameNameHeader(), container.firstChild);
   gameEl.replaceChildren(container);
 }
 
@@ -505,86 +616,99 @@ function renderFuchsjagdTV(state) {
   container.appendChild(fuchsPanel);
   container.appendChild(divider);
   container.appendChild(jaegerPanel);
+  container.insertBefore(makeGameNameHeader(), container.firstChild);
   gameEl.replaceChildren(container);
 }
 
-// Viergewinnt TV layout — Team X / VS / Team O
+// Viergewinnt TV layout — 9x9 board with team headers
 function renderViergewinntTV(state) {
   if (!state) return;
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
   var container = document.createElement('div');
   container.className = 'vg-tv-layout';
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:row;align-items:center;justify-content:center;padding:2vw;gap:32px;box-sizing:border-box';
+  container.style.cssText = 'width:100vw;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:2vw;box-sizing:border-box;gap:16px';
 
-  // Helper to build a team panel
-  function buildTeamPanel(players, teamColor, teamLabel, isWinner, isLoser) {
-    var panel = document.createElement('div');
-    panel.className = 'vg-team-panel';
-    panel.style.cssText = 'flex:1;background:var(--card);border-radius:12px;padding:24px;border-left:4px solid ' + teamColor + ';display:flex;flex-direction:column;gap:8px';
+  // Team header
+  var headerRow = document.createElement('div');
+  headerRow.style.cssText = 'display:flex;width:100%;align-items:center;justify-content:space-between;gap:16px';
 
-    if (isWinner) {
-      panel.style.border = '2px solid ' + teamColor;
-    } else if (isLoser) {
-      panel.style.opacity = '0.6';
-    }
-
-    var label = document.createElement('div');
-    label.className = 'vg-team-label';
-    label.textContent = teamLabel;  // textContent — safe (fixed string)
-    label.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:' + teamColor;
-    panel.appendChild(label);
-
+  function makeTeamHeader(players, color, label, dim) {
+    var el = document.createElement('div');
+    el.style.cssText = 'flex:1;text-align:center;opacity:' + (dim ? '0.5' : '1');
+    var lbl = document.createElement('div');
+    lbl.textContent = label;  // textContent — safe (fixed string)
+    lbl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:5vw;color:' + color;
+    el.appendChild(lbl);
     (players || []).forEach(function(p) {
-      var row = document.createElement('div');
-      row.className = 'vg-player-row';
-      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center';
-
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'vg-player-emoji-name';
-      nameSpan.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe (T-07-03-03)
-      nameSpan.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--txt)';
-
-      var scoreSpan = document.createElement('span');
-      scoreSpan.className = 'vg-player-score';
-      scoreSpan.textContent = '—';  // Viergewinnt has no per-player throw totals in state
-      scoreSpan.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);color:' + teamColor;
-
-      row.appendChild(nameSpan);
-      row.appendChild(scoreSpan);
-      panel.appendChild(row);
+      var n = document.createElement('div');
+      n.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+      n.style.cssText = 'font-size:2.5vw;color:var(--txt)';
+      el.appendChild(n);
     });
-
-    return panel;
+    return el;
   }
 
-  var winner = state.winner;  // 'X', 'O', 'draw', or undefined
+  var xDim = state.done && state.winner === 'O';
+  var oDim = state.done && state.winner === 'X';
+  headerRow.appendChild(makeTeamHeader(state.tX, 'var(--ac)', 'TEAM X', xDim));
 
-  var teamXPanel = buildTeamPanel(
-    state.tX,
-    'var(--tX)',
-    'TEAM X',
-    winner === 'X',
-    winner === 'O'
-  );
+  var vsEl = document.createElement('div');
+  vsEl.textContent = 'VS';  // textContent — safe (fixed string)
+  vsEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:4vw;color:var(--mut);flex-shrink:0';
+  headerRow.appendChild(vsEl);
 
-  var vsCenter = document.createElement('div');
-  vsCenter.className = 'vg-vs-center';
-  vsCenter.textContent = 'VS';  // textContent — safe (fixed string)
-  vsCenter.style.cssText = 'align-self:center;font-size:72px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--mut)';
+  headerRow.appendChild(makeTeamHeader(state.tO, '#4da6ff', 'TEAM O', oDim));
+  container.appendChild(headerRow);
 
-  var teamOPanel = buildTeamPanel(
-    state.tO,
-    'var(--tO)',
-    'TEAM O',
-    winner === 'O',
-    winner === 'X'
-  );
+  // 9x9 Board grid
+  var boardContainer = document.createElement('div');
+  boardContainer.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px';
 
-  container.appendChild(teamXPanel);
-  container.appendChild(vsCenter);
-  container.appendChild(teamOPanel);
+  for (var row = 0; row < 9; row++) {
+    var rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:flex;gap:4px';
+    for (var col = 0; col < 9; col++) {
+      var cell = document.createElement('div');
+      var val = state.grid[row][col];
+      var bg = val === 'X' ? 'var(--ac)' : val === 'O' ? '#4da6ff' : '#333';
+      cell.style.cssText = 'width:4.5vw;height:4.5vw;border-radius:50%;background:' + bg + ';border:1px solid ' + (val ? bg : '#555') + ';box-sizing:border-box';
+      rowEl.appendChild(cell);
+    }
+    boardContainer.appendChild(rowEl);
+  }
+
+  // Column numbers
+  var colNums = document.createElement('div');
+  colNums.style.cssText = 'display:flex;gap:4px;margin-top:4px';
+  for (var c = 1; c <= 9; c++) {
+    var num = document.createElement('div');
+    num.textContent = String(c);  // textContent — safe (loop counter)
+    num.style.cssText = 'width:4.5vw;text-align:center;font-size:1.5vw;color:var(--mut);font-family:var(--fb,"DM Sans",sans-serif)';
+    colNums.appendChild(num);
+  }
+  boardContainer.appendChild(colNums);
+  container.appendChild(boardContainer);
+
+  // Winner banner
+  if (state.done && state.winner && state.winner !== 'draw') {
+    var winBanner = document.createElement('div');
+    winBanner.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:5vw;text-align:center';
+    var winColor = state.winner === 'X' ? 'var(--ac)' : '#4da6ff';
+    var winLabel = state.winner === 'X' ? 'TEAM X' : 'TEAM O';
+    winBanner.textContent = winLabel + ' GEWINNT!';  // textContent — safe (no user data)
+    winBanner.style.color = winColor;
+    container.appendChild(winBanner);
+  } else if (state.done && state.winner === 'draw') {
+    var drawBanner = document.createElement('div');
+    drawBanner.textContent = 'UNENTSCHIEDEN';  // textContent — safe (fixed string)
+    drawBanner.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:5vw;color:var(--mut);text-align:center';
+    container.appendChild(drawBanner);
+  }
+
+  container.insertBefore(makeGameNameHeader(), container.firstChild);
   gameEl.replaceChildren(container);
 }
 
