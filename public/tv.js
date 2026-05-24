@@ -41,14 +41,23 @@ function kegelSVGtv(activePins, w, h) {
   return '<svg viewBox="0 0 80 100" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">'+circles+'</svg>';
 }
 
+function renderHighlightsHdr() {
+  var hdr = document.getElementById('tv-highlights-hdr');
+  if (!hdr || !tvHighlights) return;
+  var hasKda = tvHighlights.kda_champion && tvHighlights.kda_champion.name;
+  var hasBk  = tvHighlights.bk_loser  && tvHighlights.bk_loser.name;
+  hdr.textContent = '';
+  if (!hasKda && !hasBk) return;
+  var parts = [];
+  if (hasKda) parts.push('🏆 ' + tvHighlights.kda_champion.name);
+  if (hasBk)  parts.push('💩 ' + tvHighlights.bk_loser.name);
+  hdr.textContent = parts.join('  |  ');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   fetch('/api/highlights/current')
     .then(function(r){ return r.json(); })
-    .then(function(d){
-      tvHighlights = d;
-      // If idle screen is already visible, re-render to add the highlights bar
-      if (idleEl.style.display !== 'none') renderIdle(currentIdleLastWinner);
-    })
+    .then(function(d){ tvHighlights = d; renderHighlightsHdr(); })
     .catch(function(){});
 });
 
@@ -73,7 +82,7 @@ socket.on('game:started', function({ state, gameId, type_key }) {
 });
 socket.on('game:finished', function({ state, lastWinner, typeKey }) {
   renderEndOverlay(typeKey, state, lastWinner);
-  fetch('/api/highlights/current').then(function(r){ return r.json(); }).then(function(d){ tvHighlights = d; }).catch(function(){});
+  fetch('/api/highlights/current').then(function(r){ return r.json(); }).then(function(d){ tvHighlights = d; renderHighlightsHdr(); }).catch(function(){});
 });
 
 function renderIdle(lastWinner) {
@@ -86,35 +95,6 @@ function renderIdle(lastWinner) {
     ? 'Letzter Sieger: ' + lastWinner
     : 'Noch kein Spiel gespielt';
 
-  // Highlights bar
-  var existingBar = document.getElementById('tv-highlights-bar');
-  if (existingBar) existingBar.remove();
-
-  if (tvHighlights) {
-    var bar = document.createElement('div');
-    bar.id = 'tv-highlights-bar';
-    bar.style.cssText = 'font-size:1.5vw;color:var(--mut);margin-top:16px;text-align:center';
-    var hasKda = tvHighlights.kda_champion && tvHighlights.kda_champion.name;
-    var hasBk  = tvHighlights.bk_loser  && tvHighlights.bk_loser.name;
-    if (hasKda || hasBk) {
-      if (hasKda) {
-        var s1 = document.createElement('span');
-        s1.textContent = 'KDA-Sieger: ' + tvHighlights.kda_champion.name;  // textContent — XSS safe
-        bar.appendChild(s1);
-      }
-      if (hasKda && hasBk) {
-        var sep = document.createElement('span');
-        sep.textContent = '   |   ';
-        bar.appendChild(sep);
-      }
-      if (hasBk) {
-        var s2 = document.createElement('span');
-        s2.textContent = 'BK-Verlierer: ' + tvHighlights.bk_loser.name;  // textContent — XSS safe
-        bar.appendChild(s2);
-      }
-      idleEl.appendChild(bar);
-    }
-  }
 }
 
 function renderGame(state) {

@@ -120,10 +120,22 @@
     }
     .conn-dot.green { background: #4caf7d; }
     .conn-dot.red   { background: #e05252; }
+
+    /* Persistent highlights header (07) */
+    #tv-highlights-hdr {
+      position: fixed;
+      top: 0.6rem;
+      right: 2.5rem;
+      font-size: 1.2vw;
+      color: var(--mut);
+      text-align: right;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
   <div class="conn-dot" id="connDot"></div>
+  <div id="tv-highlights-hdr"></div>
 
   <div id="idle">
     <div class="club-name">Pegelköpp</div>
