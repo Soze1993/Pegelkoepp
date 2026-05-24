@@ -335,3 +335,56 @@ test('KDA9: initState throws Error for player counts outside 4–12', () => {
     'initState must throw for > 12 players'
   );
 });
+
+// KDA10: 4-player bracket has exactly 6 slots including L-R1
+test('KDA10: 4-player bracket has 6 slots with correct L-R1 structure', () => {
+  const state = kda.initState(players4, { seed: 'test' });
+  assert.equal(state.bracket.length, 6, '4-player DE bracket must have exactly 6 slots');
+
+  // L-R1 slot must exist
+  const lR1 = state.bracket.find(s => s.id === 'L-R1');
+  assert.ok(lR1, 'L-R1 slot must exist');
+  assert.equal(lR1.bracket, 'L', 'L-R1 bracket field must be "L"');
+  assert.equal(lR1.advancesWinnerTo, 'L-Final', 'L-R1 winner must advance to L-Final');
+
+  // W-R1 losers must route to L-R1
+  const wR1_1 = state.bracket.find(s => s.id === 'W-R1-1');
+  const wR1_2 = state.bracket.find(s => s.id === 'W-R1-2');
+  assert.ok(wR1_1, 'W-R1-1 must exist');
+  assert.ok(wR1_2, 'W-R1-2 must exist');
+  assert.equal(wR1_1.advancesLoserTo, 'L-R1', 'W-R1-1 loser must go to L-R1');
+  assert.equal(wR1_2.advancesLoserTo, 'L-R1', 'W-R1-2 loser must go to L-R1');
+
+  // W-Final loser must still go to L-Final
+  const wFinal = state.bracket.find(s => s.id === 'W-Final');
+  assert.ok(wFinal, 'W-Final must exist');
+  assert.equal(wFinal.advancesLoserTo, 'L-Final', 'W-Final loser must go to L-Final');
+});
+
+// KDA11: After both W-R1 matches complete, L-R1 has both losers
+test('KDA11: completing W-R1 matches populates L-R1 with both losers', () => {
+  let state = kda.initState(players4, { seed: 'fixed' });
+  // Find W-R1-1 and W-R1-2 matches
+  const findActive = (s) => s.bracket.find(m => !m.done && !m.isBye && m.p1 && m.p2);
+
+  // Play out W-R1-1: p1 wins, p2 loses
+  const m1 = findActive(state);
+  assert.ok(m1, 'first match must be available');
+  const loser1 = m1.p2;
+  state = kda.applyThrow(state, m1.p1.id, 9);
+  state = kda.applyThrow(state, m1.p2.id, 0);
+
+  // Play out W-R1-2: p1 wins, p2 loses
+  const m2 = findActive(state);
+  assert.ok(m2, 'second match must be available');
+  const loser2 = m2.p2;
+  state = kda.applyThrow(state, m2.p1.id, 9);
+  state = kda.applyThrow(state, m2.p2.id, 0);
+
+  // L-R1 should now have both losers
+  const lR1 = state.bracket.find(s => s.id === 'L-R1');
+  assert.ok(lR1, 'L-R1 must exist');
+  const lR1Players = [lR1.p1, lR1.p2].filter(Boolean).map(p => p.id);
+  assert.ok(lR1Players.includes(loser1.id), 'L-R1 must have W-R1-1 loser');
+  assert.ok(lR1Players.includes(loser2.id), 'L-R1 must have W-R1-2 loser');
+});
