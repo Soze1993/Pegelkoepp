@@ -570,9 +570,49 @@ function showWinnerBanner(state) {
   }, 2500);
 }
 
+function playKDATone() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var freqs = [523, 659, 784, 1047];
+    freqs.forEach(function(f, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = f;
+      osc.type = 'triangle';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i*0.2);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.2 + 0.18);
+      osc.start(ctx.currentTime + i*0.2);
+      osc.stop(ctx.currentTime + i*0.2 + 0.2);
+    });
+  } catch(e) {}
+}
+
+function playBKTone() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var freqs = [523, 494, 466, 440];
+    freqs.forEach(function(f, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = f;
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + i*0.25);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.25 + 0.23);
+      osc.start(ctx.currentTime + i*0.25);
+      osc.stop(ctx.currentTime + i*0.25 + 0.25);
+    });
+  } catch(e) {}
+}
+
 function handleGameFinished(state) {
   if (S.aktSpiel && !S.aktSpiel._finishing) {
     S.aktSpiel._finishing = true;
+    // Play game-end tone for KDA and Bilderkegel
+    var typeKey = S.aktSpiel ? S.aktSpiel.type_key : '';
+    if (typeKey === 'kda') playKDATone();
+    else if (typeKey === 'bilderkegel') playBKTone();
     showWinnerBanner(state);
   }
 }
@@ -835,6 +875,18 @@ function renderSpielenTab() {
     case 'kda':         renderKDASpiel(el, S.aktSpiel.state); break;
     case 'bilderkegel': renderBKSpiel(el, S.aktSpiel.state); break;
     default:            renderNSpiel(el, S.aktSpiel.state); break;
+  }
+  // Append undo button after sub-renderer (only when game is still active)
+  if (S.aktSpiel.state && !S.aktSpiel.state.done) {
+    var undoDiv = document.createElement('div');
+    undoDiv.style.cssText = 'padding:0 0 8px';
+    var undoBtn = document.createElement('button');
+    undoBtn.className = 'btn bg';
+    undoBtn.textContent = '↩ Rückgängig';
+    undoBtn.style.cssText = 'width:100%;color:var(--mut)';
+    undoBtn.onclick = submitUndo;
+    undoDiv.appendChild(undoBtn);
+    el.appendChild(undoDiv);
   }
 }
 
