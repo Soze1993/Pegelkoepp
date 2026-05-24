@@ -49,8 +49,8 @@ function renderHighlightsHdr() {
   hdr.textContent = '';
   if (!hasKda && !hasBk) return;
   var parts = [];
-  if (hasKda) parts.push('🏆 ' + tvHighlights.kda_champion.name);
-  if (hasBk)  parts.push('💩 ' + tvHighlights.bk_loser.name);
+  if (hasKda) parts.push('🏆 KDA-Gewinner: ' + tvHighlights.kda_champion.name);
+  if (hasBk)  parts.push('💩 BK-Verlierer: ' + tvHighlights.bk_loser.name);
   hdr.textContent = parts.join('  |  ');
 }
 
