@@ -6,6 +6,8 @@ const gameEl       = document.getElementById('game');
 const playerListEl = document.getElementById('playerList');
 const lastWinnerEl = document.getElementById('lastWinnerText');
 
+var currentTypeKey = null;  // set on game:started and game:state — used by renderGame dispatcher
+
 const socket = io();  // same-origin; socket.io.js auto-served at /socket.io/socket.io.js
 
 // Connection indicator (RT-03)
@@ -13,16 +15,20 @@ socket.on('connect',    () => { connDot.className = 'conn-dot green'; });
 socket.on('disconnect', () => { connDot.className = 'conn-dot red';   });
 
 // State events (D-09, D-11)
-socket.on('game:state',    ({ idle, state, gameId, lastWinner }) => {
+socket.on('game:state', function({ idle, state, gameId, lastWinner, type_key }) {
+  if (type_key) currentTypeKey = type_key;
   if (idle) renderIdle(lastWinner);
   else { socket.emit('join', gameId); renderGame(state); }
 });
 socket.on('throw:applied', ({ state }) => renderGame(state));
 socket.on('undo:applied',  ({ state }) => renderGame(state));   // D-07: silent re-render
-socket.on('game:started',  ({ state, gameId }) => { socket.emit('join', gameId); renderGame(state); });
-socket.on('game:finished', function({ state, lastWinner }) {
+socket.on('game:started', function({ state, gameId, type_key }) {
+  currentTypeKey = type_key;
+  socket.emit('join', gameId);
   renderGame(state);
-  setTimeout(function() { renderIdle(lastWinner || null); }, 3000);
+});
+socket.on('game:finished', function({ state, lastWinner, typeKey }) {
+  renderEndOverlay(typeKey, state, lastWinner);
 });
 
 function renderIdle(lastWinner) {
@@ -293,6 +299,69 @@ function buildTVSlotEl(slot, w, h) {
   });
 
   return el;
+}
+
+// BK score helper — sum bildPts, null entries count as 0
+function bkTotal(p) {
+  return (p.bildPts || []).reduce(function(a, b) { return a + (b !== null ? b : 0); }, 0);
+}
+
+// BK loser detection — player with the minimum bkTotal
+function getBKLoserName(state) {
+  if (!state || !state.players || !state.players.length) return '—';
+  var withTotals = state.players.map(function(p) {
+    return { name: p.name, total: bkTotal(p) };
+  });
+  withTotals.sort(function(a, b) { return a.total - b.total; });
+  return withTotals[0].name;
+}
+
+// End-of-game full-screen overlay (UI-SPEC: tv-end-overlay)
+function renderEndOverlay(typeKey, state, lastWinner) {
+  // Unknown game type: skip overlay, go idle after short delay
+  if (typeKey !== 'kda' && typeKey !== 'bilderkegel') {
+    setTimeout(function() { renderIdle(lastWinner || null); }, 3000);
+    return;
+  }
+
+  var overlayEl = document.createElement('div');
+  overlayEl.className = 'tv-end-overlay';
+  overlayEl.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:var(--bg);padding:32px 48px;box-sizing:border-box;text-align:center';
+
+  var emojiEl = document.createElement('div');
+  emojiEl.className = 'tv-overlay-emoji';
+  emojiEl.style.cssText = 'font-size:10vw;line-height:1';
+
+  var nameEl = document.createElement('div');
+  nameEl.className = 'tv-overlay-name';
+  nameEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:15vw;line-height:1;font-weight:400';
+
+  var subtitleEl = document.createElement('div');
+  subtitleEl.className = 'tv-overlay-subtitle';
+  subtitleEl.style.cssText = 'font-family:var(--fb,"DM Sans",sans-serif);font-size:4vw;font-weight:600;line-height:1.2;color:var(--txt)';
+
+  if (typeKey === 'kda') {
+    emojiEl.textContent = '🏆';
+    nameEl.textContent = lastWinner || '—';  // textContent — XSS safe (T-07-03-01)
+    nameEl.style.color = 'var(--ac)';
+    subtitleEl.textContent = '— Kegler des Abends!';
+  } else {
+    // typeKey === 'bilderkegel'
+    emojiEl.textContent = '💩';
+    nameEl.textContent = getBKLoserName(state);  // textContent — XSS safe (T-07-03-01)
+    nameEl.style.color = 'var(--red)';
+    subtitleEl.textContent = '— Bilderkegeln-Verlierer!';
+  }
+
+  overlayEl.appendChild(emojiEl);
+  overlayEl.appendChild(nameEl);
+  overlayEl.appendChild(subtitleEl);
+
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+  gameEl.replaceChildren(overlayEl);
+
+  setTimeout(function() { renderIdle(lastWinner || null); }, 10000);
 }
 
 // Round label copywriting (06-UI-SPEC.md lines 340–368)
