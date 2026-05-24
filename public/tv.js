@@ -9,6 +9,7 @@ const lastWinnerEl = document.getElementById('lastWinnerText');
 var currentTypeKey = null;  // set on game:started and game:state — used by renderGame dispatcher
 var overlayTimeoutId = null;
 var tvHighlights = null;
+var currentIdleLastWinner = null;
 
 var GAME_NAMES = {
   'bilderkegel': 'Bilderkegel',
@@ -41,7 +42,14 @@ function kegelSVGtv(activePins, w, h) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  fetch('/api/highlights/current').then(function(r){ return r.json(); }).then(function(d){ tvHighlights = d; }).catch(function(){});
+  fetch('/api/highlights/current')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      tvHighlights = d;
+      // If idle screen is already visible, re-render to add the highlights bar
+      if (idleEl.style.display !== 'none') renderIdle(currentIdleLastWinner);
+    })
+    .catch(function(){});
 });
 
 const socket = io();  // same-origin; socket.io.js auto-served at /socket.io/socket.io.js
@@ -69,6 +77,7 @@ socket.on('game:finished', function({ state, lastWinner, typeKey }) {
 });
 
 function renderIdle(lastWinner) {
+  currentIdleLastWinner = lastWinner || null;
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
   gameEl.classList.remove('active');
   idleEl.style.display = 'flex';
