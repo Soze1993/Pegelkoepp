@@ -306,6 +306,8 @@ var selEmo='🎳',selSTEmo='🎯',genTyp=null,genSel=[],hausWurf=null,hausSlot=n
 function mkSp(id,name,emoji){return{id:id,name:name,emoji:emoji,spiele:0,siege:0,niederlagen:0,pts:0,best:0,wuerfe:0,pudel:0,bezahlCount:0,tDatum:'',tSiege:0,tNiederlagen:0};}
 
 var S={
+  kdaChampionId: null,
+  bkLoserId: null,
   spieler:[],
   typen:[
     {id:'viergewinnt',bi:true,icon:'🔴',name:'Vier Gewinnt',desc:'Zwei Teams abwechselnd. Geworfene Zahl = Spalte im 9x9-Feld. Pudel = kein Feld. Erste Viererreihe gewinnt.',mode:'teams'},
@@ -360,6 +362,15 @@ async function init() {
 
   initSocket();
   renderAll();
+
+  fetch('/api/highlights/current')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      S.kdaChampionId = data.kda_champion ? data.kda_champion.id : null;
+      S.bkLoserId = data.bk_loser ? data.bk_loser.id : null;
+      renderSpielenTab();
+    })
+    .catch(function() {});
 }
 
 // PIN Overlay
@@ -421,6 +432,13 @@ function initSocket() {
   socket.on('game:finished', function(data) {
     if (S.aktSpiel && S.aktSpiel._finishing) return;
     showWinnerBanner(data.state);
+    fetch('/api/highlights/current')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        S.kdaChampionId = d.kda_champion ? d.kda_champion.id : null;
+        S.bkLoserId = d.bk_loser ? d.bk_loser.id : null;
+      })
+      .catch(function() {});
   });
 }
 
@@ -504,15 +522,41 @@ function getWinnerName(state, type_key) {
   return 'Unbekannt';
 }
 
+function appendSymbol(nameEl, playerId) {
+  // Remove any previously appended symbol spans first
+  var existing = nameEl.querySelectorAll('.player-symbol');
+  existing.forEach(function(s) { s.remove(); });
+  if (S.kdaChampionId && playerId === S.kdaChampionId) {
+    var sym = document.createElement('span');
+    sym.className = 'player-symbol';
+    sym.setAttribute('aria-label', 'Kegler des Abends');
+    sym.textContent = ' 🏆';
+    nameEl.appendChild(sym);
+  } else if (S.bkLoserId && playerId === S.bkLoserId) {
+    var sym = document.createElement('span');
+    sym.className = 'player-symbol';
+    sym.setAttribute('aria-label', 'Bilderkegeln-Verlierer');
+    sym.textContent = ' 💩';
+    nameEl.appendChild(sym);
+  }
+}
+
 function showWinnerBanner(state) {
   if (S.aktSpiel) S.aktSpiel._finishing = true;
   var winnerName = getWinnerName(state, S.aktSpiel ? S.aktSpiel.type_key : '');
   var banner = document.createElement('div');
   banner.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center;';
-  banner.innerHTML = '<div style="background:var(--card);border:2px solid var(--ac);border-radius:16px;padding:32px;text-align:center">' +
-    '<div style="font-size:48px;margin-bottom:8px">🏆</div>' +
-    '<div style="font-family:var(--fh);font-size:32px;color:var(--ac)">' + winnerName + ' hat gewonnen!</div>' +
-    '</div>';
+  var card = document.createElement('div');
+  card.style.cssText = 'background:var(--card);border:2px solid var(--ac);border-radius:16px;padding:32px;text-align:center';
+  var emojiEl = document.createElement('div');
+  emojiEl.style.cssText = 'font-size:48px;margin-bottom:8px';
+  emojiEl.textContent = '🏆';
+  var nameEl = document.createElement('div');
+  nameEl.style.cssText = 'font-family:var(--fh);font-size:32px;color:var(--ac)';
+  nameEl.textContent = winnerName + ' hat gewonnen!';
+  card.appendChild(emojiEl);
+  card.appendChild(nameEl);
+  banner.appendChild(card);
   document.body.appendChild(banner);
   setTimeout(function() {
     banner.remove();
