@@ -926,6 +926,108 @@ test('GT24: POST /api/games viergewinnt with roles produces non-empty state.tX a
 });
 
 // ---------------------------------------------------------------------------
+// G-HL01: game:finished event payload includes typeKey equal to the game type_key
+// Status: RED — games.js line 195 does not include typeKey in game:finished yet.
+//         This test starts its own Socket.io-enabled server in an isolated scope.
+// ---------------------------------------------------------------------------
+test('G-HL01: game:finished event payload includes typeKey equal to the game type_key', async () => {
+  const { Server: IOServer } = require('socket.io');
+  const { io: ioclient } = require('socket.io-client');
+  const httpModule = require('http');
+
+  // Create a fresh http server with socket.io attached
+  const appForSocket = require('../app');
+  const ioServer = await new Promise((resolve) => {
+    const srv = httpModule.createServer(appForSocket);
+    const io = new IOServer(srv, { cors: { origin: false } });
+    appForSocket.locals.io = io;
+
+    // Handle join events (needed for game:finished to reach client)
+    io.on('connection', (socket) => {
+      socket.on('join', (gameId) => { socket.join(`game:${gameId}`); });
+    });
+
+    srv.listen(0, '127.0.0.1', () => {
+      resolve({ srv, io, port: srv.address().port });
+    });
+  });
+
+  const { srv: srvHL01, io: ioHL01, port: portHL01 } = ioServer;
+  const baseUrlHL01 = `http://127.0.0.1:${portHL01}`;
+
+  // Connect a socket.io client
+  const clientSocket = ioclient(baseUrlHL01, { transports: ['websocket'] });
+
+  try {
+    // Wait for client connection
+    await new Promise((resolve, reject) => {
+      clientSocket.on('connect', resolve);
+      clientSocket.on('connect_error', reject);
+      setTimeout(() => reject(new Error('Socket connection timeout')), 5000);
+    });
+
+    // Login and create a dreiVollen game
+    const loginRes = await fetch(`${baseUrlHL01}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pin: PIN })
+    });
+    assert.equal(loginRes.status, 200, `G-HL01 login failed: ${loginRes.status}`);
+    const rawCookie = loginRes.headers.get('set-cookie');
+    const cookieHL01 = rawCookie.split(';')[0];
+
+    const createRes = await fetch(`${baseUrlHL01}/api/games`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: cookieHL01 },
+      body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+    });
+    assert.equal(createRes.status, 201, `G-HL01 game creation failed: ${createRes.status}`);
+    const { id: gameId } = await createRes.json();
+
+    // Join the game room
+    clientSocket.emit('join', gameId);
+    await new Promise(r => setTimeout(r, 50)); // let join propagate
+
+    // Set up listener for game:finished BEFORE submitting last throw
+    const finishedPayloadPromise = new Promise((resolve, reject) => {
+      clientSocket.on('game:finished', (payload) => resolve(payload));
+      setTimeout(() => reject(new Error('game:finished event not received within 5s')), 5000);
+    });
+
+    // Submit 3 throws for player 1
+    for (let i = 0; i < 3; i++) {
+      await fetch(`${baseUrlHL01}/api/games/${gameId}/throws`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: cookieHL01 },
+        body: JSON.stringify({ player_id: 1, throw_index: i, value: 5 })
+      });
+    }
+
+    // Submit 3 throws for player 2 — last throw triggers game:finished
+    for (let i = 0; i < 3; i++) {
+      await fetch(`${baseUrlHL01}/api/games/${gameId}/throws`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: cookieHL01 },
+        body: JSON.stringify({ player_id: 2, throw_index: i, value: 7 })
+      });
+    }
+
+    // Wait for the game:finished event
+    const payload = await finishedPayloadPromise;
+
+    // Assert that typeKey is present and equals 'dreiVollen'
+    // This assertion FAILS in RED state — games.js does not include typeKey yet
+    assert.ok('typeKey' in payload, `game:finished payload should include typeKey field, got: ${JSON.stringify(Object.keys(payload))}`);
+    assert.equal(typeof payload.typeKey, 'string', `typeKey should be a string, got ${typeof payload.typeKey}`);
+    assert.equal(payload.typeKey, 'dreiVollen', `typeKey should be 'dreiVollen', got '${payload.typeKey}'`);
+  } finally {
+    clientSocket.disconnect();
+    await new Promise(resolve => srvHL01.close(resolve));
+    ioHL01.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GT15: Crash recovery — rebuildActiveGames restores state from DB
 // ---------------------------------------------------------------------------
 test('GT15: rebuildActiveGames rebuilds activeGames from DB after full Map teardown', async () => {
