@@ -290,11 +290,14 @@ router.post('/:id/skip-stechen', requireSession, (req, res) => {
 // DELETE /api/games/:id — cancel an active game and persist to DB
 // ---------------------------------------------------------------------------
 router.delete('/:id', requireSession, (req, res) => {
-  const game = db.prepare('SELECT * FROM games WHERE id = ?').get(Number(req.params.id));
+  const gameId = Number(req.params.id);
+  const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
   if (!game) return res.status(404).json({ error: 'not found' });
   if (game.status !== 'active') return res.status(409).json({ error: 'not active' });
-  db.prepare("UPDATE games SET status = 'cancelled', finished_at = datetime('now') WHERE id = ?").run(Number(req.params.id));
-  activeGames.delete(Number(req.params.id));
+  db.prepare("UPDATE games SET status = 'cancelled', finished_at = datetime('now') WHERE id = ?").run(gameId);
+  activeGames.delete(gameId);
+  const io = req.app.locals.io;
+  if (io) io.to(`game:${gameId}`).emit('game:state', { idle: true, lastWinner: null });
   res.json({ ok: true });
 });
 

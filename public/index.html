@@ -431,6 +431,9 @@ function initSocket() {
   });
 
   socket.on('game:finished', function(data) {
+    var typeKey = S.aktSpiel ? S.aktSpiel.type_key : '';
+    if (typeKey === 'kda') playKDATone();
+    else if (typeKey === 'bilderkegel') playBKTone();
     if (S.aktSpiel && S.aktSpiel._finishing) return;
     showWinnerBanner(data.state);
     fetch('/api/highlights/current')
@@ -626,10 +629,6 @@ function playBKTone() {
 function handleGameFinished(state) {
   if (S.aktSpiel && !S.aktSpiel._finishing) {
     S.aktSpiel._finishing = true;
-    // Play game-end tone for KDA and Bilderkegel
-    var typeKey = S.aktSpiel ? S.aktSpiel.type_key : '';
-    if (typeKey === 'kda') playKDATone();
-    else if (typeKey === 'bilderkegel') playBKTone();
     showWinnerBanner(state);
   }
 }
@@ -937,8 +936,8 @@ async function doBKWurf() {
 function bkTotal(p){return(p.bildPts||[]).reduce(function(a,b){return a+(b!==null?b:0);},0);}
 function endBK(sp){notify('Bilderkegel beendet!');}
 async function cancelAktSpiel() {
-  if (S.aktSpiel && S.aktSpiel.id) {
-    try { await fetch('/api/games/' + S.aktSpiel.id, { method: 'DELETE' }); } catch(e) {}
+  if (S.aktSpiel && S.aktSpiel.gameId) {
+    try { await fetch('/api/games/' + S.aktSpiel.gameId, { method: 'DELETE' }); } catch(e) {}
   }
   S.aktSpiel = null;
 }
