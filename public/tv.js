@@ -780,6 +780,7 @@ function renderPlusMinusTV(state) {
     var r = w[0];
     if (w.length > 1) r += w[1];
     if (w.length > 2) r -= w[2];
+    if (w.length > 2 && r < 1) r = 1;
     if (w.length > 3) r *= w[3];
     if (w.length > 4) r = w[4] !== 0 ? r / w[4] : r;
     return Math.round(r * 100) / 100;

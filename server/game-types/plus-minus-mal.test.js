@@ -96,8 +96,8 @@ test('P2: sequential formula: [5,3,2,4,1] => ((5+3-2)*4)/1 = 24', () => {
 });
 
 // P3: Pudel on round 3 (W3) substitutes 9; [5,3,0(pudel),4,1] => stored as [5,3,9,4,1]
-// Sequential: r=5, r+=3=8, r-=9=-1, r*=4=-4, r/=1=-4
-test('P3: Pudel on W3 substitutes 9; stored as 9; increments pudel; result = -4', () => {
+// 5+3=8, 8-9=-1 → floor to 1, 1*4=4, 4/1=4
+test('P3: Pudel on W3 substitutes 9; result floored at 1 before ×; score = 4', () => {
   const players1 = [{ id: 1, name: 'A', emoji: 'A' }];
   let state = plusMinus.initState(players1);
   state = plusMinus.applyThrow(state, 1, 5); // round 1
@@ -109,7 +109,7 @@ test('P3: Pudel on W3 substitutes 9; stored as 9; increments pudel; result = -4'
   assert.equal(p.pudel, 1, 'pudel counter incremented');
   assert.equal(p.wuerfe[2], 9, 'W3 Pudel stored as 9');
   const results = plusMinus.getFinalResults(state);
-  assert.equal(results[0].score, -4); // ((5+3-9)*4)/1 = -4
+  assert.equal(results[0].score, 4); // 5+3-9=-1 → floor 1, ×4=4, ÷1=4
 });
 
 // P4: isFinished returns true after pmRunde > 5
@@ -141,4 +141,18 @@ test('P5: highest pmCalc wins; P2 scores 24 > P1 scores 17', () => {
   assert.equal(results.find(r => r.playerId === 2).score, 24);
   assert.equal(results.find(r => r.playerId === 2).winner, true);
   assert.equal(results.find(r => r.playerId === 1).winner, false);
+});
+
+// P6: W1+W2-W3 result floored at 1 — can never go 0 or negative into × ÷
+// Worst case: W1=0(pudel→0), W2=0(pudel→0), W3=9(pudel→9): 0+0-9=-9 → floor 1; ×9=9; ÷1=9
+test('P6: result after W3 is floored at 1; worst-case pudels score 9 not negative', () => {
+  const players1 = [{ id: 1, name: 'A', emoji: 'A' }];
+  let state = plusMinus.initState(players1);
+  state = plusMinus.applyThrow(state, 1, 0); // round 1: pudel → stored 0
+  state = plusMinus.applyThrow(state, 1, 0); // round 2: pudel → stored 0
+  state = plusMinus.applyThrow(state, 1, 0); // round 3: pudel → stored 9
+  state = plusMinus.applyThrow(state, 1, 9); // round 4: ×9
+  state = plusMinus.applyThrow(state, 1, 1); // round 5: ÷1
+  const results = plusMinus.getFinalResults(state);
+  assert.equal(results[0].score, 9); // 0+0-9=-9 → floor 1, ×9=9, ÷1=9
 });
