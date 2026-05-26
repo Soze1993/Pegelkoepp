@@ -79,9 +79,31 @@ router.post('/', requireSession, (req, res) => {
     role: (roles && roles[String(p.id)]) || null
   }));
   // KDA uses game_id as seed so reconstruction after server restart is deterministic
-  const configWithSeed = gameModule.id === 'kda'
+  let configWithSeed = gameModule.id === 'kda'
     ? Object.assign({}, config, { seed: String(gameId) })
     : config;
+
+  // BK: derive exemptPlayerId from last finished BK game (T-WVG-01: server-derived, never trust client)
+  if (type_key === 'bilderkegel') {
+    try {
+      const lastBK = db.prepare(
+        "SELECT * FROM games WHERE type_key = 'bilderkegel' AND status = 'finished' ORDER BY finished_at DESC LIMIT 1"
+      ).get();
+      if (lastBK) {
+        const lastState = reconstructState(lastBK);
+        const bkModule = gameTypes['bilderkegel'];
+        const lastResults = bkModule.getFinalResults(lastState);
+        const payerResult = lastResults.find(r => r.payer);
+        if (payerResult) {
+          configWithSeed = Object.assign({}, configWithSeed, { exemptPlayerId: payerResult.playerId });
+        }
+      }
+    } catch (e) {
+      // Non-fatal: graceful degradation — start game without exemptPlayerId
+      console.warn('BK exempt lookup failed:', e.message);
+    }
+  }
+
   const state = gameModule.initState(playersWithRole, configWithSeed);
   activeGames.set(gameId, state);
 

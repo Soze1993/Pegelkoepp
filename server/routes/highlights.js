@@ -18,8 +18,11 @@ function getBKLoserId(state) {
     id: p.id,
     total: (p.bildPts || []).reduce((a, b) => a + (b !== null ? b : 0), 0)
   }));
-  tots.sort((a, b) => a.total - b.total);
-  return tots[0].id;
+  const eligible = tots.filter(x => x.id !== (state.exemptPlayerId || null));
+  const effTots = eligible.length > 0 ? eligible : tots;  // fallback: all players if somehow all exempt
+  const minTot = Math.min(...effTots.map(t => t.total));
+  const loser = effTots.find(t => t.total === minTot);
+  return loser ? loser.id : null;
 }
 
 // ---------------------------------------------------------------------------
