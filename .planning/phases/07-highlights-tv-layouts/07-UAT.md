@@ -1,5 +1,5 @@
 ---
-status: testing
+status: partial
 phase: 07-highlights-tv-layouts
 source: [07-01-SUMMARY.md, 07-02-SUMMARY.md, 07-03-SUMMARY.md, 07-04-SUMMARY.md, 07-05-SUMMARY.md, 07-06-SUMMARY.md, 07-07-SUMMARY.md, 07-08-SUMMARY.md]
 started: 2026-05-24T00:00:00Z
@@ -8,13 +8,7 @@ updated: 2026-05-24T12:00:00Z
 
 ## Current Test
 
-number: 12
-name: Fuchsjagd — ends after 6 rounds
-expected: |
-  Start a Fuchsjagd game. Play through all throws until 6 Runden (6 rounds per Jäger) are
-  complete. After the 6th round finishes, the game ends automatically — the spielen tab closes
-  or shows a "Spiel beendet" state and the TV shows a game-end overlay.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -76,15 +70,15 @@ result: pass
 
 ### 14. Bilderkegel — early advance on max (non-Volle)
 expected: When playing Kleeblatt (max=6) and the first throw knocks down 6 pins, the system immediately advances — no second throw is offered. When playing Volle (max=12), two throws are always given regardless of first-throw score.
-result: [pending]
+result: pass
 
 ### 15. Bilderkegel — Kleeblatt pin formation
 expected: The Kleeblatt pin SVG in the tablet view shows 6 active pins (3 center pins: front, mid, and back-center are all highlighted). No missing pin at the back.
-result: [pending]
+result: pass
 
 ### 16. Bilderkegel — winner name in overlay
 expected: After a Bilderkegel game ends, the game-end overlay shows the actual winner's name (e.g. "Tobi hat gewonnen!"), not "Unbekannt".
-result: [pending]
+result: pass
 
 ### 17. Drei-Vollen — stechen at tie
 expected: If 2 or more players are tied for first in Drei-Vollen, the game enters a stechen (tiebreaker) phase instead of ending immediately. A "Stechen überspringen" option is visible. If pressed, the game ends with no declared winner.
@@ -92,15 +86,17 @@ result: pass
 
 ### 18. TV overlay — auto-dismiss (no stuck)
 expected: After a KDA or BK game ends, the TV overlay appears and auto-dismisses after 10 seconds. Triggering another game-end immediately after works cleanly — the old overlay doesn't stack or get stuck. No TV reload required.
-result: [pending]
+result: pass
 
 ### 19. TV — game name header
 expected: During any active game on the TV screen, the game type name is displayed at the top of the layout (e.g. "Bilderkegel", "Fuchsjagd", "Viergewinnt").
-result: [pending]
+result: issue
+reported: "Drei in die Vollen zeigt den Namen, Große Hausnummer nicht — Spielname fehlt im TV-Layout für Große Hausnummer"
+severity: minor
 
 ### 20. TV Bilderkegel — Bild display
 expected: During an active Bilderkegel game, the TV shows the current Bild name (e.g. "Kleeblatt"), a pin-formation SVG, and a "Bild 1/5" counter above the player list. Updates as the game progresses through Bilder.
-result: [pending]
+result: pass
 
 ### 21. TV idle — highlights bar
 expected: When no game is active, the TV idle screen shows a highlights bar with "KDA-Sieger: [name]" and "BK-Verlierer: [name]" (if data is available from previous games).
@@ -110,22 +106,28 @@ severity: major
 
 ### 22. TV Viergewinnt — real 9×9 board
 expected: During an active Viergewinnt game, the TV shows a 9-column grid of circles (empty/X/O coloured), column numbers 1–9, and team headers with player names. When the game ends, the losing team's side is dimmed to 0.5 opacity. The winner banner shows "TEAM X" or "TEAM O" — not a single player name.
-result: [pending]
+result: issue
+reported: "TV-Layout soll überarbeitet werden: 6 Spieler (alle Team-Mitglieder) plus das 9×9-Grid müssen gleichzeitig sichtbar sein. Referenz-Design: Downloads/kegel_app_viergewinnt_fix.html"
+severity: major
 
 ### 23. Undo button in game views
 expected: During any active game (in the spielen tab on the tablet), a "↩ Rückgängig" button is visible. Pressing it reverses the last throw and the displayed state updates accordingly. The button disappears after the game ends.
-result: [pending]
+result: pass
 
 ### 24. Game-end audio tones
 expected: When a KDA game ends, an ascending arpeggio tone plays automatically. When a Bilderkegel game ends, a distinct descending tone sequence plays. Both tones play via the browser (no external audio files required). The two tones are clearly different.
-result: [pending]
+result: issue
+reported: "Kein Ton zu hören bei KDA- oder BK-Spielende"
+severity: major
 
 ## Summary
 
 total: 24
-passed: 10
-issues: 3
-pending: 11
+passed: 17
+issues: 8
+pending: 0
+skipped: 0
+blocked: 0
 skipped: 0
 blocked: 0
 
@@ -193,11 +195,11 @@ blocked: 0
 
 - truth: "TV Viergewinnt layout shows actual Connect Four game board (grid with colored pieces) updating live — not a Team X vs Team O text layout"
   status: failed
-  reason: "User reported: aktuelles Team-X-VS-Team-O-Layout nicht gewünscht — komplettes Redesign auf echtes Viergewinnt-Raster mit live eingelegten Steinen"
+  reason: "User reported: TV-Layout soll überarbeitet werden: 6 Spieler (alle Team-Mitglieder) plus das 9×9-Grid müssen gleichzeitig sichtbar sein. Referenz-Design: Downloads/kegel_app_viergewinnt_fix.html"
   severity: major
-  test: 8
+  test: 22
   root_cause: ""
-  artifacts: []
+  artifacts: ["Downloads/kegel_app_viergewinnt_fix.html"]
   missing: []
   debug_session: ""
 
@@ -263,9 +265,39 @@ blocked: 0
 
 - truth: "When KDA or BK end overlay fires, a fitting audio track plays"
   status: failed
-  reason: "User requested: Musik soll beim Overlay abgespielt werden (Feature-Request, kein Bug)"
+  reason: "User reported: Kein Ton zu hören bei KDA- oder BK-Spielende — Web Audio API-Töne werden nicht abgespielt (möglicherweise Autoplay-Block durch Browser oder Fehler in playGameEndTone)"
+  severity: major
+  test: 24
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+
+- truth: "TV screen shows the game name for all game types including Große Hausnummer"
+  status: failed
+  reason: "User reported: Drei in die Vollen zeigt den Namen korrekt, aber Große Hausnummer zeigt keinen Spielnamen im TV-Layout — TV-Renderer für Große Hausnummer hat kein typeKey/name-Rendering"
   severity: minor
-  test: 4-5
+  test: 19
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+
+- truth: "When a game is ended via the 'Spiel beenden' button, the game is marked finished in the database so that a page refresh (F5) does not cause it to reappear as active"
+  status: failed
+  reason: "User reported: Spiel via 'Spiel beenden' beendet → F5 → Spiel taucht wieder auf. Vermutlich fehlt der Backend-Aufruf zum Persistieren des Spielendes; nur Client-State wird geändert."
+  severity: major
+  test: ad-hoc
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+
+- truth: "When a new game starts on the TV, any previous game-end overlay is cleared and does not reappear"
+  status: failed
+  reason: "User reported: Nach Bilderkegeln → TV idle → Große Hausnummer starten → altes BK-Verlierer-Overlay erscheint erneut. Overlay wird beim Start eines neuen Spiels nicht gecleart."
+  severity: major
+  test: ad-hoc
   root_cause: ""
   artifacts: []
   missing: []
