@@ -59,10 +59,11 @@ test('DB sets foreign_keys ON', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Test 3: All 6 tables exist (excluding SQLite internal tables like sqlite_sequence)
+// Test 3: All 7 tables exist (excluding SQLite internal tables like sqlite_sequence)
 // Phase 4 added: abende table (via migrations array)
+// Quick 260526-wvg added: feedback table
 // ---------------------------------------------------------------------------
-test('All 6 tables exist after init', () => {
+test('All 7 tables exist after init', () => {
   const db = freshDb();
   const tables = db
     .prepare(
@@ -70,11 +71,11 @@ test('All 6 tables exist after init', () => {
     )
     .all()
     .map(r => r.name);
-  const expected = ['abende', 'game_players', 'game_type_defs', 'games', 'players', 'throws'];
+  const expected = ['abende', 'feedback', 'game_players', 'game_type_defs', 'games', 'players', 'throws'];
   for (const t of expected) {
     assert.ok(tables.includes(t), `Missing table: ${t} (found: ${tables.join(', ')})`);
   }
-  assert.equal(tables.length, 6, `Expected 6 tables, found ${tables.length}: ${tables.join(', ')}`);
+  assert.equal(tables.length, 7, `Expected 7 tables, found ${tables.length}: ${tables.join(', ')}`);
 });
 
 // ---------------------------------------------------------------------------

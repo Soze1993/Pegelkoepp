@@ -71,6 +71,8 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 .wi strong{color:var(--txt);font-size:15px}
 .mo{position:fixed;inset:0;background:#00000088;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
 .mo.open{display:flex}
+#fb-btn{position:fixed;bottom:20px;right:20px;z-index:99;width:44px;height:44px;border-radius:50%;background:var(--bg2);border:1px solid var(--brd);color:var(--mut);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px #0006;transition:border-color .18s,color .18s}
+#fb-btn:hover{border-color:var(--ac);color:var(--ac)}
 .md{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto}
 .md h2{font-size:22px;margin-bottom:16px;color:var(--ac);font-family:var(--fh);letter-spacing:.06em}
 .empty{text-align:center;padding:40px 20px;color:var(--mut)}
@@ -1705,8 +1707,54 @@ window.addEventListener('load', function() {
   document.querySelectorAll('.mo').forEach(function(m) {
     m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
   });
+
+  // Feedback / Bug-Melder
+  document.getElementById('fb-btn').addEventListener('click', function() {
+    document.getElementById('m-fb').classList.add('open');
+    document.getElementById('fb-msg').value = '';
+    document.getElementById('fb-status').textContent = '';
+  });
+  document.getElementById('fb-cancel').addEventListener('click', function() {
+    document.getElementById('m-fb').classList.remove('open');
+  });
+  document.getElementById('fb-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var msg = document.getElementById('fb-msg').value.trim();
+    if (!msg) return;
+    var btn = document.getElementById('fb-send');
+    btn.disabled = true;
+    try {
+      var r = await fetch('/api/feedback', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ message: msg }) });
+      if (r.ok) {
+        document.getElementById('fb-status').textContent = 'Danke! Feedback gesendet.';
+        document.getElementById('fb-msg').value = '';
+        setTimeout(function() { document.getElementById('m-fb').classList.remove('open'); }, 1200);
+      } else {
+        document.getElementById('fb-status').textContent = 'Fehler beim Senden.';
+      }
+    } catch(err) {
+      document.getElementById('fb-status').textContent = 'Netzwerkfehler.';
+    }
+    btn.disabled = false;
+  });
 });
 
 </script>
+
+<button id="fb-btn" title="Bug melden">🐛</button>
+
+<div class="mo" id="m-fb">
+  <div class="md">
+    <h2>Bug melden</h2>
+    <form id="fb-form">
+      <textarea id="fb-msg" rows="5" placeholder="Was ist passiert? (Was hast du getan, was ist schiefgelaufen?)" style="resize:vertical"></textarea>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button type="button" id="fb-cancel" class="btn bg" style="flex:1">Abbrechen</button>
+        <button type="submit" id="fb-send" class="btn bp" style="flex:2">Senden</button>
+      </div>
+      <div id="fb-status" style="margin-top:10px;font-size:13px;color:var(--grn);text-align:center"></div>
+    </form>
+  </div>
+</div>
 </body>
 </html>
