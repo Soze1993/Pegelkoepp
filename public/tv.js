@@ -38,7 +38,7 @@ function kegelSVGtv(activePins, w, h) {
     var xy = px[pin], act = activePins.indexOf(pin) >= 0;
     circles += '<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="11" fill="'+(act?'#fff':'#333')+'" stroke="'+(act?'var(--ac)':'#555')+'" stroke-width="2"/>';
   }
-  return '<svg viewBox="0 0 80 100" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">'+circles+'</svg>';
+  return '<svg viewBox="-6 -6 92 112" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">'+circles+'</svg>';
 }
 
 function renderHighlightsHdr() {
