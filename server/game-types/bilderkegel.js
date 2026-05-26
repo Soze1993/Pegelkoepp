@@ -33,14 +33,14 @@ module.exports = {
     };
   },
 
-  // value: raw pin count 0..9 (0 = Pudel)
-  applyThrow(state, playerId, value) {
+  // value: raw pin count 0..9 (0 = Pudel, unless meta.keinPudel=true)
+  applyThrow(state, playerId, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     if (s.done) return s;
     const p = s.players[s.aktSpIdx];
     if (!p || p.id !== playerId) return s;
 
-    if (value === 0) p.pudel++;
+    if (value === 0 && !(meta && meta.keinPudel)) p.pudel++;
     p.wuerfe[s.aktBildIdx].push(value);
     s.aktWurfNr++;
 

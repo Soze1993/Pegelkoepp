@@ -187,3 +187,29 @@ test('FJ6: replay determinism - fox win sequence', () => {
   assert.equal(s1.winner, 'fuchs');
   assert.equal(s1.done, true);
 });
+
+// FJ7: Multi-Jäger turn order — J1→F→J2→F repeating, then ONE final Jäger throw
+test('FJ7: 2-jaeger: interleaved J1→F→J2→F×3, then one final Jäger throw ends the game', () => {
+  // fp=12; 3 rounds of (J1→F→J2→F) = 6 fuchs jagd throws → J1 (next in sequence) gets ONE final throw → done=fuchs
+  let state = fuchsjagd.initState(players);
+  state = fuchsjagd.applyThrow(state, 1, 6); // start 1: fp=6
+  state = fuchsjagd.applyThrow(state, 1, 6); // start 2: fp=12, jagd jPhase='jaeger' jIdx=0
+  for (let round = 0; round < 3; round++) {
+    state = fuchsjagd.applyThrow(state, 2, 1); // J1 throws
+    assert.equal(state.jPhase, 'fuchs', `round ${round + 1}: after J1, jPhase=fuchs`);
+    state = fuchsjagd.applyThrow(state, 1, 0); // F responds to J1
+    assert.equal(state.jIdx, 1, `round ${round + 1}: after F responds to J1, jIdx=1 (J2 next)`);
+    state = fuchsjagd.applyThrow(state, 3, 1); // J2 throws
+    assert.equal(state.jPhase, 'fuchs', `round ${round + 1}: after J2, jPhase=fuchs`);
+    state = fuchsjagd.applyThrow(state, 1, 0); // F responds to J2
+  }
+  // After 6 Fuchs jagd throws: finalRound=true, jIdx=0 (J1 is next)
+  assert.equal(state.finalRound, true, 'finalRound set after 6 fuchs jagd throws');
+  assert.equal(state.jIdx, 0, 'J1 is next — gets the single final throw');
+  assert.equal(state.done, false, 'game not done yet — one final Jäger throw pending');
+  // ONE final Jäger throw — game ends immediately after
+  state = fuchsjagd.applyThrow(state, 2, 1); // J1 final throw (fp still > 0 → fox wins)
+  assert.equal(state.done, true, 'game ends after the one final Jäger throw');
+  assert.equal(state.winner, 'fuchs');
+  assert.equal(state.fuchs.w.length - 2, 6, 'fuchs made exactly 6 jagd throws');
+});

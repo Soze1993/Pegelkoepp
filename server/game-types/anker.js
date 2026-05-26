@@ -20,7 +20,7 @@ module.exports = {
   },
 
   // value is 0, 1, 2, 3, 4, 5, or 10 (Anker point values)
-  applyThrow(state, playerId, value) {
+  applyThrow(state, playerId, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     const p = s.players[s.aktSpIdx];
     // Guard: if wrong player or already done
@@ -28,7 +28,7 @@ module.exports = {
     // Ensure current round array exists
     if (!p.runden[s.aktRunde - 1]) p.runden[s.aktRunde - 1] = [];
     p.runden[s.aktRunde - 1].push(value);
-    if (value === 0) p.pudel++;
+    if (value === 0 && !(meta && meta.keinPudel)) p.pudel++;
     s.wurfNr++;
     const rPts = p.runden[s.aktRunde - 1].reduce((a, b) => a + b, 0);
     // Round ends: 5 throws OR cumulative >= 40

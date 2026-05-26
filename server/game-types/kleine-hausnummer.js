@@ -27,7 +27,7 @@ module.exports = {
     const p = s.players.find(x => x.id === playerId);
     if (!p || !meta.slot) return s;
     let storedVal = value;
-    if (value === 0) {
+    if (value === 0 && !(meta && meta.keinPudel)) {
       p.pudel++;
       storedVal = 9; // Pudel substitutes 9 for kleineHaus
     }

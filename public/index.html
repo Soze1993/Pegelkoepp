@@ -302,6 +302,7 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 var socket = null;
 var EMOJIS=['🎳','🎯','⚡','🦁','🔥','💪','🐆','🌟','🧊','🎸','🏆','🎲','🃏','🥇','🎪'];
 var selEmo='🎳',selSTEmo='🎯',genTyp=null,genSel=[],hausWurf=null,hausSlot=null,selK=null,ankerPts=null,vgSel=null,fjSel=null,bkK=null,bkSel=[];
+var selKeinPudel=false;
 
 function mkSp(id,name,emoji){return{id:id,name:name,emoji:emoji,spiele:0,siege:0,niederlagen:0,pts:0,best:0,wuerfe:0,pudel:0,bezahlCount:0,tDatum:'',tSiege:0,tNiederlagen:0};}
 
@@ -706,7 +707,7 @@ async function startGenSpiel() {
 function hn(slots){if(slots.h===null||slots.z===null||slots.e===null)return null;return(slots.h*100)+(slots.z*10)+slots.e;}
 function pmCalc(w){if(!w||!w.length)return 0;var r=w[0];if(w.length>1)r+=w[1];if(w.length>2)r-=w[2];if(w.length>3)r*=w[3];if(w.length>4)r=w[4]!==0?r/w[4]:r;return Math.round(r*100)/100;}
 function totPts(p,stid){if(stid==='grosseHaus'||stid==='kleineHaus'){var v=hn(p.slots);return v===null?0:v;}if(stid==='plusMinus')return pmCalc(p.wuerfe);if(!p.wuerfe||!p.wuerfe.length)return 0;return p.wuerfe.reduce(function(a,b){return a+b;},0);}
-function kgrid(val,fn){var btns='';for(var n=0;n<=9;n++)btns+='<button class="kb'+(n===0?' pudel':'')+(val===n?' sel':'')+'" onclick="'+fn+'('+n+')">'+(n===0?'P':n)+'</button>';return'<div class="kgrid">'+btns+'</div>';}
+function kgrid(val,fn){var pSel=val===0&&!selKeinPudel,kSel=val===0&&selKeinPudel;var btns='';for(var n=0;n<=9;n++){var isSel=n===0?pSel:(val===n);btns+='<button class="kb'+(n===0?' pudel':'')+(isSel?' sel':'')+'" onclick="selKeinPudel=false;'+fn+'('+n+')">'+(n===0?'P':n)+'</button>';}var kpS='display:block;width:100%;margin-top:4px;padding:5px;border-radius:8px;border:1px solid '+(kSel?'var(--ac)':'var(--brd)')+';background:'+(kSel?'var(--ac)22':'var(--bg3)')+';color:'+(kSel?'var(--ac)':'var(--mut)')+';font-size:12px;font-weight:600;cursor:pointer;text-align:center';return'<div class="kgrid">'+btns+'</div><button style="'+kpS+'" onclick="selKeinPudel=true;'+fn+'(0)">0 (kein Pudel)</button>';}
 function cbBox(cbId,fn){return'<div class="cb" id="'+cbId+'"><div style="font-size:14px;color:var(--red);font-weight:600;margin-bottom:8px">Spiel beenden?</div><div style="display:flex;gap:8px"><button class="btn bd sm" onclick="'+fn+'()">Ja</button><button class="btn bg sm" onclick="document.getElementById(\''+cbId+'\').classList.remove(\'show\')">Zurueck</button></div></div><button class="btn bd sm" style="width:100%;margin-bottom:10px" onclick="document.getElementById(\''+cbId+'\').classList.toggle(\'show\')">&#9634; Beenden</button>';}
 
 // Kegel SVG
@@ -907,7 +908,8 @@ async function doBKWurf() {
   });
   var value = bkK;
   bkK = null;
-  var data = await submitThrow(akt.id, throwIndex, value, undefined);
+  var metaBk = selKeinPudel ? {keinPudel:true} : undefined; selKeinPudel = false;
+  var data = await submitThrow(akt.id, throwIndex, value, metaBk);
   if (!data) return;
   S.aktSpiel.state = data.state;
   if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
@@ -939,7 +941,8 @@ async function doNWurf() {
     var stechenAkt = state.stechenPlayers.map(function(id){ return state.players.find(function(p){ return p.id === id; }); }).find(function(p){ return p && p.stechenWuerfe.length === 0; });
     if (!stechenAkt) { notify('Alle haben bereits geworfen', 'var(--red)'); return; }
     var value = selK; selK = null;
-    var data = await submitThrow(stechenAkt.id, 0, value, undefined);
+    var metaSt = selKeinPudel ? {keinPudel:true} : undefined; selKeinPudel = false;
+    var data = await submitThrow(stechenAkt.id, 0, value, metaSt);
     if (!data) return;
     S.aktSpiel.state = data.state;
     if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
@@ -950,7 +953,8 @@ async function doNWurf() {
     var throwIndex = akt.wuerfe ? akt.wuerfe.length : 0;
     var value = selK;
     selK = null;
-    var data = await submitThrow(akt.id, throwIndex, value, undefined);
+    var metaN = selKeinPudel ? {keinPudel:true} : undefined; selKeinPudel = false;
+    var data = await submitThrow(akt.id, throwIndex, value, metaN);
     if (!data) return;
     S.aktSpiel.state = data.state;
     if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
@@ -961,9 +965,9 @@ async function doNWurf() {
     if (!hausSlot) { notify('Stelle waehlen', 'var(--red)'); return; }
     var throwIndex2 = akt.wuerfe ? akt.wuerfe.length : 0;
     var val2 = hausWurf;
-    if (stid === 'kleineHaus' && hausWurf === 0) val2 = 9;
-    var meta2 = { slot: hausSlot };
-    hausWurf = null; hausSlot = null;
+    if (stid === 'kleineHaus' && hausWurf === 0 && !selKeinPudel) val2 = 9;
+    var meta2 = selKeinPudel ? {slot:hausSlot,keinPudel:true} : {slot:hausSlot};
+    hausWurf = null; hausSlot = null; selKeinPudel = false;
     var data2 = await submitThrow(akt.id, throwIndex2, val2, meta2);
     if (!data2) return;
     S.aktSpiel.state = data2.state;
@@ -1023,7 +1027,8 @@ async function doFJWurf() {
   var throwIndex = state.fuchs.w.length + state.jaeger.reduce(function(s,j){return s+j.w.length;},0);
   var value = fjSel;
   fjSel = null;
-  var data = await submitThrow(activeId, throwIndex, value, undefined);
+  var metaFj = selKeinPudel ? {keinPudel:true} : undefined; selKeinPudel = false;
+  var data = await submitThrow(activeId, throwIndex, value, metaFj);
   if (!data) return;
   S.aktSpiel.state = data.state;
   if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }
@@ -1045,7 +1050,8 @@ async function doAnkerWurf() {
   var throwIndex = akt.runden ? akt.runden.reduce(function(s,r){return s+r.length;},0) : 0;
   var value = ankerPts;
   ankerPts = null;
-  var data = await submitThrow(akt.id, throwIndex, value, undefined);
+  var metaAnk = selKeinPudel ? {keinPudel:true} : undefined; selKeinPudel = false;
+  var data = await submitThrow(akt.id, throwIndex, value, metaAnk);
   if (!data) return;
   S.aktSpiel.state = data.state;
   if (data.finished) { handleGameFinished(data.state); } else { renderSpielenTab(); }

@@ -16,7 +16,7 @@ module.exports = {
     };
   },
 
-  applyThrow(state, playerId, value) {
+  applyThrow(state, playerId, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     if (s.done) return s;
 
@@ -25,7 +25,7 @@ module.exports = {
       const sp = s.players.find(x => x.id === playerId && s.stechenPlayers.includes(x.id));
       if (!sp) return s;
       if (sp.stechenWuerfe.length >= 1) return s; // already threw in this round
-      if (value === 0) sp.pudel++;
+      if (value === 0 && !(meta && meta.keinPudel)) sp.pudel++;
       sp.stechenWuerfe.push(value);
       // Check if all stechen players have thrown
       const allThrown = s.stechenPlayers.every(id => {
@@ -55,7 +55,7 @@ module.exports = {
 
     const p = s.players.find(x => x.id === playerId);
     if (!p) return s;
-    if (value === 0) p.pudel++;
+    if (value === 0 && !(meta && meta.keinPudel)) p.pudel++;
     p.wuerfe.push(value);
     if (p.wuerfe.length >= 3) {
       s.aktSpIdx++;

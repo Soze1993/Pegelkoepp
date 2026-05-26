@@ -25,7 +25,7 @@ module.exports = {
     const s = JSON.parse(JSON.stringify(state));
     const p = s.players.find(x => x.id === playerId);
     if (!p || !meta.slot) return s;
-    if (value === 0) p.pudel++;
+    if (value === 0 && !(meta && meta.keinPudel)) p.pudel++;
     p.slots[meta.slot] = value; // Pudel=0 stored as 0 for grosseHaus
     // Rotate to next player
     s.aktSpIdx++;

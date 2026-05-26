@@ -524,76 +524,111 @@ function renderBilderkegelTV(state) {
   gameEl.replaceChildren(container);
 }
 
-// Fuchsjagd TV layout — split Fuchs/Jäger panels
+// Fuchsjagd TV layout — split Fuchs/Jäger panels with active highlighting + throw countdown
 function renderFuchsjagdTV(state) {
   if (!state) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
+  // Determine who is active
+  var isFuchsTurn  = !state.done && (state.phase === 'start' || state.jPhase === 'fuchs');
+  var activeJIdx   = (!state.done && state.jPhase === 'jaeger') ? (state.jIdx || 0) : -1;
+
+  // Remaining throws until game ends (jagd phase only)
+  var remainingThrows = null;
+  if (!state.done && state.phase === 'jagd') {
+    if (state.finalRound) {
+      remainingThrows = 1;
+    } else {
+      var fuchsJagdLeft = Math.max(0, 6 - Math.max(0, (state.fuchs.w.length || 0) - 2));
+      remainingThrows = (state.jPhase === 'jaeger') ? 2 * fuchsJagdLeft + 1 : 2 * fuchsJagdLeft;
+    }
+  }
+
+  // Fuchs jagd progress (e.g. "2/6")
+  var fuchsJagdDone = Math.max(0, (state.fuchs.w.length || 0) - 2);
+
   var container = document.createElement('div');
   container.className = 'fj-tv-layout';
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:row;align-items:center;padding:2vw;box-sizing:border-box;gap:0';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;padding:2vw;box-sizing:border-box;gap:12px';
+
+  // Panels row
+  var panelsRow = document.createElement('div');
+  panelsRow.style.cssText = 'flex:1;display:flex;flex-direction:row;align-items:stretch;gap:0;min-height:0';
 
   // --- LEFT PANEL: Fuchs ---
   var fuchsPanel = document.createElement('div');
   fuchsPanel.className = 'fj-fuchs-panel';
-  fuchsPanel.style.cssText = 'flex:1;background:var(--card);border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px';
+  fuchsPanel.style.cssText = 'flex:1;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;transition:all .3s;'
+    + (isFuchsTurn
+      ? 'background:rgba(232,184,75,0.15);border:2px solid var(--ac);box-shadow:0 0 32px #e8b84b44'
+      : 'background:var(--card);border:2px solid transparent');
 
   var fuchsLabel = document.createElement('div');
-  fuchsLabel.className = 'fj-role-label';
   fuchsLabel.textContent = 'FUCHS';
-  fuchsLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);letter-spacing:2px';
+  fuchsLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;letter-spacing:2px;color:'
+    + (isFuchsTurn ? 'var(--ac)' : 'var(--mut)');
 
   var fuchsName = document.createElement('div');
-  fuchsName.className = 'fj-player-name';
-  fuchsName.textContent = (state.fuchs.emoji != null ? state.fuchs.emoji : '') + ' ' + state.fuchs.name;  // textContent — XSS safe (T-07-03-02)
-  fuchsName.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--txt);line-height:1';
+  fuchsName.textContent = (isFuchsTurn ? '▶ ' : '') + (state.fuchs.emoji != null ? state.fuchs.emoji : '') + ' ' + state.fuchs.name;  // textContent — XSS safe
+  fuchsName.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);line-height:1;color:'
+    + (isFuchsTurn ? 'var(--ac)' : 'var(--txt)');
 
   var fuchsThrows = document.createElement('div');
-  fuchsThrows.className = 'fj-throw-list';
   fuchsThrows.textContent = state.fuchs.w && state.fuchs.w.length > 0 ? state.fuchs.w.join(', ') : '—';
   fuchsThrows.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);color:var(--mut)';
 
   var fuchsScore = document.createElement('div');
-  fuchsScore.className = 'fj-score';
   fuchsScore.textContent = 'Noch: ' + String(state.fp != null ? state.fp : '—');  // textContent — safe
   fuchsScore.style.cssText = 'font-size:72px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--ac);line-height:1';
+
+  // Jagd progress indicator (only during jagd phase)
+  var fuchsProgress = document.createElement('div');
+  if (state.phase === 'jagd') {
+    fuchsProgress.textContent = 'Jagd-Würfe: ' + fuchsJagdDone + ' / 6';  // textContent — safe
+    fuchsProgress.style.cssText = 'font-size:16px;font-family:var(--fb,"DM Sans",sans-serif);color:var(--mut)';
+  }
 
   fuchsPanel.appendChild(fuchsLabel);
   fuchsPanel.appendChild(fuchsName);
   fuchsPanel.appendChild(fuchsThrows);
   fuchsPanel.appendChild(fuchsScore);
+  if (state.phase === 'jagd') fuchsPanel.appendChild(fuchsProgress);
 
   // --- VERTICAL DIVIDER ---
   var divider = document.createElement('div');
-  divider.className = 'fj-vs-divider';
-  divider.style.cssText = 'width:1px;background:var(--brd);height:80vh;align-self:center;margin:0 24px;flex-shrink:0';
+  divider.style.cssText = 'width:1px;background:var(--brd);align-self:center;height:80%;margin:0 24px;flex-shrink:0';
 
   // --- RIGHT PANEL: Jäger ---
+  var jaegerActive = activeJIdx >= 0;
   var jaegerPanel = document.createElement('div');
   jaegerPanel.className = 'fj-jaeger-panel';
-  jaegerPanel.style.cssText = 'flex:1;background:var(--card);border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px';
+  jaegerPanel.style.cssText = 'flex:1;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;'
+    + (jaegerActive
+      ? 'background:rgba(232,184,75,0.08);border:2px solid var(--brd)'
+      : 'background:var(--card);border:2px solid transparent');
 
   var jaegerLabel = document.createElement('div');
-  jaegerLabel.className = 'fj-role-label';
   jaegerLabel.textContent = 'JÄGER';
   jaegerLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);letter-spacing:2px';
-
   jaegerPanel.appendChild(jaegerLabel);
 
   var jaeger = state.jaeger || [];
-  jaeger.forEach(function(j) {
+  jaeger.forEach(function(j, idx) {
+    var isActive = idx === activeJIdx;
     var row = document.createElement('div');
     row.className = 'fj-jaeger-row';
-    row.style.cssText = 'display:flex;justify-content:space-between;width:100%;padding:8px 0';
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 12px;border-radius:8px;'
+      + (isActive
+        ? 'background:rgba(232,184,75,0.2);border:1px solid var(--ac)'
+        : 'background:transparent;border:1px solid transparent');
 
     var nameSpan = document.createElement('span');
-    nameSpan.className = 'fj-jaeger-name';
-    nameSpan.textContent = (j.emoji != null ? j.emoji : '') + ' ' + j.name;  // textContent — XSS safe (T-07-03-02)
-    nameSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--txt)';
+    nameSpan.textContent = (isActive ? '▶ ' : '') + (j.emoji != null ? j.emoji : '') + ' ' + j.name;  // textContent — XSS safe
+    nameSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:'
+      + (isActive ? 'var(--ac)' : 'var(--txt)');
 
     var contribSpan = document.createElement('span');
-    contribSpan.className = 'fj-jaeger-contrib';
     contribSpan.textContent = String((j.w || []).reduce(function(a, b) { return a + b; }, 0));  // textContent — safe
     contribSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--mut)';
 
@@ -602,10 +637,26 @@ function renderFuchsjagdTV(state) {
     jaegerPanel.appendChild(row);
   });
 
-  container.appendChild(fuchsPanel);
-  container.appendChild(divider);
-  container.appendChild(jaegerPanel);
+  panelsRow.appendChild(fuchsPanel);
+  panelsRow.appendChild(divider);
+  panelsRow.appendChild(jaegerPanel);
+
   container.insertBefore(makeGameNameHeader(), container.firstChild);
+  container.appendChild(panelsRow);
+
+  // --- FOOTER: remaining throws countdown ---
+  if (remainingThrows !== null) {
+    var footer = document.createElement('div');
+    if (state.finalRound) {
+      footer.textContent = 'Letzter Jäger-Wurf!';
+      footer.style.cssText = 'text-align:center;font-size:2.8vw;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--ac);letter-spacing:0.06em;flex-shrink:0';
+    } else {
+      footer.textContent = 'Noch ' + remainingThrows + (remainingThrows === 1 ? ' Wurf' : ' Würfe') + ' bis Spielende';
+      footer.style.cssText = 'text-align:center;font-size:2vw;font-family:var(--fb,"DM Sans",sans-serif);color:var(--mut);flex-shrink:0';
+    }
+    container.appendChild(footer);
+  }
+
   gameEl.replaceChildren(container);
 }
 

@@ -21,8 +21,10 @@ module.exports = {
     };
   },
 
-  // Ported verbatim from HTML line 345 doFJWurf
-  applyThrow(state, playerId, value) {
+  // Turn order: 2 Fuchs start throws, then J1→F→J2→F→J3→F repeating.
+  // After Fuchs's 6th jagd throw (8 total), finalRound=true.
+  // In finalRound: the NEXT Jäger in the sequence gets exactly ONE final throw, then game ends.
+  applyThrow(state, playerId, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     if (s.done) return s;
 
@@ -31,47 +33,49 @@ module.exports = {
     if (s.phase === 'start') {
       s.fuchs.w.push(n);
       s.fp += n;
-      if (n === 0) s.fuchs.pudel++;
+      if (n === 0 && !(meta && meta.keinPudel)) s.fuchs.pudel++;
       s.startW++;
       if (s.startW >= 2) {
         s.phase = 'jagd';
         s.jPhase = 'jaeger';
         s.jIdx = 0;
       }
-    } else {
-      if (s.jPhase === 'jaeger') {
-        const j = s.jaeger[s.jIdx];
-        j.w.push(n);
-        s.fp -= n;
-        if (n === 0) j.pudel++;
-        if (s.fp <= 0) {
-          s.done = true;
-          s.winner = 'jaeger';
-          return s;
-        }
-        s.jIdx++;
-        if (s.jIdx >= s.jaeger.length) {
-          if (s.finalRound) {
-            // All Jäger had their final throw — Fuchs wins
-            s.done = true;
-            s.winner = 'fuchs';
-            return s;
-          }
-          s.jPhase = 'fuchs';
-          s.jIdx = 0;
-        }
-      } else {
-        // jPhase === 'fuchs'
-        s.fuchs.w.push(n);
-        s.fp += n;
-        if (n === 0) s.fuchs.pudel++;
-        s.jPhase = 'jaeger';
-        s.jIdx = 0;
-        // After Fuchs's 6th jagd throw, next Jäger round is the final one
-        if (s.fuchs.w.length - 2 >= 6) {
-          s.finalRound = true;
-        }
+      return s;
+    }
+
+    // jagd phase: J1→F→J2→F→... (each Jäger immediately followed by Fuchs)
+    if (s.jPhase === 'jaeger') {
+      const j = s.jaeger[s.jIdx];
+      j.w.push(n);
+      s.fp -= n;
+      if (n === 0 && !(meta && meta.keinPudel)) j.pudel++;
+      if (s.fp <= 0) {
+        s.done = true;
+        s.winner = 'jaeger';
+        return s;
       }
+      if (s.finalRound) {
+        // One Jäger throws after Fuchs's last jagd throw — game ends immediately
+        s.done = true;
+        s.winner = 'fuchs';
+      } else {
+        // Normal: Fuchs responds immediately after this Jäger
+        s.jPhase = 'fuchs';
+      }
+    } else {
+      // jPhase === 'fuchs': responds to jaeger[jIdx], then moves to next Jäger
+      s.fuchs.w.push(n);
+      s.fp += n;
+      if (n === 0 && !(meta && meta.keinPudel)) s.fuchs.pudel++;
+      s.jIdx++;
+      if (s.jIdx >= s.jaeger.length) {
+        s.jIdx = 0;
+      }
+      const fuchsJagdThrows = s.fuchs.w.length - 2;
+      if (fuchsJagdThrows >= 6) {
+        s.finalRound = true;
+      }
+      s.jPhase = 'jaeger';
     }
 
     return s;
@@ -85,7 +89,6 @@ module.exports = {
     const w = state.winner; // 'fuchs' | 'jaeger' | null
     const results = [];
 
-    // Fox result
     results.push({
       playerId: state.fuchs.id,
       role: 'fuchs',
@@ -93,7 +96,6 @@ module.exports = {
       winner: w === 'fuchs'
     });
 
-    // Hunter results
     for (const j of state.jaeger) {
       results.push({
         playerId: j.id,

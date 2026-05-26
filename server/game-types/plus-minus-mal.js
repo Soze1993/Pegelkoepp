@@ -27,13 +27,13 @@ module.exports = {
     };
   },
 
-  applyThrow(state, playerId, value) {
+  applyThrow(state, playerId, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     const p = s.players.find(x => x.id === playerId);
     if (!p) return s;
     const roundIdx = s.pmRunde - 1; // 0-based index for PUDEL_SUB
     let storedVal = value;
-    if (value === 0) {
+    if (value === 0 && !(meta && meta.keinPudel)) {
       p.pudel++;
       storedVal = PUDEL_SUB[roundIdx];
     }
