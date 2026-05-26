@@ -25,6 +25,21 @@ module.exports = {
     const p = s.players[s.aktSpIdx];
     // Guard: if wrong player or already done
     if (!p || p.id !== playerId) return s;
+    // meta.finishRound: end player's turn early, jump to next player
+    // Push a 0 to runden to keep p.runden.length in sync with DB throw_index,
+    // otherwise the next round would reuse the same throw_index → UNIQUE violation.
+    if (meta && meta.finishRound) {
+      if (!p.runden[s.aktRunde - 1]) p.runden[s.aktRunde - 1] = [];
+      p.runden[s.aktRunde - 1].push(0);
+      s.wurfNr = 0;
+      s.aktSpIdx++;
+      if (s.aktSpIdx >= s.players.length) {
+        s.aktSpIdx = 0;
+        s.aktRunde++;
+        if (s.aktRunde > s.maxRunden) s.done = true;
+      }
+      return s;
+    }
     // Ensure current round array exists
     if (!p.runden[s.aktRunde - 1]) p.runden[s.aktRunde - 1] = [];
     p.runden[s.aktRunde - 1].push(value);

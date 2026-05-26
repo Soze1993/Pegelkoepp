@@ -799,21 +799,58 @@ function renderAnkerTV(state) {
   }
   container.appendChild(rndEl);
 
-  // Scoring chips
+  // Scoring legend row: chips + pin diagram
+  var legendRow = document.createElement('div');
+  legendRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:1.5vw;margin-bottom:0.7vw;flex-shrink:0';
+
   var chips = document.createElement('div');
-  chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.4vw;justify-content:center;margin-bottom:0.7vw;flex-shrink:0';
+  chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.4vw;justify-content:center;align-content:center';
   [
-    { label: 'Bauer 4+6 = 10', col: 'var(--ac)' },
-    { label: 'Dame 7+8 = 5',   col: '#5b8dee' },
-    { label: 'Barbel 1+5+9 = 10', col: '#4caf7d' },
-    { label: 'P = 0 · Sonst 1/Kegel', col: 'var(--mut)' }
+    { label: 'Bauer (4, 6) einzeln = 10', col: 'var(--ac)' },
+    { label: 'Dame (7, 8) einzeln = 5',   col: '#5b8dee' },
+    { label: 'Bärbel (1+5+9) zusammen = 10', col: '#4caf7d' },
+    { label: 'Pudel = 0 · Sonst 1/Kegel', col: 'var(--mut)' }
   ].forEach(function(chip) {
     var s = document.createElement('span');
     s.textContent = chip.label;  // textContent — safe
     s.style.cssText = 'border:1px solid ' + chip.col + ';border-radius:5px;padding:0.15vw 0.5vw;font-size:0.9vw;font-weight:600;color:' + chip.col;
     chips.appendChild(s);
   });
-  container.appendChild(chips);
+  legendRow.appendChild(chips);
+
+  // SVG pin diagram — coloured by role
+  (function() {
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '-14 -5 108 130');
+    svg.setAttribute('width', '6vw');
+    svg.setAttribute('height', '7vw');
+    var pinColors = { 4:'var(--ac)', 6:'var(--ac)', 7:'#5b8dee', 8:'#5b8dee', 1:'#4caf7d', 5:'#4caf7d', 9:'#4caf7d' };
+    var pins = [
+      {n:9,x:40,y:10},{n:7,x:22,y:35},{n:8,x:58,y:35},
+      {n:4,x:5,y:60},{n:5,x:40,y:60},{n:6,x:75,y:60},
+      {n:2,x:22,y:85,inactive:true},{n:3,x:58,y:85,inactive:true},{n:1,x:40,y:110}
+    ];
+    pins.forEach(function(p) {
+      var col = p.inactive ? 'none' : (pinColors[p.n] || '#555');
+      var stroke = p.inactive ? '#e05252' : col;
+      var c = document.createElementNS(svgNS, 'circle');
+      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', '9');
+      c.setAttribute('fill', p.inactive ? 'none' : '#1a1a2e');
+      c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', '2');
+      if (p.inactive) c.setAttribute('stroke-dasharray', '3 2');
+      var t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', p.x); t.setAttribute('y', p.y + 4);
+      t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', '9');
+      t.setAttribute('font-weight', 'bold'); t.setAttribute('font-family', 'sans-serif');
+      t.setAttribute('fill', p.inactive ? '#e05252' : (pinColors[p.n] || 'var(--txt)'));
+      t.textContent = String(p.n);
+      svg.appendChild(c); svg.appendChild(t);
+    });
+    legendRow.appendChild(svg);
+  })();
+
+  container.appendChild(legendRow);
 
   // Player grid
   var grid = document.createElement('div');
@@ -994,7 +1031,7 @@ function renderPlusMinusTV(state) {
   gameEl.replaceChildren(container);
 }
 
-// Viergewinnt TV layout — teams row at top, 9x9 grid below
+// Viergewinnt TV layout — 3-column: Team X | Board | Team O
 function renderViergewinntTV(state) {
   if (!state) return;
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
@@ -1005,101 +1042,85 @@ function renderViergewinntTV(state) {
   var VG_O = '#5b8dee';
   var tX = state.tX || [];
   var tO = state.tO || [];
-  var aktT = state.aktT || 'X';
   var xWon = state.done && state.winner === 'X';
   var oWon = state.done && state.winner === 'O';
-  var xDim = state.done && !xWon && state.winner !== 'draw';
-  var oDim = state.done && !oWon && state.winner !== 'draw';
+  var xDim = state.done && state.winner === 'O';
+  var oDim = state.done && state.winner === 'X';
+
+  // Cell size: fit 9 cells into available space (55% of width or 85% of height minus title)
+  var cellPx = Math.floor(Math.min(
+    (window.innerWidth * 0.55 - 36) / 9,
+    (window.innerHeight * 0.85 - 36) / 9
+  ));
+  var cs = cellPx + 'px';
 
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;padding:1.5vw 2vw';
 
   container.appendChild(makeGameNameHeader());
 
-  var teamsRow = document.createElement('div');
-  teamsRow.style.cssText = 'display:flex;gap:2vw;margin-bottom:1.2vw';
+  // Main row: Team X | Board | Team O
+  var mainRow = document.createElement('div');
+  mainRow.style.cssText = 'flex:1;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:2vw;min-height:0';
 
-  function makeTeamPanel(players, color, label, active, dim, won) {
+  function makeTeamPanel(players, color, label, dim, won) {
     var panel = document.createElement('div');
-    panel.style.cssText = [
-      'flex:1;border-radius:12px;padding:1vw 1.5vw;border:2px solid ' + (active ? color : 'var(--brd)'),
-      'background:' + (active ? color + '18' : 'var(--card)'),
-      'opacity:' + (dim ? '0.35' : '1') + ';transition:opacity .8s',
-      'box-shadow:' + (active && !state.done ? '0 0 18px ' + color + '44' : 'none')
-    ].join(';');
-
-    var headerRow = document.createElement('div');
-    headerRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
+    panel.style.cssText = 'flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:' + (dim ? '0.45' : '1') + ';transition:opacity .8s';
 
     var lbl = document.createElement('div');
-    lbl.textContent = label;  // textContent — safe (fixed string)
-    lbl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.8vw;color:' + color + ';letter-spacing:.08em';
-    headerRow.appendChild(lbl);
-
-    if (won) {
-      var winEl = document.createElement('div');
-      winEl.textContent = '🏆';
-      winEl.style.cssText = 'font-size:2.2vw';
-      headerRow.appendChild(winEl);
-    }
-    panel.appendChild(headerRow);
+    lbl.textContent = label + (won ? ' 🏆' : '');  // textContent — safe (fixed string)
+    lbl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:3.5vw;color:' + color + ';letter-spacing:.06em;text-align:center';
+    panel.appendChild(lbl);
 
     players.forEach(function(p) {
-      var playerEl = document.createElement('div');
-      playerEl.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
-      playerEl.style.cssText = 'font-size:1.4vw;color:var(--txt);line-height:1.6';
-      panel.appendChild(playerEl);
+      var n = document.createElement('div');
+      n.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+      n.style.cssText = 'font-size:1.8vw;color:var(--txt);text-align:center;line-height:1.5';
+      panel.appendChild(n);
     });
-
     return panel;
   }
 
-  teamsRow.appendChild(makeTeamPanel(tX, VG_X, 'TEAM X', aktT === 'X' && !state.done, xDim, xWon));
-  teamsRow.appendChild(makeTeamPanel(tO, VG_O, 'TEAM O', aktT === 'O' && !state.done, oDim, oWon));
-  container.appendChild(teamsRow);
+  mainRow.appendChild(makeTeamPanel(tX, VG_X, 'TEAM X', xDim, xWon));
+
+  // Board center column
+  var boardCol = document.createElement('div');
+  boardCol.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px';
+
+  for (var row = 0; row < 9; row++) {
+    var rowEl = document.createElement('div');
+    rowEl.style.cssText = 'display:flex;gap:4px';
+    for (var col = 0; col < 9; col++) {
+      var cell = document.createElement('div');
+      var val = state.grid && state.grid[row] ? state.grid[row][col] : null;
+      var bg = val === 'X' ? VG_X + '99' : val === 'O' ? VG_O + '99' : '#333';
+      var border = val === 'X' ? VG_X : val === 'O' ? VG_O : '#555';
+      cell.style.cssText = 'width:' + cs + ';height:' + cs + ';border-radius:50%;background:' + bg + ';border:2px solid ' + border + ';box-sizing:border-box';
+      rowEl.appendChild(cell);
+    }
+    boardCol.appendChild(rowEl);
+  }
+
+  var colNums = document.createElement('div');
+  colNums.style.cssText = 'display:flex;gap:4px;margin-top:4px';
+  for (var c = 1; c <= 9; c++) {
+    var num = document.createElement('div');
+    num.textContent = String(c);  // textContent — safe (loop counter)
+    num.style.cssText = 'width:' + cs + ';text-align:center;font-size:1.2vw;color:var(--mut);font-family:var(--fb,"DM Sans",sans-serif)';
+    colNums.appendChild(num);
+  }
+  boardCol.appendChild(colNums);
 
   if (state.done && state.winner === 'draw') {
     var drawBanner = document.createElement('div');
     drawBanner.textContent = 'UNENTSCHIEDEN';  // textContent — safe (fixed string)
-    drawBanner.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.5vw;color:var(--mut);text-align:center;margin-bottom:8px';
-    container.appendChild(drawBanner);
+    drawBanner.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:var(--mut);text-align:center;margin-top:8px';
+    boardCol.appendChild(drawBanner);
   }
 
-  var gridSection = document.createElement('div');
-  gridSection.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0';
-
-  var boardWrap = document.createElement('div');
-  boardWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px';
-
-  var colNums = document.createElement('div');
-  colNums.style.cssText = 'display:flex;gap:2px;margin-bottom:3px';
-
-  var cellSize = 'calc((min(100vw - 4vw, 85vh) - 24px) / 9)';
-
-  for (var c = 1; c <= 9; c++) {
-    var num = document.createElement('div');
-    num.textContent = String(c);  // textContent — safe (loop counter)
-    num.style.cssText = 'width:' + cellSize + ';text-align:center;font-size:1.2vw;color:var(--mut);font-family:var(--fb,"DM Sans",sans-serif)';
-    colNums.appendChild(num);
-  }
-  boardWrap.appendChild(colNums);
-
-  for (var row = 0; row < 9; row++) {
-    var rowEl = document.createElement('div');
-    rowEl.style.cssText = 'display:flex;gap:2px';
-    for (var col = 0; col < 9; col++) {
-      var cell = document.createElement('div');
-      var val = state.grid && state.grid[row] ? state.grid[row][col] : null;
-      var bg = val === 'X' ? VG_X + '99' : val === 'O' ? VG_O + '99' : 'var(--bg3)';
-      var border = val === 'X' ? VG_X : val === 'O' ? VG_O : 'var(--brd)';
-      cell.style.cssText = 'width:' + cellSize + ';height:' + cellSize + ';border-radius:50%;background:' + bg + ';border:2px solid ' + border + ';box-sizing:border-box';
-      rowEl.appendChild(cell);
-    }
-    boardWrap.appendChild(rowEl);
-  }
-
-  gridSection.appendChild(boardWrap);
-  container.appendChild(gridSection);
+  mainRow.appendChild(boardCol);
+  mainRow.appendChild(makeTeamPanel(tO, VG_O, 'TEAM O', oDim, oWon));
+  container.appendChild(mainRow);
 
   gameEl.replaceChildren(container);
 }
