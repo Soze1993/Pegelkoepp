@@ -18,7 +18,7 @@ module.exports = {
   id: 'bilderkegel',
   name: 'Bilderkegel',
 
-  initState(players) {
+  initState(players, config) {
     return {
       players: players.map(p => ({
         id: p.id, name: p.name, emoji: p.emoji,
@@ -32,7 +32,8 @@ module.exports = {
       aktWurfNr: 0,
       done: false,
       stechen: false,
-      stechenPlayers: []
+      stechenPlayers: [],
+      exemptPlayerId: (config && config.exemptPlayerId) || null
     };
   },
 
@@ -88,10 +89,11 @@ module.exports = {
         s.aktSpIdx = 0;
         s.aktBildIdx++;
         if (s.aktBildIdx >= BK_BILDER.length) {
-          // All 5 Bilder done — check for loser tie
-          const tots = s.players.map(p => bkTotal(p));
-          const minTot = Math.min(...tots);
-          const tiedIds = s.players.filter(p => bkTotal(p) === minTot).map(p => p.id);
+          // All 5 Bilder done — check for loser tie (among eligible players only)
+          const eligible = s.players.filter(p => p.id !== s.exemptPlayerId);
+          const effPlayers = eligible.length > 0 ? eligible : s.players;
+          const minTot = Math.min(...effPlayers.map(p => bkTotal(p)));
+          const tiedIds = effPlayers.filter(p => bkTotal(p) === minTot).map(p => p.id);
           if (tiedIds.length > 1) {
             s.stechen = true;
             s.stechenPlayers = tiedIds;
@@ -112,17 +114,23 @@ module.exports = {
   getFinalResults(state) {
     const tots = state.players.map(p => bkTotal(p));
     const maxP = Math.max(...tots);
-    const minP = Math.min(...tots);
+    // Eligible = all players except exemptPlayerId
+    const eligible = state.players.filter(p => p.id !== state.exemptPlayerId);
+    const effPlayers = eligible.length > 0 ? eligible : state.players;
+    const minEligibleTot = Math.min(...effPlayers.map(p => bkTotal(p)));
     // If stechen resolved to one player, that player is the definitive payer
     const stechenPayer = state.stechenPlayers && state.stechenPlayers.length === 1
       ? state.stechenPlayers[0] : null;
     return state.players.map(p => {
       const tot = bkTotal(p);
+      const isEligible = effPlayers.some(e => e.id === p.id);
       return {
         playerId: p.id,
         score: tot,
         winner: tot === maxP,
-        payer: stechenPayer ? p.id === stechenPayer : tot === minP
+        payer: stechenPayer
+          ? p.id === stechenPayer
+          : (isEligible && tot === minEligibleTot)
       };
     });
   }
