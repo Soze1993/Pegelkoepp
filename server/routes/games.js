@@ -188,8 +188,14 @@ router.post('/:id/throws', requireSession, (req, res) => {
         const results = gameModule.getFinalResults(newState);
         const winnerEntry = results.find(r => r.winner);
         if (winnerEntry) {
-          const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
-          lastWinner = row ? row.name : null;
+          if (game.type_key === 'viergewinnt' && winnerEntry.team) {
+            const winners = results.filter(r => r.winner);
+            const names = winners.map(r => { const p = db.prepare('SELECT name FROM players WHERE id = ?').get(r.playerId); return p ? p.name : null; }).filter(Boolean);
+            lastWinner = names.length > 1 ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] : names[0] || null;
+          } else {
+            const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
+            lastWinner = row ? row.name : null;
+          }
         }
       } catch (e) { /* non-fatal */ }
       io.to(`game:${gameId}`).emit('game:finished', { state: newState, lastWinner, typeKey: game.type_key });
@@ -264,14 +270,32 @@ router.post('/:id/skip-stechen', requireSession, (req, res) => {
       const results = gameModule.getFinalResults(newState);
       const winnerEntry = results.find(r => r.winner);
       if (winnerEntry) {
-        const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
-        lastWinner = row ? row.name : null;
+        if (game.type_key === 'viergewinnt' && winnerEntry.team) {
+          const winners = results.filter(r => r.winner);
+          const names = winners.map(r => { const p = db.prepare('SELECT name FROM players WHERE id = ?').get(r.playerId); return p ? p.name : null; }).filter(Boolean);
+          lastWinner = names.length > 1 ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] : names[0] || null;
+        } else {
+          const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
+          lastWinner = row ? row.name : null;
+        }
       }
     } catch (e) { /* stechenSkipped — no winner */ }
     io.to(`game:${gameId}`).emit('game:finished', { state: newState, lastWinner, typeKey: game.type_key });
   }
 
   res.json({ state: newState, finished });
+});
+
+// ---------------------------------------------------------------------------
+// DELETE /api/games/:id — cancel an active game and persist to DB
+// ---------------------------------------------------------------------------
+router.delete('/:id', requireSession, (req, res) => {
+  const game = db.prepare('SELECT * FROM games WHERE id = ?').get(Number(req.params.id));
+  if (!game) return res.status(404).json({ error: 'not found' });
+  if (game.status !== 'active') return res.status(409).json({ error: 'not active' });
+  db.prepare("UPDATE games SET status = 'cancelled', finished_at = datetime('now') WHERE id = ?").run(Number(req.params.id));
+  activeGames.delete(Number(req.params.id));
+  res.json({ ok: true });
 });
 
 // ---------------------------------------------------------------------------
