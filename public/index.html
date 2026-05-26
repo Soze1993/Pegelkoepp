@@ -344,8 +344,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 async function init() {
-  var playersRes = await fetch('/api/players');
+  var [playersRes, statsRes] = await Promise.all([fetch('/api/players'), fetch('/api/stats')]);
   S.spieler = await playersRes.json();
+  var statsArr = []; try { statsArr = await statsRes.json(); } catch(e) {}
+  var stMap = {}; statsArr.forEach(function(s){ stMap[s.player_id] = s; });
+  S.spieler.forEach(function(p) {
+    var st = stMap[p.id] || {};
+    p.spiele = (st.wins||0) + (st.losses||0) + (st.draws||0);
+    p.siege = st.wins || 0;
+    p.niederlagen = st.losses || 0;
+    p.pudel = st.pudel_count || 0;
+    p.wuerfe = st.total_throws || 0;
+  });
 
   var abendRes = await fetch('/api/abende/active');
   var abendData = await abendRes.json();
@@ -1108,6 +1118,7 @@ async function doAnkerWurf() {
 }
 function endAnker(sp){}
 function ankerAbbruch() { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); }
+function kdaAbbruch() { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); }
 function ankerSelPts(v){ankerPts=v;if(v!==0)selKeinPudel=false;renderSpielenTab();}
 async function doAnkerAbschluss() {
   if (!S.aktSpiel) return;
@@ -1373,12 +1384,10 @@ function renderKDABracket(el, state) {
   }
 
   // Back button
-  var backBtn = document.createElement('button');
-  backBtn.className = 'btn bg sm';
-  backBtn.style.marginTop = '8px';
-  backBtn.textContent = 'Zurück zur Übersicht';
-  backBtn.onclick = function() { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); };
-  innerDiv.appendChild(backBtn);
+  var cbW = document.createElement('div');
+  cbW.style.marginTop = '8px';
+  cbW.innerHTML = cbBox('cb-kda', 'kdaAbbruch');
+  innerDiv.appendChild(cbW);
 
   scrollContainer.appendChild(innerDiv);
   el.replaceChildren(scrollContainer);
