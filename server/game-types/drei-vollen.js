@@ -90,6 +90,15 @@ module.exports = {
   },
 
   getFinalResults(state) {
+    // Helper: attach top6Sum to all entries when players.length >= 6
+    function attachTop6Sum(scores, players) {
+      if (players.length >= 6) {
+        const sorted = scores.slice().sort((a, b) => b.score - a.score);
+        const top6Sum = sorted.slice(0, 6).reduce((s, r) => s + r.score, 0);
+        scores.forEach(r => { r.top6Sum = top6Sum; });
+      }
+    }
+
     if (state.stechenSkipped) {
       // No winner declared
       const scores = state.players.map(p => ({
@@ -98,6 +107,7 @@ module.exports = {
         pudel: p.pudel,
         winner: false
       }));
+      attachTop6Sum(scores, state.players);
       return scores;
     }
     const scores = state.players.map(p => ({
@@ -105,6 +115,7 @@ module.exports = {
       score: p.wuerfe.reduce((a, b) => a + b, 0),
       pudel: p.pudel
     }));
+    attachTop6Sum(scores, state.players);
     const best = Math.max(...scores.map(x => x.score));
     // If stechen was played, stechenPlayers has the actual winner(s)
     if (state.stechenPlayers && state.stechenPlayers.length === 1) {
