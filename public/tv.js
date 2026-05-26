@@ -108,6 +108,7 @@ function renderGame(state) {
   if (currentTypeKey === 'fuchsjagd')   { renderFuchsjagdTV(state); return; }
   if (currentTypeKey === 'viergewinnt') { renderViergewinntTV(state); return; }
   if (currentTypeKey === 'grosseHaus' || currentTypeKey === 'kleineHaus') { renderHausnummerTV(state); return; }
+  if (currentTypeKey === 'plusMinus') { renderPlusMinusTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -756,6 +757,120 @@ function renderHausnummerTV(state) {
     total.textContent = sc !== null ? String(sc) : '·';
     total.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.4vw;min-width:4.5vw;text-align:right;color:' + (sc !== null ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)');
     row.appendChild(total);
+
+    grid.appendChild(row);
+  });
+
+  container.appendChild(grid);
+  gameEl.replaceChildren(container);
+}
+
+// Plus-Minus-Mal TV layout — 2-column formula grid, W1+W2-W3×W4÷W5
+function renderPlusMinusTV(state) {
+  if (!state || !state.players) return;
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var players = state.players || [];
+  var aktId = (players[state.aktSpIdx] && !state.done) ? players[state.aktSpIdx].id : null;
+
+  function pmCalcTV(w) {
+    if (!w || !w.length) return null;
+    var r = w[0];
+    if (w.length > 1) r += w[1];
+    if (w.length > 2) r -= w[2];
+    if (w.length > 3) r *= w[3];
+    if (w.length > 4) r = w[4] !== 0 ? r / w[4] : r;
+    return Math.round(r * 100) / 100;
+  }
+
+  var sorted = players.slice().sort(function(a, b) {
+    var wa = a.wuerfe || [], wb = b.wuerfe || [];
+    var va = wa.length > 0 ? pmCalcTV(wa) : null;
+    var vb = wb.length > 0 ? pmCalcTV(wb) : null;
+    if (va === null && vb === null) return 0;
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    return vb - va;
+  });
+
+  var OP_COLS = [
+    { label: ' ', color: 'var(--mut)' },  // W1 — no operator
+    { label: '+',      color: '#4caf7d' },       // W2 — green
+    { label: '−', color: '#e05252' },       // W3 — red (−)
+    { label: '×', color: '#f59e0b' },       // W4 — orange (×)
+    { label: '÷', color: '#5b8dee' }        // W5 — blue (÷)
+  ];
+
+  var container = document.createElement('div');
+  container.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
+  container.appendChild(makeGameNameHeader());
+
+  var rndEl = document.createElement('div');
+  rndEl.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.8vw';
+  rndEl.textContent = state.done ? 'Spiel beendet' : 'Runde ' + (state.pmRunde || 1) + ' / 5';
+  container.appendChild(rndEl);
+
+  var grid = document.createElement('div');
+  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:start;overflow:hidden';
+
+  sorted.forEach(function(p, i) {
+    var isActive = p.id === aktId;
+    var w = p.wuerfe || [];
+    var result = w.length > 0 ? pmCalcTV(w) : null;
+    var isLeader = i === 0 && state.done && result !== null;
+
+    var row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex;align-items:center;gap:0.5vw;padding:0.6vw 0.8vw',
+      'border-radius:10px;border:2px solid ' + (isActive ? 'var(--ac)' : 'var(--brd)'),
+      'background:' + (isActive ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
+      'box-shadow:' + (isActive ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
+    ].join(';');
+
+    var rank = document.createElement('div');
+    rank.textContent = String(i + 1);
+    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.5vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.5vw;text-align:center;flex-shrink:0';
+    row.appendChild(rank);
+
+    var name = document.createElement('div');
+    name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+    name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    row.appendChild(name);
+
+    OP_COLS.forEach(function(op, idx) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.2vw;flex-shrink:0';
+
+      var opEl = document.createElement('div');
+      opEl.textContent = op.label;
+      opEl.style.cssText = 'font-size:0.9vw;font-weight:700;color:' + op.color + ';line-height:1';
+
+      var valEl = document.createElement('div');
+      valEl.textContent = w.length > idx ? String(w[idx]) : '—';  // em dash for empty
+      valEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.8vw;color:' + (w.length > idx ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+
+      cell.appendChild(opEl);
+      cell.appendChild(valEl);
+      row.appendChild(cell);
+    });
+
+    var eqCell = document.createElement('div');
+    eqCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:3.5vw;flex-shrink:0';
+
+    var eqOp = document.createElement('div');
+    eqOp.textContent = '=';
+    eqOp.style.cssText = 'font-size:0.9vw;font-weight:700;color:var(--mut);line-height:1';
+
+    var eqVal = document.createElement('div');
+    var resultStr = result !== null ? String(result) : '·';  // middle dot for no result yet
+    eqVal.textContent = resultStr;  // textContent — safe (numeric output)
+    eqVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.8vw;color:' + (result !== null ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)') + ';line-height:1.1';
+
+    eqCell.appendChild(eqOp);
+    eqCell.appendChild(eqVal);
+    row.appendChild(eqCell);
 
     grid.appendChild(row);
   });
