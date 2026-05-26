@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function init() {
   var [playersRes, statsRes] = await Promise.all([fetch('/api/players'), fetch('/api/stats')]);
   S.spieler = await playersRes.json();
-  var statsArr = []; try { statsArr = await statsRes.json(); } catch(e) {}
+  var statsArr = []; try { var _sd = await statsRes.json(); statsArr = _sd.players || _sd; } catch(e) {}
   var stMap = {}; statsArr.forEach(function(s){ stMap[s.player_id] = s; });
   S.spieler.forEach(function(p) {
     var st = stMap[p.id] || {};
