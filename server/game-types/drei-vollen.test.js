@@ -132,6 +132,75 @@ test('DV3: applyThrow does not mutate input', () => {
   assert.deepEqual(s, snap);
 });
 
+// DreiVollen Turnier-Rekord top6Sum
+
+// Helper: drive a dreiVollen game with N players, each with specified scores as 3 throws (v, v, v) split
+function playDVGame(playerScores) {
+  // playerScores: [{id, score}, ...] where score is total (split evenly across 3 throws)
+  const players = playerScores.map(({ id }, i) => ({ id, name: 'P' + id, emoji: String(id) }));
+  let state = dreiVollen.initState(players);
+  for (const { id, score } of playerScores) {
+    // distribute score across 3 throws (integer; last absorbs remainder)
+    const base = Math.floor(score / 3);
+    const rem = score - base * 2;
+    state = dreiVollen.applyThrow(state, id, base);
+    state = dreiVollen.applyThrow(state, id, base);
+    state = dreiVollen.applyThrow(state, id, rem);
+  }
+  // resolve stechen if needed (skip it for top6Sum tests — winner doesn't affect top6Sum)
+  if (state.stechen) {
+    state = dreiVollen.skipStechen(state);
+  }
+  return state;
+}
+
+// T6-1: 6 players → top6Sum = sum of all 6 (exactly 6 players)
+test('T6-1: getFinalResults with 6 players — top6Sum = sum of all 6 scores', () => {
+  const scores = [15, 12, 18, 9, 21, 6]; // sum = 81
+  const ps = scores.map((score, i) => ({ id: i + 1, score }));
+  const state = playDVGame(ps);
+  const results = dreiVollen.getFinalResults(state);
+  const expected = scores.reduce((a, b) => a + b, 0);
+  assert.ok(results[0].top6Sum !== undefined, 'top6Sum should be present with 6 players');
+  assert.equal(results[0].top6Sum, expected, `top6Sum should be ${expected}`);
+  // All entries must have the same top6Sum
+  assert.ok(results.every(r => r.top6Sum === expected), 'All result entries must have same top6Sum');
+});
+
+// T6-2: 7 players → top6Sum = sum of top 6 only (excludes lowest scorer)
+test('T6-2: getFinalResults with 7 players — top6Sum = sum of top 6 (not all 7)', () => {
+  // Scores: [20, 18, 16, 14, 12, 10, 2] → top 6 sum = 90; all 7 = 92
+  const allScores = [20, 18, 16, 14, 12, 10, 2];
+  const ps = allScores.map((score, i) => ({ id: i + 1, score }));
+  const state = playDVGame(ps);
+  const results = dreiVollen.getFinalResults(state);
+  const top6 = allScores.slice().sort((a, b) => b - a).slice(0, 6).reduce((a, b) => a + b, 0);
+  assert.ok(results[0].top6Sum !== undefined, 'top6Sum should be present with 7 players');
+  assert.equal(results[0].top6Sum, top6, `top6Sum should be ${top6} (top 6 only, not all 7)`);
+});
+
+// T6-3: 5 players → top6Sum is absent (field undefined)
+test('T6-3: getFinalResults with 5 players — top6Sum is undefined on all results', () => {
+  const ps = [10, 12, 8, 15, 9].map((score, i) => ({ id: i + 1, score }));
+  const state = playDVGame(ps);
+  const results = dreiVollen.getFinalResults(state);
+  assert.ok(results.every(r => r.top6Sum === undefined), 'top6Sum must be absent with 5 players');
+});
+
+// T6-4: 6 players with stechenSkipped → top6Sum still present
+test('T6-4: getFinalResults with 6 players stechenSkipped — top6Sum still present', () => {
+  // All 6 players with the same score will trigger stechen → we skip it
+  const ps = [15, 15, 12, 10, 8, 5].map((score, i) => ({ id: i + 1, score }));
+  const state = playDVGame(ps);
+  // playDVGame calls skipStechen if stechen is active; state should be done
+  assert.equal(state.done, true);
+  const results = dreiVollen.getFinalResults(state);
+  const allScores = ps.map(p => p.score);
+  const expected = allScores.slice().sort((a, b) => b - a).slice(0, 6).reduce((a, b) => a + b, 0);
+  assert.ok(results[0].top6Sum !== undefined, 'top6Sum should be present even with stechenSkipped');
+  assert.equal(results[0].top6Sum, expected);
+});
+
 // DV4: skipStechen marks done and no winner
 test('DV4: skipStechen marks done and no winner', () => {
   let s = dreiVollen.initState(players2);
