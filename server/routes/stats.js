@@ -138,7 +138,27 @@ router.get('/', (req, res) => {
     };
   });
 
-  res.json(response);
+  // Tournament record: Drei in die Vollen top6Sum
+  let dvBestSum = null;
+  let dvBestGameId = null;
+  const dvGames = finishedGames.filter(g => g.type_key === 'dreiVollen');
+  for (const g of dvGames) {
+    try {
+      const dvState = reconstructState(g);
+      const dvResults = gameTypes['dreiVollen'].getFinalResults(dvState);
+      if (dvResults.length > 0 && dvResults[0].top6Sum != null) {
+        if (dvBestSum === null || dvResults[0].top6Sum > dvBestSum) {
+          dvBestSum = dvResults[0].top6Sum;
+          dvBestGameId = g.id;
+        }
+      }
+    } catch (e) { continue; }
+  }
+  const tournament_records = {
+    dreiVollen: dvBestSum !== null ? { best_sum: dvBestSum, game_id: dvBestGameId } : null
+  };
+
+  res.json({ players: response, tournament_records });
 });
 
 module.exports = router;

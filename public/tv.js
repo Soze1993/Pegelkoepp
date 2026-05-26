@@ -158,6 +158,22 @@ function renderGame(state) {
     li.appendChild(scoreEl);
     playerListEl.appendChild(li);
   }
+
+  // Drei in die Vollen Turnierergebnis — show top6Sum banner when game done with >=6 players
+  if (currentTypeKey === 'dreiVollen' && state.done && state.players.length >= 6) {
+    var sorted6 = state.players.slice().sort(function(a, b) {
+      var sa = a.wuerfe ? a.wuerfe.reduce(function(x, y) { return x + y; }, 0) : 0;
+      var sb = b.wuerfe ? b.wuerfe.reduce(function(x, y) { return x + y; }, 0) : 0;
+      return sb - sa;
+    });
+    var top6Sum = sorted6.slice(0, 6).reduce(function(acc, p) {
+      return acc + (p.wuerfe ? p.wuerfe.reduce(function(x, y) { return x + y; }, 0) : 0);
+    }, 0);
+    var turEl = document.createElement('div');
+    turEl.style.cssText = 'text-align:center;font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:var(--ac);margin-top:12px';
+    turEl.textContent = 'Turnierergebnis: ' + top6Sum + ' Volle';  // textContent — safe (numeric)
+    gameEl.appendChild(turEl);
+  }
 }
 
 function isActivePlayer(state, playerId) {

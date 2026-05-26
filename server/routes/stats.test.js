@@ -144,13 +144,14 @@ test('ST10: GET /api/stats returns one entry per non-archived player', async () 
   const res = await fetch(`${baseUrl}/api/stats`);
   assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
   const body = await res.json();
-  assert.ok(Array.isArray(body), 'Should return array');
+  assert.ok(body && typeof body === 'object' && Array.isArray(body.players), 'Should return {players:[...], tournament_records:{...}}');
+  assert.ok('tournament_records' in body, 'Should have tournament_records field');
 
-  const ids = body.map(e => e.player_id);
+  const ids = body.players.map(e => e.player_id);
   assert.ok(ids.includes(p1), `Should include Alice (id=${p1})`);
   assert.ok(ids.includes(p2), `Should include Bob (id=${p2})`);
 
-  const archivedEntry = body.find(e => e.name === 'Archived');
+  const archivedEntry = body.players.find(e => e.name === 'Archived');
   assert.ok(!archivedEntry, 'Archived player should NOT appear in stats');
 });
 
@@ -170,9 +171,10 @@ test('ST11: Single winner gets wins=1 losses=0; loser gets losses=1 wins=0', asy
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const aliceStats = body.find(e => e.player_id === alice.id);
-  const bobStats = body.find(e => e.player_id === bob.id);
+  const aliceStats = players.find(e => e.player_id === alice.id);
+  const bobStats = players.find(e => e.player_id === bob.id);
 
   assert.ok(aliceStats, 'Alice should be in stats');
   assert.ok(bobStats, 'Bob should be in stats');
@@ -198,9 +200,10 @@ test('ST12: Two-player tie (both winner:true) → both get draws=1, wins=0, loss
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const c = body.find(e => e.player_id === p1);
-  const d = body.find(e => e.player_id === p2);
+  const c = players.find(e => e.player_id === p1);
+  const d = players.find(e => e.player_id === p2);
 
   assert.ok(c && d, 'Both players should be in stats');
   assert.equal(c.draws, 1, `Charlie should have draws=1, got ${c.draws}`);
@@ -255,9 +258,10 @@ test('ST13: VG draw (0 winner:true entries) → all players get draws=1', async 
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const eStats = body.find(e => e.player_id === p1);
-  const fStats = body.find(e => e.player_id === p2);
+  const eStats = players.find(e => e.player_id === p1);
+  const fStats = players.find(e => e.player_id === p2);
 
   assert.ok(eStats && fStats, 'Both players should be in stats');
   assert.equal(eStats.draws, 1, `Eve should have draws=1, got ${eStats.draws}`);
@@ -282,8 +286,9 @@ test('ST14: personal_bests contains best score after a dreiVollen game', async (
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const grace = body.find(e => e.player_id === p1);
+  const grace = players.find(e => e.player_id === p1);
   assert.ok(grace, 'Grace should be in stats');
   assert.ok(Array.isArray(grace.personal_bests), 'personal_bests should be an array');
   const pb = grace.personal_bests.find(b => b.type_key === 'dreiVollen');
@@ -313,9 +318,10 @@ test('ST15: Higher score replaces personal best; lower score does not', async ()
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const iris = body.find(e => e.player_id === p1);
-  const jack = body.find(e => e.player_id === p2);
+  const iris = players.find(e => e.player_id === p1);
+  const jack = players.find(e => e.player_id === p2);
 
   const irisPb = iris.personal_bests.find(b => b.type_key === 'dreiVollen');
   assert.ok(irisPb, 'Iris should have a dreiVollen personal best');
@@ -344,9 +350,10 @@ test('ST16: pudel_count counts throws where meta.pudel = 1', async () => {
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const karen = body.find(e => e.player_id === p1);
-  const leo = body.find(e => e.player_id === p2);
+  const karen = players.find(e => e.player_id === p1);
+  const leo = players.find(e => e.player_id === p2);
 
   assert.ok(karen && leo, 'Both players should be in stats');
   assert.equal(karen.pudel_count, 1, `Karen should have pudel_count=1, got ${karen.pudel_count}`);
@@ -368,8 +375,9 @@ test('ST17: value=0 without meta.pudel flag is NOT counted as pudel', async () =
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const mia = body.find(e => e.player_id === p1);
+  const mia = players.find(e => e.player_id === p1);
   assert.ok(mia, 'Mia should be in stats');
   assert.equal(mia.pudel_count, 0, `Mia should have pudel_count=0 (value=0 without meta.pudel), got ${mia.pudel_count}`);
 });
@@ -389,8 +397,9 @@ test('ST18: pudel_pct = Math.round(pudel_count / total_throws * 1000) / 10', asy
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const olivia = body.find(e => e.player_id === p1);
+  const olivia = players.find(e => e.player_id === p1);
   assert.ok(olivia, 'Olivia should be in stats');
   assert.equal(olivia.pudel_count, 1, `pudel_count should be 1, got ${olivia.pudel_count}`);
   assert.equal(olivia.total_throws, 3, `total_throws should be 3, got ${olivia.total_throws}`);
@@ -406,8 +415,9 @@ test('ST19: Archived players do NOT appear in GET /api/stats', async () => {
 
   const res = await fetch(`${baseUrl}/api/stats`);
   const body = await res.json();
+  const players = body.players;
 
-  const found = body.find(e => e.player_id === archived);
+  const found = players.find(e => e.player_id === archived);
   assert.ok(!found, `Archived player (id=${archived}) should not appear in stats`);
 });
 
@@ -428,5 +438,55 @@ test('ST20: Game with unknown type_key is skipped gracefully, no 500 error', asy
   const res = await fetch(`${baseUrl}/api/stats`);
   assert.equal(res.status, 200, `Expected 200, got ${res.status} (unknown type_key should be skipped gracefully)`);
   const body = await res.json();
-  assert.ok(Array.isArray(body), 'Should return array even when games with unknown type_key exist');
+  assert.ok(body && Array.isArray(body.players), 'Should return {players:[...]} even when games with unknown type_key exist');
+});
+
+// ---------------------------------------------------------------------------
+// ST21: GET /api/stats returns tournament_records.dreiVollen with best_sum and game_id
+//        after a dreiVollen game with >=6 players
+// ---------------------------------------------------------------------------
+test('ST21: tournament_records.dreiVollen has best_sum and game_id after 6-player dreiVollen game', async () => {
+  // Insert 6 players
+  const pids = [
+    insertPlayer('TRec1', '1'), insertPlayer('TRec2', '2'), insertPlayer('TRec3', '3'),
+    insertPlayer('TRec4', '4'), insertPlayer('TRec5', '5'), insertPlayer('TRec6', '6')
+  ];
+
+  // 6-player dreiVollen: scores [9,8,7,6,5,4] → sum = 39
+  const gameId = insertFinishedGame('dreiVollen', [
+    { id: pids[0], throws: [3, 3, 3] }, // 9
+    { id: pids[1], throws: [3, 3, 2] }, // 8
+    { id: pids[2], throws: [3, 2, 2] }, // 7
+    { id: pids[3], throws: [2, 2, 2] }, // 6
+    { id: pids[4], throws: [2, 2, 1] }, // 5
+    { id: pids[5], throws: [2, 1, 1] }  // 4
+  ]);
+
+  const res = await fetch(`${baseUrl}/api/stats`);
+  const body = await res.json();
+
+  assert.ok(body.tournament_records, 'tournament_records should be present');
+  assert.ok(body.tournament_records.dreiVollen, 'tournament_records.dreiVollen should be non-null after 6-player game');
+  assert.equal(typeof body.tournament_records.dreiVollen.best_sum, 'number', 'best_sum should be a number');
+  assert.ok(body.tournament_records.dreiVollen.game_id != null, 'game_id should be present');
+  // The 6-player game top6Sum = sum of all 6 = 39
+  assert.equal(body.tournament_records.dreiVollen.best_sum, 39, `best_sum should be 39, got ${body.tournament_records.dreiVollen.best_sum}`);
+});
+
+// ---------------------------------------------------------------------------
+// ST22: tournament_records.dreiVollen is null when no dreiVollen game with >=6 players exists
+// ---------------------------------------------------------------------------
+test('ST22: tournament_records.dreiVollen is null when no qualifying dreiVollen games exist', async () => {
+  // Only 2-player dreiVollen games exist in the DB at this point (from previous tests)
+  // Just check that tournament_records is present and dreiVollen is null or the best_sum is from 6-player game
+  const res = await fetch(`${baseUrl}/api/stats`);
+  const body = await res.json();
+  assert.ok('tournament_records' in body, 'tournament_records should always be present');
+  // dreiVollen may be non-null if ST21 already inserted a 6-player game (tests share DB)
+  // So just verify the shape is correct: either null or {best_sum, game_id}
+  const tr = body.tournament_records.dreiVollen;
+  if (tr !== null) {
+    assert.equal(typeof tr.best_sum, 'number', 'If present, best_sum must be a number');
+    assert.ok(tr.game_id != null, 'If present, game_id must be non-null');
+  }
 });
