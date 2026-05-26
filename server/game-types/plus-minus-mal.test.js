@@ -95,21 +95,22 @@ test('P2: sequential formula: [5,3,2,4,1] => ((5+3-2)*4)/1 = 24', () => {
   assert.equal(results[0].score, 24);
 });
 
-// P3: Pudel on round 3 (W3) substitutes 9; [5,3,0(pudel),4,1] => stored as [5,3,9,4,1]
-// 5+3=8, 8-9=-1 → floor to 1, 1*4=4, 4/1=4
-test('P3: Pudel on W3 substitutes 9; result floored at 1 before ×; score = 4', () => {
+// P3: Pudel on W3 substitutes 9; cap prevents subtraction going below 1
+// W1=5, W2=3 → sumW1W2=8 → W3 capped to min(9, 8-1)=7; stored as 7
+// 5+3-7=1, ×4=4, ÷1=4
+test('P3: Pudel on W3 capped to sumW1W2-1; W3 stored as 7 not 9; score = 4', () => {
   const players1 = [{ id: 1, name: 'A', emoji: 'A' }];
   let state = plusMinus.initState(players1);
   state = plusMinus.applyThrow(state, 1, 5); // round 1
   state = plusMinus.applyThrow(state, 1, 3); // round 2
-  state = plusMinus.applyThrow(state, 1, 0); // round 3 = Pudel -> stored as 9
+  state = plusMinus.applyThrow(state, 1, 0); // round 3 = Pudel -> substituted 9, capped to 7
   state = plusMinus.applyThrow(state, 1, 4); // round 4
   state = plusMinus.applyThrow(state, 1, 1); // round 5
   const p = state.players.find(x => x.id === 1);
   assert.equal(p.pudel, 1, 'pudel counter incremented');
-  assert.equal(p.wuerfe[2], 9, 'W3 Pudel stored as 9');
+  assert.equal(p.wuerfe[2], 7, 'W3 capped to sumW1W2-1 (8-1=7)');
   const results = plusMinus.getFinalResults(state);
-  assert.equal(results[0].score, 4); // 5+3-9=-1 → floor 1, ×4=4, ÷1=4
+  assert.equal(results[0].score, 4); // 5+3-7=1, ×4=4, ÷1=4
 });
 
 // P4: isFinished returns true after pmRunde > 5
@@ -143,16 +144,19 @@ test('P5: highest pmCalc wins; P2 scores 24 > P1 scores 17', () => {
   assert.equal(results.find(r => r.playerId === 1).winner, false);
 });
 
-// P6: W1+W2-W3 result floored at 1 — can never go 0 or negative into × ÷
-// Worst case: W1=0(pudel→0), W2=0(pudel→0), W3=9(pudel→9): 0+0-9=-9 → floor 1; ×9=9; ÷1=9
-test('P6: result after W3 is floored at 1; worst-case pudels score 9 not negative', () => {
+// P6: W1=W2=0 (both pudels) — W3 capped to 0, pmCalc floor saves result to 1
+// Worst case: W1=0(pudel), W2=0(pudel), W3=pudel→9 capped to min(9,0)=0
+// pmCalc: 0+0-0=0 → floor 1; ×9=9; ÷1=9
+test('P6: W1=W2=0 edge case — W3 capped to 0, pmCalc floor gives minimum 1; score = 9', () => {
   const players1 = [{ id: 1, name: 'A', emoji: 'A' }];
   let state = plusMinus.initState(players1);
   state = plusMinus.applyThrow(state, 1, 0); // round 1: pudel → stored 0
   state = plusMinus.applyThrow(state, 1, 0); // round 2: pudel → stored 0
-  state = plusMinus.applyThrow(state, 1, 0); // round 3: pudel → stored 9
+  state = plusMinus.applyThrow(state, 1, 0); // round 3: pudel → 9, capped to 0 (sumW1W2=0)
   state = plusMinus.applyThrow(state, 1, 9); // round 4: ×9
   state = plusMinus.applyThrow(state, 1, 1); // round 5: ÷1
+  const p = state.players.find(x => x.id === 1);
+  assert.equal(p.wuerfe[2], 0, 'W3 capped to 0 when W1+W2=0');
   const results = plusMinus.getFinalResults(state);
-  assert.equal(results[0].score, 9); // 0+0-9=-9 → floor 1, ×9=9, ÷1=9
+  assert.equal(results[0].score, 9); // 0+0-0=0 → pmCalc floor→1, ×9=9, ÷1=9
 });

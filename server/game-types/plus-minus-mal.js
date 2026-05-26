@@ -38,6 +38,11 @@ module.exports = {
       p.pudel++;
       storedVal = PUDEL_SUB[roundIdx];
     }
+    // W3: cap so W1+W2-W3 cannot go below 1
+    if (roundIdx === 2 && p.wuerfe.length >= 2) {
+      const sumW1W2 = p.wuerfe[0] + p.wuerfe[1];
+      storedVal = Math.min(storedVal, Math.max(sumW1W2 - 1, 0));
+    }
     p.wuerfe.push(storedVal);
     s.aktSpIdx++;
     if (s.aktSpIdx >= s.players.length) {
