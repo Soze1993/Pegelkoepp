@@ -432,16 +432,14 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 10000);
 }
 
-// Bilderkegeln TV layout — player list with loser row highlighted in red
+// Bilderkegeln TV layout — scales for 4–12 players; bild section + row fonts shrink with player count
 function renderBilderkegelTV(state) {
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
-  var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:2vw;box-sizing:border-box';
+  var n = state.players.length;
 
-  // Current Bild display
   var BK_BILDER_TV = [
     {id:'volle',name:'Volle',pins:[1,2,3,4,5,6,7,8,9]},
     {id:'kleeblatt',name:'Kleeblatt',pins:[2,3,4,6,7,8]},
@@ -450,24 +448,42 @@ function renderBilderkegelTV(state) {
     {id:'bauern',name:'Bauern',pins:[4,6]}
   ];
 
+  // Bild section sizing — compress SVG and font for large player counts
+  var svgW, svgH, bildNameVw, bildNumVw;
+  if (n <= 6)      { svgW = 120; svgH = 150; bildNameVw = 8;   bildNumVw = 2;   }
+  else if (n <= 8) { svgW = 88;  svgH = 110; bildNameVw = 6;   bildNumVw = 1.5; }
+  else             { svgW = 64;  svgH = 80;  bildNameVw = 4.5; bildNumVw = 1.2; }
+
+  // Player row sizing — fonts shrink so all rows fit in remaining height
+  var namePx, scorePx, rowPad;
+  if (n <= 4)       { namePx = 36; scorePx = 72; rowPad = '1.5vw 2vw'; }
+  else if (n <= 6)  { namePx = 32; scorePx = 60; rowPad = '1vw 2vw';   }
+  else if (n <= 8)  { namePx = 26; scorePx = 48; rowPad = '0.6vw 2vw'; }
+  else if (n <= 10) { namePx = 22; scorePx = 40; rowPad = '0.4vw 2vw'; }
+  else              { namePx = 18; scorePx = 32; rowPad = '0.2vw 2vw'; }
+
+  var container = document.createElement('div');
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:2vw;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
+
+  container.appendChild(makeGameNameHeader());
+
   if (!state.done && state.aktBildIdx >= 0 && state.aktBildIdx < BK_BILDER_TV.length) {
     var bildInfo = BK_BILDER_TV[state.aktBildIdx];
 
     var bildSection = document.createElement('div');
-    bildSection.style.cssText = 'text-align:center;margin-bottom:16px';
+    bildSection.style.cssText = 'text-align:center;flex-shrink:0;margin-bottom:8px';
 
     var bildNameEl = document.createElement('div');
     bildNameEl.textContent = bildInfo.name;  // textContent — safe (static data)
-    bildNameEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:8vw;color:var(--ac);line-height:1';
+    bildNameEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + bildNameVw + 'vw;color:var(--ac);line-height:1';
+
+    var svgEl = document.createElement('div');
+    svgEl.innerHTML = kegelSVGtv(bildInfo.pins, svgW, svgH);  // SVG built from static pin data — no user input
+    svgEl.style.cssText = 'margin:4px auto';
 
     var bildNumEl = document.createElement('div');
     bildNumEl.textContent = 'Bild ' + (state.aktBildIdx + 1) + '/5';  // textContent — safe
-    bildNumEl.style.cssText = 'font-size:2vw;color:var(--mut);margin-top:4px';
-
-    // Pin SVG for TV (white pins on dark)
-    var svgEl = document.createElement('div');
-    svgEl.innerHTML = kegelSVGtv(bildInfo.pins, 120, 150);  // SVG built from static pin data — no user input
-    svgEl.style.cssText = 'margin:8px auto';
+    bildNumEl.style.cssText = 'font-size:' + bildNumVw + 'vw;color:var(--mut);margin-top:2px';
 
     bildSection.appendChild(bildNameEl);
     bildSection.appendChild(svgEl);
@@ -494,24 +510,22 @@ function renderBilderkegelTV(state) {
     });
   }
 
+  // Player list fills remaining height; rows share space equally via flex
   var ul = document.createElement('ul');
-  ul.style.cssText = 'list-style:none;margin:0;padding:0;width:100%';
+  ul.style.cssText = 'list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden';
 
   state.players.forEach(function(player, idx) {
     var li = document.createElement('li');
-    li.className = 'player-row';
-
-    if (idx === loserIdx) {
-      // Loser row highlight (UI-SPEC BK loser row)
-      li.style.cssText = 'border-left:4px solid var(--red);background:rgba(224,82,82,0.07);padding-left:calc(2vw - 4px)';
-    }
+    var isLoser = idx === loserIdx;
+    li.style.cssText = 'flex:1;min-height:0;display:flex;align-items:center;padding:' + rowPad + ';border-radius:8px;'
+      + (isLoser ? 'border-left:4px solid var(--red);background:rgba(224,82,82,0.07);padding-left:calc(2vw - 4px)' : '');
 
     var nameEl = document.createElement('span');
-    nameEl.className = 'player-name';
+    nameEl.style.cssText = 'flex:1;font-size:' + namePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     nameEl.textContent = (player.emoji != null ? player.emoji : '') + ' ' + player.name;  // textContent — XSS safe (T-07-03-04)
 
     var scoreEl = document.createElement('span');
-    scoreEl.className = 'player-score';
+    scoreEl.style.cssText = 'width:12vw;text-align:right;font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + scorePx + 'px;color:var(--ac);flex-shrink:0';
     scoreEl.textContent = bkTotal(player);  // textContent — safe
 
     li.appendChild(nameEl);
@@ -520,7 +534,6 @@ function renderBilderkegelTV(state) {
   });
 
   container.appendChild(ul);
-  container.insertBefore(makeGameNameHeader(), container.firstChild);
   gameEl.replaceChildren(container);
 }
 
