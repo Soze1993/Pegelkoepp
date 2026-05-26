@@ -168,6 +168,56 @@ test('BK7: Kleeblatt (bildIdx=1) max score in first throw skips second throw', (
   assert.equal(state.aktWurfNr, 0, 'wurfNr reset');
 });
 
+// BK-S1: Stechen triggered when two players tie for minimum
+test('BK-S1: stechen starts when two players tie for minimum bkTotal', () => {
+  let state = bilderkegel.initState(players2);
+  // Both players score equally (2 throws of 1 each, 5 bilds = 10 pts each)
+  for (let pic = 0; pic < 5; pic++) {
+    state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 2, 1);
+    state = bilderkegel.applyThrow(state, 2, 1);
+  }
+  assert.equal(bilderkegel.isFinished(state), false, 'not done yet — stechen required');
+  assert.equal(state.stechen, true);
+  assert.deepEqual(state.stechenPlayers.sort(), [1, 2]);
+});
+
+// BK-S2: Stechen resolves when one player scores lower
+test('BK-S2: stechen resolves — lower scorer becomes payer', () => {
+  let state = bilderkegel.initState(players2);
+  for (let pic = 0; pic < 5; pic++) {
+    state = bilderkegel.applyThrow(state, 1, 1); state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 2, 1); state = bilderkegel.applyThrow(state, 2, 1);
+  }
+  assert.equal(state.stechen, true);
+  state = bilderkegel.applyThrow(state, 1, 3); // P1 throws 3
+  state = bilderkegel.applyThrow(state, 2, 1); // P2 throws 1 → P2 is lower → P2 pays
+  assert.equal(bilderkegel.isFinished(state), true);
+  assert.equal(state.stechen, false);
+  const results = bilderkegel.getFinalResults(state);
+  assert.equal(results.find(r => r.playerId === 2).payer, true, 'P2 has lower stechen score → pays');
+  assert.equal(results.find(r => r.playerId === 1).payer, false);
+});
+
+// BK-S3: Stechen re-runs when still tied after first round
+test('BK-S3: stechen repeats when still tied', () => {
+  let state = bilderkegel.initState(players2);
+  for (let pic = 0; pic < 5; pic++) {
+    state = bilderkegel.applyThrow(state, 1, 1); state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 2, 1); state = bilderkegel.applyThrow(state, 2, 1);
+  }
+  state = bilderkegel.applyThrow(state, 1, 2); // P1: 2
+  state = bilderkegel.applyThrow(state, 2, 2); // P2: 2 — still tied
+  assert.equal(state.stechen, true, 'stechen continues after second tie');
+  assert.equal(bilderkegel.isFinished(state), false);
+  // Now P2 breaks the tie
+  state = bilderkegel.applyThrow(state, 1, 5);
+  state = bilderkegel.applyThrow(state, 2, 1); // P2 lower → P2 pays
+  assert.equal(bilderkegel.isFinished(state), true);
+  assert.equal(bilderkegel.getFinalResults(state).find(r => r.playerId === 2).payer, true);
+});
+
 // BK8: Volle always gets 2 throws even if throw 1 = 9
 test('BK8: Volle (bildIdx=0) always gets 2 throws even with max pins', () => {
   const player = { id: 1, name: 'A', emoji: 'A' };
