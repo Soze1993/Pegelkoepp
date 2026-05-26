@@ -218,6 +218,113 @@ test('BK-S3: stechen repeats when still tied', () => {
   assert.equal(bilderkegel.getFinalResults(state).find(r => r.playerId === 2).payer, true);
 });
 
+// Exempt player (Außer Konkurrenz)
+
+// EX-1: initState with config={exemptPlayerId:2} stores state.exemptPlayerId===2
+test('EX-1: initState with config.exemptPlayerId stores it in state', () => {
+  const state = bilderkegel.initState(players2, { exemptPlayerId: 2 });
+  assert.equal(state.exemptPlayerId, 2);
+});
+
+// EX-2: initState with no config stores state.exemptPlayerId===null
+test('EX-2: initState with no config stores exemptPlayerId===null', () => {
+  const state = bilderkegel.initState(players2);
+  assert.equal(state.exemptPlayerId, null);
+});
+
+// Helper: drive a full BK game with 3 players where each player's per-Bild score
+// is controlled by (throws_per_player: [[t1_p1, t2_p1], [t1_p2, t2_p2], ...]) per Bild.
+// returns final state.
+function playFullGame(players, bild_throws) {
+  // bild_throws: array of 5 entries; each entry is array of [v1,v2] per player
+  // Use values guaranteed below per-Bild max so 2 throws always
+  let state = bilderkegel.initState(players, { exemptPlayerId: players[2].id });
+  for (let bild = 0; bild < 5; bild++) {
+    for (let pi = 0; pi < players.length; pi++) {
+      const [v1, v2] = bild_throws[bild][pi];
+      state = bilderkegel.applyThrow(state, players[pi].id, v1);
+      state = bilderkegel.applyThrow(state, players[pi].id, v2);
+    }
+  }
+  return state;
+}
+
+const players3 = [
+  { id: 1, name: 'A', emoji: 'A' },
+  { id: 2, name: 'B', emoji: 'B' },
+  { id: 3, name: 'C', emoji: 'C' }
+];
+
+// EX-3: Exempt player (id=3) has lowest total; eligible = {1,2}; payer = player with second-lowest (id=2)
+test('EX-3: Exempt player with lowest total is not payer; eligible lowest (id=2) is payer', () => {
+  // p1: score 3 per Bild * 5 = 15; p2: 2 per Bild * 5 = 10; p3(exempt): 1 per Bild * 5 = 5 (lowest)
+  // All throws below any Bild max (use value 1)
+  const bild_throws = Array.from({ length: 5 }, () => [[1,2],[1,1],[1,0]]);
+  // p1: 3/Bild, p2: 2/Bild, p3: 1/Bild
+  let state = bilderkegel.initState(players3, { exemptPlayerId: 3 });
+  for (let bild = 0; bild < 5; bild++) {
+    // p1: 2+1=3
+    state = bilderkegel.applyThrow(state, 1, 2);
+    state = bilderkegel.applyThrow(state, 1, 1);
+    // p2: 1+1=2
+    state = bilderkegel.applyThrow(state, 2, 1);
+    state = bilderkegel.applyThrow(state, 2, 1);
+    // p3(exempt): 0+0=0
+    state = bilderkegel.applyThrow(state, 3, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 3, 0, { keinPudel: true });
+  }
+  assert.equal(bilderkegel.isFinished(state), true);
+  const results = bilderkegel.getFinalResults(state);
+  const r3 = results.find(r => r.playerId === 3);
+  const r2 = results.find(r => r.playerId === 2);
+  const r1 = results.find(r => r.playerId === 1);
+  assert.equal(r3.payer, false, 'Exempt player (id=3, lowest) must not be payer');
+  assert.equal(r2.payer, true, 'Second-lowest eligible player (id=2) must be payer');
+  assert.equal(r1.payer, false, 'Highest scorer must not be payer');
+});
+
+// EX-4: Exempt player does NOT have lowest total; normal lowest-scoring player is payer
+test('EX-4: When exempt player does not have lowest total, normal lowest player is payer', () => {
+  // p1: 0/bild=0 (lowest), p2: 2/bild=10, p3(exempt): 1/bild=5 (not lowest)
+  let state = bilderkegel.initState(players3, { exemptPlayerId: 3 });
+  for (let bild = 0; bild < 5; bild++) {
+    // p1: 0+0=0 (lowest among all, and is eligible)
+    state = bilderkegel.applyThrow(state, 1, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 1, 0, { keinPudel: true });
+    // p2: 2+0=2
+    state = bilderkegel.applyThrow(state, 2, 1);
+    state = bilderkegel.applyThrow(state, 2, 1);
+    // p3(exempt): 1+0=1 (not lowest overall but exempt anyway)
+    state = bilderkegel.applyThrow(state, 3, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 3, 1);
+  }
+  assert.equal(bilderkegel.isFinished(state), true);
+  const results = bilderkegel.getFinalResults(state);
+  const r1 = results.find(r => r.playerId === 1);
+  const r3 = results.find(r => r.playerId === 3);
+  assert.equal(r1.payer, true, 'p1 has lowest total and is eligible → payer');
+  assert.equal(r3.payer, false, 'Exempt player never payer even if eligible player has same/lower total');
+});
+
+// EX-5: Stechen only among eligible players when exempt player tied for lowest
+test('EX-5: Stechen triggered only among eligible players (p1 and p2 tie; p3 exempt)', () => {
+  // p1: 1/bild=5, p2: 1/bild=5 (tie for eligible lowest), p3(exempt): 0/bild=0 (lower but exempt)
+  let state = bilderkegel.initState(players3, { exemptPlayerId: 3 });
+  for (let bild = 0; bild < 5; bild++) {
+    // p1: 1+0=1
+    state = bilderkegel.applyThrow(state, 1, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 1, 1);
+    // p2: 1+0=1 (same as p1)
+    state = bilderkegel.applyThrow(state, 2, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 2, 1);
+    // p3(exempt): 0+0=0 — lowest overall but exempt
+    state = bilderkegel.applyThrow(state, 3, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 3, 0, { keinPudel: true });
+  }
+  assert.equal(state.stechen, true, 'Stechen should be triggered (p1 and p2 tied)');
+  assert.deepEqual(state.stechenPlayers.sort(), [1, 2], 'Stechen players should be p1 and p2 only (not exempt p3)');
+});
+
 // BK8: Volle always gets 2 throws even if throw 1 = 9
 test('BK8: Volle (bildIdx=0) always gets 2 throws even with max pins', () => {
   const player = { id: 1, name: 'A', emoji: 'A' };
