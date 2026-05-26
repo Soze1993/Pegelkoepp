@@ -109,6 +109,7 @@ function renderGame(state) {
   if (currentTypeKey === 'viergewinnt') { renderViergewinntTV(state); return; }
   if (currentTypeKey === 'grosseHaus' || currentTypeKey === 'kleineHaus') { renderHausnummerTV(state); return; }
   if (currentTypeKey === 'plusMinus') { renderPlusMinusTV(state); return; }
+  if (currentTypeKey === 'anker')     { renderAnkerTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -757,6 +758,119 @@ function renderHausnummerTV(state) {
     total.textContent = sc !== null ? String(sc) : '·';
     total.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.4vw;min-width:4.5vw;text-align:right;color:' + (sc !== null ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)');
     row.appendChild(total);
+
+    grid.appendChild(row);
+  });
+
+  container.appendChild(grid);
+  gameEl.replaceChildren(container);
+}
+
+// Anker TV layout — player grid with round scores, scoring chips, pin diagram
+function renderAnkerTV(state) {
+  if (!state || !state.players) return;
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var players = state.players || [];
+  var aktId = (players[state.aktSpIdx] && !state.done) ? players[state.aktSpIdx].id : null;
+
+  function rundTotal(p) {
+    return p.runden.reduce(function(t, r) { return t + r.reduce(function(a, b) { return a + b; }, 0); }, 0);
+  }
+
+  var sorted = players.slice().sort(function(a, b) { return rundTotal(b) - rundTotal(a); });
+
+  var container = document.createElement('div');
+  container.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
+  container.appendChild(makeGameNameHeader());
+
+  // Round + active player indicator
+  var rndEl = document.createElement('div');
+  rndEl.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.5vw;flex-shrink:0';
+  if (state.done) {
+    rndEl.textContent = 'Spiel beendet';
+  } else {
+    var aktP = players[state.aktSpIdx];
+    rndEl.textContent = 'Runde ' + state.aktRunde + '/' + state.maxRunden
+      + ' · Wurf ' + (state.wurfNr + 1) + '/5'
+      + (aktP ? ' · ' + (aktP.emoji || '') + ' ' + aktP.name : '');
+  }
+  container.appendChild(rndEl);
+
+  // Scoring chips
+  var chips = document.createElement('div');
+  chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.4vw;justify-content:center;margin-bottom:0.7vw;flex-shrink:0';
+  [
+    { label: 'Bauer 4+6 = 10', col: 'var(--ac)' },
+    { label: 'Dame 7+8 = 5',   col: '#5b8dee' },
+    { label: 'Barbel 1+5+9 = 10', col: '#4caf7d' },
+    { label: 'P = 0 · Sonst 1/Kegel', col: 'var(--mut)' }
+  ].forEach(function(chip) {
+    var s = document.createElement('span');
+    s.textContent = chip.label;  // textContent — safe
+    s.style.cssText = 'border:1px solid ' + chip.col + ';border-radius:5px;padding:0.15vw 0.5vw;font-size:0.9vw;font-weight:600;color:' + chip.col;
+    chips.appendChild(s);
+  });
+  container.appendChild(chips);
+
+  // Player grid
+  var grid = document.createElement('div');
+  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:start;overflow:hidden';
+
+  sorted.forEach(function(p, i) {
+    var isActive = p.id === aktId;
+    var total = rundTotal(p);
+    var isLeader = i === 0 && state.done;
+
+    var row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex;align-items:center;gap:0.5vw;padding:0.55vw 0.8vw',
+      'border-radius:10px;border:2px solid ' + (isActive ? 'var(--ac)' : 'var(--brd)'),
+      'background:' + (isActive ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
+      'box-shadow:' + (isActive ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
+    ].join(';');
+
+    var rank = document.createElement('div');
+    rank.textContent = String(i + 1);
+    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.5vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.4vw;text-align:center;flex-shrink:0';
+    row.appendChild(rank);
+
+    var name = document.createElement('div');
+    name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+    name.style.cssText = 'flex:1;font-size:1.35vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    row.appendChild(name);
+
+    // Round score columns
+    for (var ri = 0; ri < state.maxRunden; ri++) {
+      var r = p.runden[ri];
+      var rPts = r ? r.reduce(function(a, b) { return a + b; }, 0) : null;
+      var cell = document.createElement('div');
+      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.2vw;flex-shrink:0';
+      var lbl = document.createElement('div');
+      lbl.textContent = 'R' + (ri + 1);
+      lbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+      var val = document.createElement('div');
+      val.textContent = rPts !== null ? String(rPts) : '—';
+      val.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.7vw;color:' + (rPts !== null ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      cell.appendChild(lbl);
+      cell.appendChild(val);
+      row.appendChild(cell);
+    }
+
+    // Total
+    var totCell = document.createElement('div');
+    totCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.8vw;flex-shrink:0';
+    var totLbl = document.createElement('div');
+    totLbl.textContent = 'Ges.';
+    totLbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+    var totVal = document.createElement('div');
+    totVal.textContent = String(total);  // textContent — safe (numeric)
+    totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.7vw;color:' + (isLeader ? 'var(--ac)' : 'var(--txt)') + ';line-height:1.1';
+    totCell.appendChild(totLbl);
+    totCell.appendChild(totVal);
+    row.appendChild(totCell);
 
     grid.appendChild(row);
   });
