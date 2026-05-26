@@ -147,7 +147,7 @@ router.post('/:id/throws', requireSession, (req, res) => {
   //    match boundaries. All other game types use the client-provided throw_index with
   //    the UNIQUE constraint as an idempotency guard.
   let effectiveThrowIndex = throw_index;
-  if (game.type_key === 'kda' || game.type_key === 'bilderkegel') {
+  if (game.type_key === 'kda' || game.type_key === 'bilderkegel' || game.type_key === 'grosseHaus' || game.type_key === 'kleineHaus') {
     const { mx } = db.prepare(
       'SELECT MAX(throw_index) AS mx FROM throws WHERE game_id = ? AND player_id = ?'
     ).get(game.id, player_id);

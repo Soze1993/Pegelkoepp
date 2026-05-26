@@ -104,9 +104,10 @@ function renderGame(state) {
   // Remove any stale game name headers from previous renders
   gameEl.querySelectorAll('.tv-game-name-hdr').forEach(function(e) { e.remove(); });
   if (state && state.bracket) { renderKDABracket(state); return; }  // KDA: before state.players guard
-  if (currentTypeKey === 'bilderkegel') { renderBilderkegelTV(state); return; }  // BK layout (must precede !players guard)
-  if (currentTypeKey === 'fuchsjagd')   { renderFuchsjagdTV(state); return; }   // FJ layout
-  if (currentTypeKey === 'viergewinnt') { renderViergewinntTV(state); return; } // VG layout
+  if (currentTypeKey === 'bilderkegel') { renderBilderkegelTV(state); return; }
+  if (currentTypeKey === 'fuchsjagd')   { renderFuchsjagdTV(state); return; }
+  if (currentTypeKey === 'viergewinnt') { renderViergewinntTV(state); return; }
+  if (currentTypeKey === 'grosseHaus' || currentTypeKey === 'kleineHaus') { renderHausnummerTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -672,6 +673,94 @@ function renderFuchsjagdTV(state) {
     container.appendChild(footer);
   }
 
+  gameEl.replaceChildren(container);
+}
+
+// Große/Kleine Hausnummer TV layout — 2-column player grid, H/Z/E slots per player
+function renderHausnummerTV(state) {
+  if (!state) return;
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var isKleine = currentTypeKey === 'kleineHaus';
+  var players = state.players || [];
+  var aktId = players[state.aktSpIdx] ? players[state.aktSpIdx].id : null;
+
+  function score(p) {
+    var sl = p.slots;
+    if (sl.h === null || sl.z === null || sl.e === null) return null;
+    return (sl.h * 100) + (sl.z * 10) + sl.e;
+  }
+
+  var sorted = players.slice().sort(function(a, b) {
+    var va = score(a), vb = score(b);
+    if (va === null && vb === null) return 0;
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    return isKleine ? va - vb : vb - va;
+  });
+
+  var container = document.createElement('div');
+  container.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
+  container.appendChild(makeGameNameHeader());
+
+  var sub = document.createElement('div');
+  sub.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.8vw';
+  sub.textContent = isKleine ? 'Niedrigste Zahl gewinnt · Pudel = 9' : 'Höchste Zahl gewinnt · Pudel = 0';
+  container.appendChild(sub);
+
+  var grid = document.createElement('div');
+  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.6vw;align-content:start;overflow:hidden';
+
+  sorted.forEach(function(p, i) {
+    var isActive = p.id === aktId && !state.done;
+    var sl = p.slots;
+    var sc = score(p);
+    var isLeader = i === 0 && sc !== null;
+
+    var row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex;align-items:center;gap:0.8vw;padding:0.7vw 1vw',
+      'border-radius:10px;border:2px solid ' + (isActive ? 'var(--ac)' : 'var(--brd)'),
+      'background:' + (isActive ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
+      'box-shadow:' + (isActive ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
+    ].join(';');
+
+    var rank = document.createElement('div');
+    rank.textContent = String(i + 1);
+    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.8vw;color:' + (isLeader && state.done ? 'gold' : 'var(--mut)') + ';min-width:1.8vw;text-align:center';
+    row.appendChild(rank);
+
+    var name = document.createElement('div');
+    name.textContent = (p.emoji || '') + ' ' + p.name;
+    name.style.cssText = 'flex:1;font-size:1.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    row.appendChild(name);
+
+    [['h','H'],['z','Z'],['e','E']].forEach(function(pair) {
+      var slot = pair[0], lbl = pair[1];
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.5vw';
+      var lEl = document.createElement('div');
+      lEl.textContent = lbl;
+      lEl.style.cssText = 'font-size:0.8vw;color:var(--mut);line-height:1';
+      var vEl = document.createElement('div');
+      vEl.textContent = sl[slot] !== null ? String(sl[slot]) : '—';
+      vEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (sl[slot] !== null ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      wrap.appendChild(lEl);
+      wrap.appendChild(vEl);
+      row.appendChild(wrap);
+    });
+
+    var total = document.createElement('div');
+    total.textContent = sc !== null ? String(sc) : '·';
+    total.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.4vw;min-width:4.5vw;text-align:right;color:' + (sc !== null ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)');
+    row.appendChild(total);
+
+    grid.appendChild(row);
+  });
+
+  container.appendChild(grid);
   gameEl.replaceChildren(container);
 }
 
