@@ -74,8 +74,23 @@ Plans:
   5. User sees in a player profile how many times that player lost the Bilderkegeln game across all evenings
   6. The homepage shows the date, "Kegler des Abends" winner, and Bilderkegeln loser for the most recent club evening
   7. User can browse all games played at the last club evening with their results and per-game winner
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
+Plans:
+
+**Wave 0**
+- [ ] 08-01-PLAN.md — Wave 0: RED test stubs ST30..ST36 + AB30..AB32 (helpers + fixtures)
+
+**Wave 1** *(blocked on Wave 0 completion)*
+- [ ] 08-02-PLAN.md — Wave 1: Backend stats sub-routes (/year /streaks /h2h /kda-counts /bk-counts) + highlights.js exports getBKLoserId
+- [ ] 08-03-PLAN.md — Wave 1: Backend GET /api/abende/last-summary (recap for last closed Kegelabend)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 08-04-PLAN.md — Wave 2: Frontend UI — recap card, year leaderboard, H2H selector, streak chips, KdA/BK count chips
+
+Cross-cutting constraints:
+- `reconstructState(game)` + `getFinalResults(state)` + `winners.length !== 1` isDraw pattern — both 08-02 and 08-03
+- `getBKLoserId` exported from highlights.js — 08-02/T1 exports, 08-02/T2 and 08-03/T1 import
+- Game iteration order: `ORDER BY id ASC` (not `finished_at`) — 08-02 and 08-03; preserves BK exemption chain
 
 ### Phase 9: Polish
 **Goal**: Users can share a finished game result via WhatsApp, and the app runs fully without internet (fonts loaded locally)
@@ -98,5 +113,5 @@ Plans:
 | 5. Production Deployment | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 6. Turnierbaum | v2.0 | 4/4 | Complete | 2026-05-27 |
 | 7. Highlights & TV-Layouts | v2.0 | 4/4 | Complete | 2026-05-24 |
-| 8. Statistiken & Rückblick | v2.0 | 0/? | Not started | - |
+| 8. Statistiken & Rückblick | v2.0 | 0/4 | Planned | - |
 | 9. Polish | v2.0 | 0/? | Not started | - |

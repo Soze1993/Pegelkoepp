@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
 status: active
-last_updated: "2026-05-27T12:00:00.000Z"
-last_activity: "2026-05-27 — Phase 6 verified 21/21 must-haves; 421 tests pass"
+last_updated: "2026-05-27T14:00:00.000Z"
+last_activity: "2026-05-27 — Phase 8 planned (4 plans, 3 waves); ready to execute"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 14
+  total_plans: 18
   completed_plans: 14
   percent: 50
 ---
@@ -24,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 6 + 7 — COMPLETE
-Plan: ALL COMPLETE (14/14)
-Status: Phase 6 verified 21/21 must-haves (2026-05-27). Phase 7 verified (2026-05-24). Both phases complete.
-Last activity: 2026-05-27 — Phase 6 Turnierbaum verification passed; 421 tests pass
+Phase: 8 — Statistiken & Rückblick — PLANNED (0/4 plans executed)
+Plan: 4 plans created (08-01..08-04), wave structure: W0→W1 parallel→W2
+Status: Phase 8 ready to execute. Phases 6+7 complete; Phase 8 planned 2026-05-27.
+Last activity: 2026-05-27 — Phase 8 planned; 4 plans verified (STATS-01..05, RECAP-01..02 covered)
 
-Progress bar: [----------] 0% (0/4 phases)
+Progress bar: [##--------] 50% (2/4 phases complete)
 
 ## Accumulated Context
 
@@ -60,10 +60,12 @@ Progress bar: [----------] 0% (0/4 phases)
 | 260527-kda-pudel | KDA Pudel tracking (pudelCounts map + meta param) | 2026-05-27 | 5b45093 | [260527-kda-pudel-tracking](./quick/260527-kda-pudel-tracking/) |
 | 260527-kda-pudel-btn | KDA throw modal: P / kein-Pudel buttons | 2026-05-27 | a099fb2 | [260527-kda-pudel-button](./quick/260527-kda-pudel-button/) |
 | 260527-kda-tv-fix | KDA TV bracket: proportional sections + adaptive sizing | 2026-05-27 | 31c2d25 | [260527-kda-tv-bracket-fix](./quick/260527-kda-tv-bracket-fix/) |
+| 260527-dreivollen-tv | DreiVollen TV: dedicated renderer, 2-col grid, scales to 12p | 2026-05-27 | 9bba36a | [260527-dreivollen-tv-12p](./quick/260527-dreivollen-tv-12p/) |
+| 260527-bk-tv-active | BK TV: gold left border + bg on active player (aktSpIdx) | 2026-05-27 | 4444011 | [260527-bk-tv-active-player](./quick/260527-bk-tv-active-player/) |
 
 ## Session Continuity
 
-Last session: 2026-05-27T04:41:17.383Z
-Stopped at: context exhaustion at 76% (2026-05-27)
+Last session: 2026-05-27
+Stopped at: Phase 8 planning complete
 Resume file: None
-Next: Phase 8 (Statistiken & Rückblick) — year leaderboard, streaks, head-to-head stats, last-evening recap.
+Next: /clear then /gsd:execute-phase 8
