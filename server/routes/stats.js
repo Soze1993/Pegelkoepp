@@ -29,9 +29,7 @@ router.get('/', (req, res) => {
       wins: 0,
       losses: 0,
       draws: 0,
-      bests: {},
-      total_score: 0,
-      score_count: 0
+      bests: {}
     };
   }
 
@@ -73,14 +71,10 @@ router.get('/', (req, res) => {
         entry.losses++;
       }
 
-      // Accumulate total score for avg_score (skip 0/null — VG/FJ placeholders)
-      if (r.score != null && r.score > 0) {
-        entry.total_score += r.score;
-        entry.score_count++;
-      }
 
       // Personal best tracking (D-06, STAT-02)
-      if (r.score === 0) continue;
+      // Skip score <= 0: KDA returns -1 for non-winners, VG/FJ return 0 as placeholder
+      if (r.score == null || r.score <= 0) continue;
 
       const prev = entry.bests[game.type_key];
       if (game.type_key === 'kleineHaus') {
@@ -108,7 +102,8 @@ router.get('/', (req, res) => {
     SELECT t.player_id,
            COUNT(*) AS total_throws,
            SUM(CASE WHEN t.value = 0 AND (t.meta IS NULL OR json_extract(t.meta, '$.keinPudel') IS NULL) THEN 1 ELSE 0 END) AS pudel_count,
-           SUM(CASE WHEN t.value = 9 THEN 1 ELSE 0 END) AS neun_count
+           SUM(CASE WHEN t.value = 9 THEN 1 ELSE 0 END) AS neun_count,
+           SUM(COALESCE(t.value, 0)) AS total_value
     FROM throws t
     JOIN games g ON t.game_id = g.id
     WHERE g.status = 'finished'
@@ -120,20 +115,21 @@ router.get('/', (req, res) => {
     pudelMap[row.player_id] = {
       total_throws: row.total_throws,
       pudel_count: row.pudel_count || 0,
-      neun_count: row.neun_count || 0
+      neun_count: row.neun_count || 0,
+      total_value: row.total_value || 0
     };
   }
 
   // Step 4: Build response array
   const response = players.map(p => {
     const entry = statsMap[p.id];
-    const pudel = pudelMap[p.id] || { total_throws: 0, pudel_count: 0 };
-    const { total_throws, pudel_count, neun_count } = pudel;
+    const pudel = pudelMap[p.id] || { total_throws: 0, pudel_count: 0, total_value: 0 };
+    const { total_throws, pudel_count, neun_count, total_value } = pudel;
     const pudel_pct = total_throws > 0
       ? Math.round(pudel_count / total_throws * 1000) / 10
       : 0;
-    const avg_score = entry.score_count > 0
-      ? Math.round(entry.total_score / entry.score_count)
+    const avg_score = total_throws > 0
+      ? Math.round(total_value / total_throws * 10) / 10
       : 0;
 
     const personal_bests = Object.entries(entry.bests).map(([type_key, score]) => ({ type_key, score }));
@@ -218,10 +214,22 @@ router.get('/year', (req, res) => {
     'SELECT id, name, emoji FROM players WHERE archived = 0'
   ).all();
 
+  // Participation = distinct Kegelabende a player played at least one finished game in
+  const teilnahmenRows = db.prepare(`
+    SELECT gp.player_id, COUNT(DISTINCT g.abend_id) AS teilnahmen
+    FROM game_players gp
+    JOIN games g ON g.id = gp.game_id
+    WHERE g.status = 'finished'
+      AND strftime('%Y', g.finished_at) = ?
+      AND g.abend_id IS NOT NULL
+    GROUP BY gp.player_id
+  `).all(year);
+  const teilnahmenMap = {};
+  for (const row of teilnahmenRows) teilnahmenMap[row.player_id] = row.teilnahmen;
+
   const leaderboard = players
-    .map(p => ({ id: p.id, name: p.name, emoji: p.emoji, wins: winsMap[p.id] || 0 }))
-    .filter(p => p.wins > 0)
-    .sort((a, b) => b.wins - a.wins);
+    .map(p => ({ id: p.id, name: p.name, emoji: p.emoji, wins: winsMap[p.id] || 0, teilnahmen: teilnahmenMap[p.id] || 0 }))
+    .sort((a, b) => b.wins - a.wins || b.teilnahmen - a.teilnahmen);
 
   const availableYears = db.prepare(
     "SELECT DISTINCT strftime('%Y', finished_at) AS y FROM games WHERE status = 'finished' AND finished_at IS NOT NULL ORDER BY y DESC"
