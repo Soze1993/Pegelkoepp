@@ -201,6 +201,11 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
   <button class="btn bg" style="width:100%;margin-top:12px" onclick="closeM('m-st-det')">Schließen</button>
 </div></div>
 
+<div class="mo" id="m-game-det"><div class="md">
+  <div id="m-game-det-c"></div>
+  <button class="btn bg" style="width:100%;margin-top:12px" onclick="closeM('m-game-det')">Schließen</button>
+</div></div>
+
 <div class="mo" id="m-spiel-gen"><div class="md">
   <h2 id="m-gen-title">Spiel starten</h2>
   <div class="fg"><label>Datum</label><input type="date" id="m-gen-datum"></div>
@@ -645,6 +650,45 @@ function handleGameFinished(state) {
   }
 }
 
+// Game detail modal
+async function showGameDetail(gameId) {
+  var c = document.getElementById('m-game-det-c');
+  c.innerHTML = '<div style="text-align:center;padding:24px;color:var(--mut)">Laden…</div>';
+  openM('m-game-det');
+  var data;
+  try {
+    var r = await fetch('/api/games/' + gameId);
+    data = await r.json();
+  } catch(e) {
+    c.innerHTML = '<div style="text-align:center;padding:24px;color:var(--red)">Laden fehlgeschlagen.</div>';
+    return;
+  }
+  var typ = S.typen.find(function(t){return t.id===data.game.type_key;});
+  var typName = typ ? typ.name : data.game.type_key;
+  var typIcon = typ ? typ.icon : '🎲';
+  var dateStr = data.game.finished_at ? new Date(data.game.finished_at.replace(' ','T')).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div style="font-size:32px">' + typIcon + '</div><div><div style="font-family:var(--fh);font-size:22px">' + typName + '</div><div style="color:var(--mut);font-size:12px">' + dateStr + '</div></div></div>';
+  if (data.results && data.results.length) {
+    var sorted = data.results.slice().sort(function(a,b){
+      if (a.winner && !b.winner) return -1;
+      if (!a.winner && b.winner) return 1;
+      return (b.score || 0) - (a.score || 0);
+    });
+    html += '<table class="stbl"><thead><tr><th>Spieler</th><th style="text-align:right">Score</th><th style="text-align:right">Ergebnis</th></tr></thead><tbody>';
+    sorted.forEach(function(entry) {
+      var sp = S.spieler.find(function(p){return p.id===entry.playerId;});
+      var name = sp ? (sp.emoji + ' ' + sp.name) : ('Spieler ' + entry.playerId);
+      var score = entry.score != null ? entry.score : '—';
+      var result = entry.winner ? '<span class="badge bgrn">Sieg</span>' : '';
+      html += '<tr' + (entry.winner ? ' style="font-weight:600"' : '') + '><td>' + name + '</td><td style="text-align:right;font-family:var(--fh);font-size:18px">' + score + '</td><td style="text-align:right">' + result + '</td></tr>';
+    });
+    html += '</tbody></table>';
+  } else {
+    html += '<div style="color:var(--mut);font-size:13px;text-align:center;padding:16px">Keine Ergebnisse verfügbar.</div>';
+  }
+  c.innerHTML = html;
+}
+
 // Spieler
 function renderSpEmo(){document.getElementById('m-sp-emoji').innerHTML=EMOJIS.map(function(e){return'<div class="eo'+(e===selEmo?' sel':'')+'" onclick="selEmo=\''+e+'\';renderSpEmo()">'+e+'</div>';}).join('');}
 function addSpieler(){var name=document.getElementById('m-sp-name').value.trim();if(!name){notify('Name eingeben','var(--red)');return;}S.spieler.push(mkSp(Date.now(),name,selEmo));closeM('m-neu-sp');document.getElementById('m-sp-name').value='';notify('Spieler hinzugefuegt!');renderAll();}
@@ -944,7 +988,9 @@ async function renderSpiele() {
     var dateStr = g.started_at ? new Date(g.started_at).toLocaleDateString('de-DE') : '';
     var card = document.createElement('div');
     card.className = 'stc';
-    card.innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div class="uav" style="font-size:20px">' + icon + '</div><div class="uinfo"><div class="nm">' + name + '</div><div class="sub">' + dateStr + '</div></div></div>';
+    card.style.cursor = 'pointer';
+    card.innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div class="uav" style="font-size:20px">' + icon + '</div><div class="uinfo"><div class="nm">' + name + '</div><div class="sub">' + dateStr + '</div></div><div style="color:var(--mut);font-size:18px;margin-left:auto">›</div></div>';
+    card.addEventListener('click', function(){ showGameDetail(g.id); });
     return card;
   }
 
