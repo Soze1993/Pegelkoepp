@@ -350,6 +350,25 @@ document.addEventListener('DOMContentLoaded', async function() {
   await init();
 });
 
+async function refreshPlayerStats() {
+  try {
+    var sd = await fetch('/api/stats').then(function(r){return r.json();});
+    var statsArr = sd.players || sd;
+    var stMap = {}; statsArr.forEach(function(s){ stMap[s.player_id] = s; });
+    S.spieler.forEach(function(p) {
+      var st = stMap[p.id] || {};
+      p.spiele = (st.wins||0) + (st.losses||0) + (st.draws||0);
+      p.siege = st.wins || 0;
+      p.niederlagen = st.losses || 0;
+      p.pudel = st.pudel_count || 0;
+      p.wuerfe = st.total_throws || 0;
+      p.avg_score = st.avg_score || 0;
+      p.neun = st.neun_count || 0;
+    });
+    renderSpielerListe();
+  } catch(e) {}
+}
+
 async function init() {
   var [playersRes, statsRes] = await Promise.all([fetch('/api/players'), fetch('/api/stats')]);
   S.spieler = await playersRes.json();
@@ -462,6 +481,7 @@ function initSocket() {
         S.bkLoserId = d.bk_loser ? d.bk_loser.id : null;
       })
       .catch(function() {});
+    refreshPlayerStats();
   });
 }
 
