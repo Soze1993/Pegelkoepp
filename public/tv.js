@@ -413,12 +413,12 @@ function bkTotal(p) {
   return (p.bildPts || []).reduce(function(a, b) { return a + (b !== null ? b : 0); }, 0);
 }
 
-// BK loser detection — player with the minimum bkTotal
+// BK loser detection — player with the minimum bkTotal, excluding außer-Konkurrenz
 function getBKLoserName(state) {
   if (!state || !state.players || !state.players.length) return '—';
-  var withTotals = state.players.map(function(p) {
-    return { name: p.name, total: bkTotal(p) };
-  });
+  var eligible = state.players.filter(function(p) { return p.id !== state.exemptPlayerId; });
+  var pool = eligible.length > 0 ? eligible : state.players;
+  var withTotals = pool.map(function(p) { return { name: p.name, total: bkTotal(p) }; });
   withTotals.sort(function(a, b) { return a.total - b.total; });
   return withTotals[0].name;
 }
@@ -542,6 +542,7 @@ function renderBilderkegelTV(state) {
   var loserIdx  = -1;
   if (gameStarted) {
     state.players.forEach(function(p, idx) {
+      if (p.id === state.exemptPlayerId) return;  // außer Konkurrenz — excluded from loser
       var tot = bkTotal(p);
       if (minTotal === null || tot < minTotal) {
         minTotal = tot;
