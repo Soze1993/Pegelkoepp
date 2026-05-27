@@ -84,19 +84,14 @@ router.post('/', requireSession, (req, res) => {
     : config;
 
   // BK: derive exemptPlayerId from last finished BK game (T-WVG-01: server-derived, never trust client)
+  // T3: use stored payer_player_id directly — no reconstructState, no exemption-chain corruption
   if (type_key === 'bilderkegel') {
     try {
       const lastBK = db.prepare(
-        "SELECT * FROM games WHERE type_key = 'bilderkegel' AND status = 'finished' ORDER BY finished_at DESC LIMIT 1"
+        "SELECT payer_player_id FROM games WHERE type_key = 'bilderkegel' AND status = 'finished' ORDER BY id DESC LIMIT 1"
       ).get();
-      if (lastBK) {
-        const lastState = reconstructState(lastBK);
-        const bkModule = gameTypes['bilderkegel'];
-        const lastResults = bkModule.getFinalResults(lastState);
-        const payerResult = lastResults.find(r => r.payer);
-        if (payerResult) {
-          configWithSeed = Object.assign({}, configWithSeed, { exemptPlayerId: payerResult.playerId });
-        }
+      if (lastBK && lastBK.payer_player_id != null) {
+        configWithSeed = Object.assign({}, configWithSeed, { exemptPlayerId: lastBK.payer_player_id });
       }
     } catch (e) {
       // Non-fatal: graceful degradation — start game without exemptPlayerId
@@ -198,6 +193,17 @@ router.post('/:id/throws', requireSession, (req, res) => {
   if (finished) {
     db.prepare("UPDATE games SET status = 'finished', finished_at = datetime('now') WHERE id = ?").run(game.id);
     activeGames.delete(game.id);
+    // T2: persist payer for BK so exemption survives server restart
+    if (game.type_key === 'bilderkegel') {
+      try {
+        const bkResults = gameModule.getFinalResults(newState);
+        const payerEntry = bkResults.find(r => r.payer);
+        if (payerEntry) {
+          db.prepare('UPDATE games SET payer_player_id = ? WHERE id = ?')
+            .run(payerEntry.playerId, game.id);
+        }
+      } catch (e) { /* non-fatal */ }
+    }
   }
 
   // 6. Emit throw event to TV (D-11: 'throw:applied') — guarded so tests without io pass (Pitfall 3)
@@ -345,7 +351,16 @@ function reconstructState(game) {
     'SELECT player_id, throw_index, value, meta FROM throws ' +
     'WHERE game_id = ? ORDER BY id ASC'
   ).all(game.id);
-  const reconstructConfig = gameModule.id === 'kda' ? { seed: String(game.id) } : {};
+  let reconstructConfig = gameModule.id === 'kda' ? { seed: String(game.id) } : {};
+  // T4: for BK games, load exemptPlayerId from the previous finished BK game's payer
+  if (game.type_key === 'bilderkegel') {
+    const prevBK = db.prepare(
+      "SELECT payer_player_id FROM games WHERE type_key = 'bilderkegel' AND status = 'finished' AND id < ? ORDER BY id DESC LIMIT 1"
+    ).get(game.id);
+    if (prevBK && prevBK.payer_player_id != null) {
+      reconstructConfig = Object.assign({}, reconstructConfig, { exemptPlayerId: prevBK.payer_player_id });
+    }
+  }
   let state = gameModule.initState(players, reconstructConfig);
   for (const t of throws) {
     const parsedMeta = t.meta ? JSON.parse(t.meta) : undefined;

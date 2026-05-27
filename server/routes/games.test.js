@@ -1098,3 +1098,124 @@ test('GT15: rebuildActiveGames rebuilds activeGames from DB after full Map teard
   assert.equal(rebuiltState.done, expectedState.done,
     `done should match: ${rebuiltState.done} vs ${expectedState.done}`);
 });
+
+// ---------------------------------------------------------------------------
+// GT36: BK exemption chain — payer_player_id persists correctly across 3 games
+//
+// Scenario:
+//   BK Game 1 (no exemption): A scores 3, B scores 5, C scores 4 → A pays (min).
+//   BK Game 2 (A exempt):     A scores 2 (lowest, but exempt), B scores 4, C scores 5 → B pays.
+//   BK Game 3:                should start with exemptPlayerId = B.
+//
+// This catches the pre-fix bug where reconstructState passed {} config, making
+// getFinalResults see A as payer again in Game 2 (since exemptPlayerId was lost).
+// ---------------------------------------------------------------------------
+test('GT36: BK exemption chain — payer_player_id persists across server restart (3-game chain)', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Use players 4, 5, 6 (distinct from other tests)
+  const pA = 4, pB = 5, pC = 6;
+
+  // Helper: finish a BK game by giving each player specific total scores.
+  // We use Bild 0 (Volle, max=12): 2 throws each, giving controlled totals.
+  // For each player, throw values v1+v2 per Bild.
+  // To keep it simple: give each player 1 throw per Bild (Bild 0 needs >=2 throws to score,
+  // so we always do 2 throws per Bild). Use 0+score to set total = score.
+  async function finishBK(gameId, scoresMap) {
+    // scoresMap: { playerId: totalScore } — we allocate across 5 Bilder
+    // Strategy: spread score across 5 Bilder with 2 throws each (throw1=score, throw2=0)
+    // BK turn order: each Bild, all players in seat order throw 2 times before next Bild.
+    // Actual BK order: aktSpIdx cycles across players for each throw within a Bild.
+    // From applyThrow: aktSpIdx cycles per throw; after 2 throws for a player, move to next.
+    // Order per Bild: p1 throw1, p1 throw2, p2 throw1, p2 throw2, p3 throw1, p3 throw2 → wrong
+    // Actual: aktSpIdx advances after each "complete" player (2 throws or max reached).
+    // Per Bild: all throws for aktSpIdx player first, then next player, etc.
+    const playerIds = [pA, pB, pC];
+    // Distribute scores: each player gets their total spread over 5 bilder
+    // For simplicity: all score in Bild 0 (first throw = totalScore, second throw = 0)
+    // Then Bilder 1-4: all 0s (2 throws each)
+    // Bild 0: for each player in order: throw(score), throw(0)
+    // Bilder 1-4: for each player: throw(0), throw(0)
+    for (let bild = 0; bild < 5; bild++) {
+      for (const pid of playerIds) {
+        // First throw for this player/bild
+        const v1 = (bild === 0) ? scoresMap[pid] : 0;
+        const r1 = await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', cookie },
+          body: JSON.stringify({ player_id: pid, throw_index: 0, value: v1 })
+        });
+        assert.equal(r1.status, 200, `BK game ${gameId} Bild${bild} p${pid} throw1: expected 200, got ${r1.status}`);
+        const b1 = await r1.json();
+        // If game finished after first throw (max reached), stop
+        if (b1.finished) return b1;
+        // Second throw (always 0)
+        const r2 = await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', cookie },
+          body: JSON.stringify({ player_id: pid, throw_index: 0, value: 0, meta: { keinPudel: true } })
+        });
+        assert.equal(r2.status, 200, `BK game ${gameId} Bild${bild} p${pid} throw2: expected 200, got ${r2.status}`);
+        const b2 = await r2.json();
+        if (b2.finished) return b2;
+      }
+    }
+  }
+
+  // --- BK Game 1: no exemption. A=3, B=5, C=4 → A pays ---
+  const r1 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'bilderkegel', player_ids: [pA, pB, pC] })
+  });
+  assert.equal(r1.status, 201);
+  const { id: g1id } = await r1.json();
+
+  const end1 = await finishBK(g1id, { [pA]: 3, [pB]: 5, [pC]: 4 });
+  assert.ok(end1 && end1.finished, `BK Game 1 should be finished`);
+
+  // Verify DB: payer_player_id = pA
+  const g1row = db.prepare('SELECT payer_player_id FROM games WHERE id = ?').get(g1id);
+  assert.equal(g1row.payer_player_id, pA, `Game 1 payer should be player A (${pA}), got ${g1row.payer_player_id}`);
+
+  // --- BK Game 2: A is exempt. A=2 (lowest but exempt), B=4, C=5 → B pays ---
+  const r2 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'bilderkegel', player_ids: [pA, pB, pC] })
+  });
+  assert.equal(r2.status, 201);
+  const g2body = await r2.json();
+  const g2id = g2body.id;
+
+  // Verify Game 2 started with A exempt
+  const { activeGames } = require('./games');
+  const g2state = activeGames.get(g2id);
+  assert.equal(g2state.exemptPlayerId, pA, `Game 2 should have exemptPlayerId=${pA}, got ${g2state.exemptPlayerId}`);
+
+  const end2 = await finishBK(g2id, { [pA]: 2, [pB]: 4, [pC]: 5 });
+  assert.ok(end2 && end2.finished, `BK Game 2 should be finished`);
+
+  // Verify DB: payer_player_id = pB (not pA, even though A scored lowest)
+  const g2row = db.prepare('SELECT payer_player_id FROM games WHERE id = ?').get(g2id);
+  assert.equal(g2row.payer_player_id, pB, `Game 2 payer should be player B (${pB}), got ${g2row.payer_player_id}`);
+
+  // --- BK Game 3: exemptPlayerId should be B ---
+  // Simulate server restart: clear activeGames so Game 3 creation reads from DB only
+  activeGames.clear();
+
+  const r3 = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'bilderkegel', player_ids: [pA, pB, pC] })
+  });
+  assert.equal(r3.status, 201);
+  const g3body = await r3.json();
+  const g3id = g3body.id;
+
+  const g3state = activeGames.get(g3id);
+  assert.equal(
+    g3state.exemptPlayerId, pB,
+    `Game 3 should exempt player B (${pB}), got ${g3state.exemptPlayerId}`
+  );
+});
