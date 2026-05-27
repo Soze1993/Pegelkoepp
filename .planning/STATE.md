@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: active
-last_updated: "2026-05-27T14:00:00.000Z"
-last_activity: "2026-05-27 — Phase 8 planned (4 plans, 3 waves); ready to execute"
+status: completed
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-05-27"
+last_activity: 2026-05-27 — Phase 8 Plan 01 executed; 10 RED test stubs written (ST30..ST36 + AB30..AB32)
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 18
-  completed_plans: 14
-  percent: 50
+  completed_plans: 16
+  percent: 53
 ---
 
 # Project State
@@ -24,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 8 — Statistiken & Rückblick — PLANNED (0/4 plans executed)
-Plan: 4 plans created (08-01..08-04), wave structure: W0→W1 parallel→W2
-Status: Phase 8 ready to execute. Phases 6+7 complete; Phase 8 planned 2026-05-27.
-Last activity: 2026-05-27 — Phase 8 planned; 4 plans verified (STATS-01..05, RECAP-01..02 covered)
+Phase: 8 — Statistiken & Rückblick — IN PROGRESS (1/4 plans executed)
+Plan: 08-01 complete (RED stubs); 08-02..08-04 queued
+Status: Wave 0 complete. 10 RED test stubs locked in contracts. Ready for Wave 1 (08-02, 08-03).
+Last activity: 2026-05-27 — 08-01 executed; ST30..ST36 + AB30..AB32 RED stubs written
 
-Progress bar: [##--------] 50% (2/4 phases complete)
+Progress bar: [##--------] 53% (2/4 phases complete, 16/18 plans done)
 
 ## Accumulated Context
 
@@ -66,6 +67,6 @@ Progress bar: [##--------] 50% (2/4 phases complete)
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Phase 8 planning complete
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
-Next: /clear then /gsd:execute-phase 8
+Next: /clear then /gsd:execute-phase 8 (to run 08-02 + 08-03 Wave 1)

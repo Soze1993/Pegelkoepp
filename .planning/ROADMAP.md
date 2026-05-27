@@ -78,7 +78,7 @@ Plans:
 Plans:
 
 **Wave 0**
-- [ ] 08-01-PLAN.md — Wave 0: RED test stubs ST30..ST36 + AB30..AB32 (helpers + fixtures)
+- [x] 08-01-PLAN.md — Wave 0: RED test stubs ST30..ST36 + AB30..AB32 (helpers + fixtures)
 
 **Wave 1** *(blocked on Wave 0 completion)*
 - [ ] 08-02-PLAN.md — Wave 1: Backend stats sub-routes (/year /streaks /h2h /kda-counts /bk-counts) + highlights.js exports getBKLoserId
@@ -113,5 +113,5 @@ Cross-cutting constraints:
 | 5. Production Deployment | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 6. Turnierbaum | v2.0 | 4/4 | Complete | 2026-05-27 |
 | 7. Highlights & TV-Layouts | v2.0 | 4/4 | Complete | 2026-05-24 |
-| 8. Statistiken & Rückblick | v2.0 | 0/4 | Planned | - |
+| 8. Statistiken & Rückblick | v2.0 | 1/4 | In Progress|  |
 | 9. Polish | v2.0 | 0/? | Not started | - |

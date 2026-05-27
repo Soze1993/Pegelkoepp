@@ -59,13 +59,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STATS-01 | Phase 8 | Pending |
-| STATS-02 | Phase 8 | Pending |
-| STATS-03 | Phase 8 | Pending |
-| STATS-04 | Phase 8 | Pending |
-| STATS-05 | Phase 8 | Pending |
-| RECAP-01 | Phase 8 | Pending |
-| RECAP-02 | Phase 8 | Pending |
+| STATS-01 | Phase 8 | Complete |
+| STATS-02 | Phase 8 | Complete |
+| STATS-03 | Phase 8 | Complete |
+| STATS-04 | Phase 8 | Complete |
+| STATS-05 | Phase 8 | Complete |
+| RECAP-01 | Phase 8 | Complete |
+| RECAP-02 | Phase 8 | Complete |
 | HIGHLIGHT-01 | Phase 7 | Pending |
 | HIGHLIGHT-02 | Phase 7 | Pending |
 | HIGHLIGHT-03 | Phase 7 | Pending |
