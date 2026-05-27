@@ -2105,7 +2105,7 @@ async function renderStats() {
     chips.appendChild(mkChip(p.losses, 'Niederl.'));
     chips.appendChild(mkChip(p.pudel_pct + '%', 'Pudel%', 'pc'));
     // Section F: streak chips
-    var streakEntry = S.streaks && S.streaks[p.id];
+    var streakEntry = S.streaks && S.streaks[p.player_id];
     var streakCurrent = streakEntry ? streakEntry.current : null;
     var streakLongest = streakEntry ? streakEntry.longest : null;
     var streakCurrentChip = mkChip(streakCurrent !== null ? streakCurrent : '—', 'Streak');
@@ -2124,7 +2124,7 @@ async function renderStats() {
     bestsTable.style.display = 'none';
     bestsTable.style.marginTop = '8px';
     bestsTable.style.width = '100%';
-    var kdaCount = S.kdaCounts && S.kdaCounts[p.id] ? S.kdaCounts[p.id] : 0;
+    var kdaCount = S.kdaCounts && S.kdaCounts[p.player_id] ? S.kdaCounts[p.player_id] : 0;
     if ((p.personal_bests && p.personal_bests.length) || kdaCount > 0) {
       var tbl = document.createElement('table');
       tbl.className = 'stbl';
