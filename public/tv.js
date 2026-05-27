@@ -204,12 +204,31 @@ function renderKDABracket(state) {
   var wColCount = (new Set(state.bracket.filter(function(m){return m.bracket==='W';}).map(function(m){return m.round;}))).size;
   var lColCount = (new Set(state.bracket.filter(function(m){return m.bracket==='L';}).map(function(m){return m.round;}))).size;
   var totalCols = wColCount + lColCount;
-  var vw = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1920;
+  var vw = (typeof window !== 'undefined' && window.innerWidth)  ? window.innerWidth  : 1920;
+  var vh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 1080;
   var colGap = totalCols > 9 ? 8 : 12;
   var slotWidth = Math.max(80, Math.min(200, Math.floor((vw - 48 - 24 - colGap * (totalCols - 2)) / totalCols)));
-  var slotHeight = wR1Count <= 2 ? 80 : wR1Count <= 4 ? 72 : wR1Count <= 6 ? 64 : 52;
 
-  // Outer container: flex column — top row (W + L side by side), GF centered at bottom
+  // For wide brackets (9–12 players, 12 cols): GF gets a fixed compact height so the bracket
+  // can use the saved space for taller slots — both names fit cleanly without vertical clipping.
+  // gfFixedH = 0 means GF keeps flex:1 (original behaviour for 4/8-player brackets).
+  var gfFixedH = 0;
+  var slotHeight;
+  if (totalCols > 9 && wR1Count > 4) {
+    gfFixedH = 180;  // compact GF: label(32) + slot(~94–117) + padding/gap/border
+    // bracketAvailH = usable height for the bracket rows
+    // wSection height ≈ 100 + 6.2 * slotH  (derived from label + spacing + 4 bye + 4 real slots)
+    var bracketAvailH = vh - 40 - gfFixedH;
+    slotHeight = Math.max(52, Math.min(90, Math.floor((bracketAvailH - 100) / 6.2)));
+  } else {
+    slotHeight = wR1Count <= 2 ? 80 : wR1Count <= 4 ? 72 : wR1Count <= 6 ? 64 : 52;
+  }
+
+  // Pre-compute exact section widths to avoid flex-rounding overflow (important for 12-col brackets)
+  var wSectionWidth = wColCount * slotWidth + (wColCount > 1 ? (wColCount - 1) * colGap : 0);
+  var lSectionWidth = lColCount * slotWidth + (lColCount > 1 ? (lColCount - 1) * colGap : 0);
+
+  // Outer container: flex column — top row (W + L side by side), GF at bottom
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
   container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
@@ -220,7 +239,7 @@ function renderKDABracket(state) {
 
   // W bracket
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:' + wColCount + ';min-width:0;overflow:hidden';
+  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;width:' + wSectionWidth + 'px;flex-shrink:0;overflow:hidden';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
@@ -256,7 +275,7 @@ function renderKDABracket(state) {
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   if (lMatches.length > 0) {
     var lSection = document.createElement('div');
-    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:' + lColCount + ';min-width:0;overflow:hidden';
+    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;width:' + lSectionWidth + 'px;flex-shrink:0;overflow:hidden';
 
     var lLabel = document.createElement('div');
     lLabel.textContent = 'Loser Bracket';
@@ -294,7 +313,8 @@ function renderKDABracket(state) {
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   if (gfSlot) {
     var gfStage = document.createElement('div');
-    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-top:12px;border-top:2px solid var(--ac);width:100%;flex:1';
+    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-top:12px;border-top:2px solid var(--ac);width:100%;'
+      + (gfFixedH > 0 ? 'height:' + gfFixedH + 'px;flex-shrink:0;flex-grow:0' : 'flex:1');
 
     var gfLabel = document.createElement('div');
     gfLabel.textContent = 'Großes Finale';
@@ -321,12 +341,15 @@ function buildTVSlotEl(slot, w, h) {
   var byeH = Math.round(h * 0.55);
   var elH = slot.isBye ? byeH : h;
 
+  // Scale padding for narrow slots (< 160px) to give names more room
+  var padH = w >= 160 ? 12 : 8;
+
   if (isActive) {
-    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px 12px;box-sizing:border-box;border:2px solid var(--ac);box-shadow:0 0 16px #e8b84b33';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px ' + padH + 'px;box-sizing:border-box;border:2px solid var(--ac);box-shadow:0 0 16px #e8b84b33';
   } else if (slot.isBye) {
-    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:6px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:4px 12px;box-sizing:border-box;border:1px dashed var(--brd);opacity:0.5';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:6px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:4px ' + padH + 'px;box-sizing:border-box;border:1px dashed var(--brd);opacity:0.5';
   } else {
-    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px 12px;box-sizing:border-box;border:1px solid var(--brd)';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px ' + padH + 'px;box-sizing:border-box;border:1px solid var(--brd)';
   }
 
   // --- Bye slot: single row with name + BYE badge ---
@@ -334,7 +357,8 @@ function buildTVSlotEl(slot, w, h) {
     var p = slot.winner || slot.p1;
     var byeName = document.createElement('span');
     byeName.textContent = p ? ((p.emoji != null ? p.emoji : '') + ' ' + p.name) : '—';  // textContent — XSS safe (T-06-04-01)
-    byeName.style.cssText = 'font-size:18px;font-weight:600;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    var byeNameFontSize = w >= 160 ? 18 : w >= 120 ? 15 : 12;
+    byeName.style.cssText = 'font-size:' + byeNameFontSize + 'px;font-weight:600;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     el.appendChild(byeName);
 
     var byeBadge = document.createElement('span');
@@ -362,8 +386,9 @@ function buildTVSlotEl(slot, w, h) {
       nameSpan.style.cssText = 'font-size:14px;font-weight:400;color:var(--mut);flex:1;min-width:0;letter-spacing:4px';
     }
 
+    var scoreFontSize = w >= 160 ? 26 : w >= 120 ? 20 : 16;
     var scoreSpan = document.createElement('span');
-    scoreSpan.style.cssText = 'font-size:26px;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
+    scoreSpan.style.cssText = 'font-size:' + scoreFontSize + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
 
     if (p && slot.throws) {
       var playerThrows = slot.throws.filter(function(t) { return t.playerId === p.id; });
