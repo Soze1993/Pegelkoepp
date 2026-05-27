@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pegelköpp</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Pirata+One&display=swap" rel="stylesheet">
+<link href="/fonts.css" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -705,6 +705,23 @@ async function showGameDetail(gameId) {
       html += '<tr' + (entry.winner ? ' style="font-weight:600"' : '') + '><td>' + name + '</td><td style="text-align:right;font-family:var(--fh);font-size:18px">' + score + '</td><td style="text-align:right">' + result + '</td></tr>';
     });
     html += '</tbody></table>';
+    // WhatsApp share button
+    var shareLines = ['🎳 Pegelköpp – ' + typName];
+    if (dateStr) shareLines.push('📅 ' + dateStr);
+    shareLines.push('');
+    sorted.forEach(function(entry, i) {
+      var sp2 = S.spieler.find(function(p) { return p.id === entry.playerId; });
+      var pName = sp2 ? sp2.name : ('Spieler ' + entry.playerId);
+      var pEmoji = sp2 ? sp2.emoji : '🎳';
+      var line = (i + 1) + '. ' + pEmoji + ' ' + pName;
+      if (entry.score != null) line += ' – ' + entry.score;
+      if (entry.winner) line += ' 🏆';
+      if (entry.payer) line += ' 💸 zahlt!';
+      shareLines.push(line);
+    });
+    var shareText = shareLines.join('\n');
+    var waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+    html += '<button class="btn bg sm" style="width:100%;margin-top:12px" onclick="window.open(\'' + waUrl.replace(/\'/g, '%27') + '\',\'_blank\')">📤 Via WhatsApp teilen</button>';
   } else {
     html += '<div style="color:var(--mut);font-size:13px;text-align:center;padding:16px">Keine Ergebnisse verfügbar.</div>';
   }
