@@ -311,7 +311,7 @@ var EMOJIS=['🎳','🎯','⚡','🦁','🔥','💪','🐆','🌟','🧊','🎸'
 var selEmo='🎳',selSTEmo='🎯',genTyp=null,genSel=[],hausWurf=null,hausSlot=null,selK=null,ankerPts=null,vgSel=null,fjSel=null,bkK=null,bkSel=[];
 var selKeinPudel=false;
 
-function mkSp(id,name,emoji){return{id:id,name:name,emoji:emoji,spiele:0,siege:0,niederlagen:0,pts:0,best:0,wuerfe:0,pudel:0,bezahlCount:0,tDatum:'',tSiege:0,tNiederlagen:0};}
+function mkSp(id,name,emoji){return{id:id,name:name,emoji:emoji,spiele:0,siege:0,niederlagen:0,pts:0,avg_score:0,best:0,wuerfe:0,pudel:0,neun:0,bezahlCount:0,tDatum:'',tSiege:0,tNiederlagen:0};}
 
 var S={
   kdaChampionId: null,
@@ -362,6 +362,8 @@ async function init() {
     p.niederlagen = st.losses || 0;
     p.pudel = st.pudel_count || 0;
     p.wuerfe = st.total_throws || 0;
+    p.avg_score = st.avg_score || 0;
+    p.neun = st.neun_count || 0;
   });
 
   var abendRes = await fetch('/api/abende/active');
@@ -692,8 +694,8 @@ async function showGameDetail(gameId) {
 // Spieler
 function renderSpEmo(){document.getElementById('m-sp-emoji').innerHTML=EMOJIS.map(function(e){return'<div class="eo'+(e===selEmo?' sel':'')+'" onclick="selEmo=\''+e+'\';renderSpEmo()">'+e+'</div>';}).join('');}
 function addSpieler(){var name=document.getElementById('m-sp-name').value.trim();if(!name){notify('Name eingeben','var(--red)');return;}S.spieler.push(mkSp(Date.now(),name,selEmo));closeM('m-neu-sp');document.getElementById('m-sp-name').value='';notify('Spieler hinzugefuegt!');renderAll();}
-function renderSpielerListe(){var el=document.getElementById('r-spieler');if(!S.spieler.length){el.innerHTML='<div class="empty"><div class="icon">👤</div><p>Noch keine Spieler.</p></div>';return;}el.innerHTML=S.spieler.map(function(s){return'<div class="uc" onclick="showSpDetail('+s.id+')"><div class="uav">'+s.emoji+'</div><div class="uinfo"><div class="nm">'+s.name+'</div><div class="sub">'+(s.spiele||0)+' Sp &middot; <span style="color:var(--grn)">'+(s.siege||0)+'S</span> &middot; <span style="color:var(--red)">'+(s.niederlagen||0)+'N</span>'+((s.bezahlCount||0)?' &middot; <span style="color:var(--red)">'+(s.bezahlCount||0)+'x&#128184;</span>':'')+'</div></div><div style="display:flex;gap:6px"><div class="chip"><div class="v">'+((s.spiele||0)?Math.round((s.pts||0)/(s.spiele||1)):'-')+'</div><div class="l">&#8960;</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel</div></div></div></div>';}).join('');}
-function showSpDetail(id){var s=S.spieler.find(function(x){return x.id===id;});if(!s)return;var avg=(s.spiele||0)?Math.round((s.pts||0)/(s.spiele||1)):0;var rate=(s.wuerfe||0)?Math.round((s.pudel||0)/(s.wuerfe||1)*100):0;var h=today();var tAkt=s.tDatum===h&&((s.tSiege||0)+(s.tNiederlagen||0))>0;document.getElementById('m-sp-detail-c').innerHTML='<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div style="width:56px;height:56px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--ac)">'+s.emoji+'</div><div><div style="font-family:var(--fh);font-size:28px">'+s.name+'</div><div style="color:var(--mut);font-size:12px">'+(s.spiele||0)+' Spiele</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"><div class="chip"><div class="v">'+avg+'</div><div class="l">&#8960; Score</div></div><div class="chip"><div class="v" style="color:var(--grn)">'+(s.siege||0)+'</div><div class="l">Siege</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.niederlagen||0)+'</div><div class="l">Niederlagen</div></div></div>'+((s.bezahlCount||0)?'<div style="background:#e0525218;border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center;margin-bottom:12px"><div style="font-size:13px;color:var(--red);font-weight:600">&#128184; '+(s.bezahlCount||0)+'x zahlen gemuessen</div></div>':'')+(tAkt?'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Heute</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div class="chip"><div class="v" style="color:var(--grn)">'+(s.tSiege||0)+'</div><div class="l">Siege heute</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.tNiederlagen||0)+'</div><div class="l">Niederl. heute</div></div></div>':'')+'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div class="chip"><div class="v">'+(s.best||0)+'</div><div class="l">Bester</div></div><div class="chip"><div class="v">'+(s.wuerfe||0)+'</div><div class="l">Wuerfe</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel '+rate+'%</div></div></div>'
+function renderSpielerListe(){var el=document.getElementById('r-spieler');if(!S.spieler.length){el.innerHTML='<div class="empty"><div class="icon">👤</div><p>Noch keine Spieler.</p></div>';return;}el.innerHTML=S.spieler.map(function(s){return'<div class="uc" onclick="showSpDetail('+s.id+')"><div class="uav">'+s.emoji+'</div><div class="uinfo"><div class="nm">'+s.name+'</div><div class="sub">'+(s.spiele||0)+' Sp &middot; <span style="color:var(--grn)">'+(s.siege||0)+'S</span> &middot; <span style="color:var(--red)">'+(s.niederlagen||0)+'N</span>'+((s.bezahlCount||0)?' &middot; <span style="color:var(--red)">'+(s.bezahlCount||0)+'x&#128184;</span>':'')+'</div></div><div style="display:flex;gap:6px"><div class="chip"><div class="v">'+((s.avg_score||0)?s.avg_score:'-')+'</div><div class="l">&#8960;</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel</div></div><div class="chip"><div class="v" style="color:var(--ac)">'+(s.neun||0)+'</div><div class="l">9er</div></div></div></div>';}).join('');}
+function showSpDetail(id){var s=S.spieler.find(function(x){return x.id===id;});if(!s)return;var avg=s.avg_score||0;var rate=(s.wuerfe||0)?Math.round((s.pudel||0)/(s.wuerfe||1)*100):0;var h=today();var tAkt=s.tDatum===h&&((s.tSiege||0)+(s.tNiederlagen||0))>0;document.getElementById('m-sp-detail-c').innerHTML='<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div style="width:56px;height:56px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--ac)">'+s.emoji+'</div><div><div style="font-family:var(--fh);font-size:28px">'+s.name+'</div><div style="color:var(--mut);font-size:12px">'+(s.spiele||0)+' Spiele</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"><div class="chip"><div class="v">'+avg+'</div><div class="l">&#8960; Score</div></div><div class="chip"><div class="v" style="color:var(--grn)">'+(s.siege||0)+'</div><div class="l">Siege</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.niederlagen||0)+'</div><div class="l">Niederlagen</div></div></div>'+((s.bezahlCount||0)?'<div style="background:#e0525218;border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center;margin-bottom:12px"><div style="font-size:13px;color:var(--red);font-weight:600">&#128184; '+(s.bezahlCount||0)+'x zahlen gemuessen</div></div>':'')+(tAkt?'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Heute</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div class="chip"><div class="v" style="color:var(--grn)">'+(s.tSiege||0)+'</div><div class="l">Siege heute</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.tNiederlagen||0)+'</div><div class="l">Niederl. heute</div></div></div>':'')+'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"><div class="chip"><div class="v">'+(s.best||0)+'</div><div class="l">Bester</div></div><div class="chip"><div class="v">'+(s.wuerfe||0)+'</div><div class="l">Würfe</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel '+rate+'%</div></div><div class="chip"><div class="v" style="color:var(--ac)">'+(s.neun||0)+'</div><div class="l">9er</div></div></div>'
   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="chip"><div class="v" style="color:var(--ac)">'+(S.kdaCounts && S.kdaCounts[id] || 0)+'</div><div class="l">KdA-Titel</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(S.bkCounts && S.bkCounts[id] || 0)+'</div><div class="l">BK Verlierer</div></div></div>';
 openM('m-sp-detail');}
 
@@ -1048,8 +1050,21 @@ async function renderSpiele() {
 function renderSpielenTab() {
   var el = document.getElementById('r-spielen');
   if (!S.aktSpiel) {
-    el.innerHTML = '<div class="empty" style="margin-top:40px"><div class="icon">🎳</div><p>Kein aktives Spiel.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p></div>';
-    return;
+    var idleFrag = document.createDocumentFragment();
+    var idleEmpty = document.createElement('div'); idleEmpty.className = 'empty'; idleEmpty.style.marginTop = '24px';
+    idleEmpty.innerHTML = '<div class="icon">🎳</div><p>Kein aktives Spiel.<br><span style="color:var(--ac);cursor:pointer" onclick="showTab(\'bib\')">Spiel starten</span></p>';
+    idleFrag.appendChild(idleEmpty);
+    var kdaSp = S.kdaChampionId && S.spieler.find(function(p){return p.id===S.kdaChampionId;});
+    var bkSp2 = S.bkLoserId && S.spieler.find(function(p){return p.id===S.bkLoserId;});
+    if (kdaSp || bkSp2) {
+      var idleCard = document.createElement('div'); idleCard.className = 'card'; idleCard.style.marginTop = '8px';
+      var idleTitle = document.createElement('div'); idleTitle.className = 'stitle'; idleTitle.textContent = 'Aktuelle Titelträger';
+      idleCard.appendChild(idleTitle);
+      if (kdaSp) { var r1=document.createElement('div');r1.className='wi';var l1=document.createElement('span');l1.textContent='🏆 Kegler des Abends';var v1=document.createElement('span');v1.textContent=kdaSp.emoji+' '+kdaSp.name;r1.appendChild(l1);r1.appendChild(v1);idleCard.appendChild(r1); }
+      if (bkSp2) { var r2=document.createElement('div');r2.className='wi';var l2=document.createElement('span');l2.textContent='💩 BK Verlierer';var v2=document.createElement('span');v2.style.color='var(--red)';v2.textContent=bkSp2.emoji+' '+bkSp2.name;r2.appendChild(l2);r2.appendChild(v2);idleCard.appendChild(r2); }
+      idleFrag.appendChild(idleCard);
+    }
+    el.innerHTML = ''; el.appendChild(idleFrag); return;
   }
   switch (S.aktSpiel.type_key) {
     case 'viergewinnt':  renderVGSpiel(el, S.aktSpiel.state); break;
@@ -1976,6 +1991,21 @@ async function renderStats() {
   h2hCard.appendChild(h2hResult);
   frag.appendChild(h2hCard);
 
+  // DreiVollen tournament record card
+  var dvRec = statsData && statsData.tournament_records && statsData.tournament_records.dreiVollen;
+  if (dvRec) {
+    var dvCard = document.createElement('div');
+    dvCard.className = 'card';
+    dvCard.style.marginBottom = '16px';
+    var dvTitle = document.createElement('div'); dvTitle.className = 'stitle'; dvTitle.textContent = '🎯 Drei in die Vollen — Rekord';
+    var dvRow = document.createElement('div'); dvRow.className = 'wi';
+    var dvL = document.createElement('span'); dvL.textContent = 'Bestes Turnierergebnis (Top 6)';
+    var dvR = document.createElement('span'); dvR.style.cssText = 'font-family:var(--fh);font-size:22px;color:var(--ac)'; dvR.textContent = dvRec.best_sum + ' Volle';
+    dvRow.appendChild(dvL); dvRow.appendChild(dvR);
+    dvCard.appendChild(dvTitle); dvCard.appendChild(dvRow);
+    frag.appendChild(dvCard);
+  }
+
   // Per-player cards (existing + Section F: streak chips)
   stats.forEach(function(p) {
     var card = document.createElement('div');
@@ -2030,16 +2060,23 @@ async function renderStats() {
     bestsTable.style.display = 'none';
     bestsTable.style.marginTop = '8px';
     bestsTable.style.width = '100%';
-    if (p.personal_bests && p.personal_bests.length) {
+    var kdaCount = S.kdaCounts && S.kdaCounts[p.id] ? S.kdaCounts[p.id] : 0;
+    if ((p.personal_bests && p.personal_bests.length) || kdaCount > 0) {
       var tbl = document.createElement('table');
       tbl.className = 'stbl';
       tbl.innerHTML = '<thead><tr><th>Spieltyp</th><th style="text-align:right">Bestleistung</th></tr></thead>';
       var tbody = document.createElement('tbody');
-      p.personal_bests.forEach(function(b) {
+      if (kdaCount > 0) {
+        var trKda = document.createElement('tr');
+        var tdKdaTyp = document.createElement('td'); tdKdaTyp.textContent = '🏆 Kegler des Abends';
+        var tdKdaVal = document.createElement('td'); tdKdaVal.className = 'snum'; tdKdaVal.style.cssText = 'text-align:right;color:var(--ac)'; tdKdaVal.textContent = kdaCount + 'x';
+        trKda.appendChild(tdKdaTyp); trKda.appendChild(tdKdaVal); tbody.appendChild(trKda);
+      }
+      (p.personal_bests || []).forEach(function(b) {
         var tr = document.createElement('tr');
         var tdTyp = document.createElement('td');
         var typ = S.typen.find(function(t){return t.id===b.type_key;});
-        tdTyp.textContent = typ ? typ.name : b.type_key;
+        tdTyp.textContent = (typ ? typ.name : b.type_key) + (b.type_key === 'kleineHaus' ? ' ↓' : '');
         var tdScore = document.createElement('td');
         tdScore.className = 'snum';
         tdScore.style.textAlign = 'right';

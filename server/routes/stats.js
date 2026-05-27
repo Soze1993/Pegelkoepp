@@ -29,7 +29,9 @@ router.get('/', (req, res) => {
       wins: 0,
       losses: 0,
       draws: 0,
-      bests: {} // type_key → best score (max or min depending on type)
+      bests: {},
+      total_score: 0,
+      score_count: 0
     };
   }
 
@@ -71,8 +73,13 @@ router.get('/', (req, res) => {
         entry.losses++;
       }
 
+      // Accumulate total score for avg_score (skip 0/null — VG/FJ placeholders)
+      if (r.score != null && r.score > 0) {
+        entry.total_score += r.score;
+        entry.score_count++;
+      }
+
       // Personal best tracking (D-06, STAT-02)
-      // Skip score=0 (VG/FJ-jaeger placeholder scores)
       if (r.score === 0) continue;
 
       const prev = entry.bests[game.type_key];
@@ -99,7 +106,8 @@ router.get('/', (req, res) => {
   const pudelRows = db.prepare(`
     SELECT t.player_id,
            COUNT(*) AS total_throws,
-           SUM(CASE WHEN json_extract(t.meta, '$.pudel') = 1 THEN 1 ELSE 0 END) AS pudel_count
+           SUM(CASE WHEN json_extract(t.meta, '$.pudel') = 1 THEN 1 ELSE 0 END) AS pudel_count,
+           SUM(CASE WHEN t.value = 9 THEN 1 ELSE 0 END) AS neun_count
     FROM throws t
     JOIN games g ON t.game_id = g.id
     WHERE g.status = 'finished'
@@ -110,7 +118,8 @@ router.get('/', (req, res) => {
   for (const row of pudelRows) {
     pudelMap[row.player_id] = {
       total_throws: row.total_throws,
-      pudel_count: row.pudel_count || 0
+      pudel_count: row.pudel_count || 0,
+      neun_count: row.neun_count || 0
     };
   }
 
@@ -118,9 +127,12 @@ router.get('/', (req, res) => {
   const response = players.map(p => {
     const entry = statsMap[p.id];
     const pudel = pudelMap[p.id] || { total_throws: 0, pudel_count: 0 };
-    const { total_throws, pudel_count } = pudel;
+    const { total_throws, pudel_count, neun_count } = pudel;
     const pudel_pct = total_throws > 0
       ? Math.round(pudel_count / total_throws * 1000) / 10
+      : 0;
+    const avg_score = entry.score_count > 0
+      ? Math.round(entry.total_score / entry.score_count)
       : 0;
 
     const personal_bests = Object.entries(entry.bests).map(([type_key, score]) => ({ type_key, score }));
@@ -135,6 +147,8 @@ router.get('/', (req, res) => {
       pudel_count,
       total_throws,
       pudel_pct,
+      neun_count,
+      avg_score,
       personal_bests
     };
   });
