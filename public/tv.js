@@ -550,6 +550,8 @@ function renderBilderkegelTV(state) {
     });
   }
 
+  var aktId = (!state.done && players[state.aktSpIdx]) ? players[state.aktSpIdx].id : null;
+
   // Player list fills remaining height; rows share space equally via flex
   var ul = document.createElement('ul');
   ul.style.cssText = 'list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden';
@@ -557,8 +559,13 @@ function renderBilderkegelTV(state) {
   state.players.forEach(function(player, idx) {
     var li = document.createElement('li');
     var isLoser = idx === loserIdx;
-    li.style.cssText = 'flex:1;min-height:0;display:flex;align-items:center;padding:' + rowPad + ';border-radius:8px;'
-      + (isLoser ? 'border-left:4px solid var(--red);background:rgba(224,82,82,0.07);padding-left:calc(2vw - 4px)' : '');
+    var isActive = player.id === aktId;
+    // Active takes visual priority over loser; transparent border keeps padding consistent across all rows
+    var borderColor = isActive ? 'var(--ac)' : (isLoser ? 'var(--red)' : 'transparent');
+    var bgExtra = isActive ? ';background:color-mix(in srgb,var(--ac) 8%,transparent)'
+                : (isLoser  ? ';background:rgba(224,82,82,0.07)' : '');
+    li.style.cssText = 'flex:1;min-height:0;display:flex;align-items:center;padding:' + rowPad
+      + ';border-radius:8px;border-left:4px solid ' + borderColor + ';padding-left:calc(2vw - 4px)' + bgExtra;
 
     var nameEl = document.createElement('span');
     nameEl.style.cssText = 'flex:1;font-size:' + namePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
