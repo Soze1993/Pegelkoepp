@@ -3,6 +3,9 @@
 const { Router } = require('express');
 const db = require('../db');
 const requireSession = require('../middleware/auth');
+const gameTypes = require('../game-types');
+const { reconstructState } = require('./games');
+const { getBKLoserId } = require('./highlights');
 
 const router = Router();
 
@@ -24,6 +27,74 @@ router.get('/active', (req, res) => {
     'SELECT id, name, started_at FROM abende WHERE ended_at IS NULL LIMIT 1'
   ).get();
   res.json(abend || null);
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/abende/last-summary — public
+// Returns the most recently closed Kegelabend (ended_at IS NOT NULL) with its
+// KDA champion, BK loser, and a per-game summary list.
+// Must be defined BEFORE any GET /:id route to avoid 'last-summary' being
+// treated as an id param.
+// ---------------------------------------------------------------------------
+router.get('/last-summary', (req, res) => {
+  const lastAbend = db.prepare(
+    'SELECT * FROM abende WHERE ended_at IS NOT NULL ORDER BY ended_at DESC LIMIT 1'
+  ).get();
+  if (!lastAbend) return res.json(null);
+
+  const abendGames = db.prepare(
+    "SELECT * FROM games WHERE abend_id = ? AND status = 'finished' ORDER BY id ASC"
+  ).all(lastAbend.id);
+  // ORDER BY id ASC — not finished_at — to match BK exemption chain order
+
+  let kda_champion = null;
+  let bk_loser = null;
+  const gamesSummary = [];
+
+  for (const game of abendGames) {
+    const gameModule = gameTypes[game.type_key];
+    if (!gameModule) continue;
+    let state, results;
+    try {
+      state = reconstructState(game);
+      results = gameModule.getFinalResults(state);
+    } catch (e) { continue; }
+
+    if (game.type_key === 'kda' && state.gewinner && state.gewinner.id != null) {
+      const p = db.prepare('SELECT id, name, emoji FROM players WHERE id = ?').get(state.gewinner.id);
+      if (p) kda_champion = { id: p.id, name: p.name, emoji: p.emoji };
+    }
+
+    if (game.type_key === 'bilderkegel') {
+      const loserId = getBKLoserId(state);
+      if (loserId != null) {
+        const p = db.prepare('SELECT id, name, emoji FROM players WHERE id = ?').get(loserId);
+        if (p) bk_loser = { id: p.id, name: p.name, emoji: p.emoji };
+      }
+    }
+
+    const winners = results.filter(r => r.winner);
+    const winnerEntry = winners.length === 1 ? winners[0] : null;
+    let winner_name = null;
+    if (winnerEntry) {
+      const wp = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
+      if (wp) winner_name = wp.name;
+    }
+    gamesSummary.push({
+      id: game.id,
+      type_key: game.type_key,
+      finished_at: game.finished_at,
+      winner_name,
+      player_count: results.length
+    });
+  }
+
+  res.json({
+    abend: { id: lastAbend.id, name: lastAbend.name, started_at: lastAbend.started_at, ended_at: lastAbend.ended_at },
+    kda_champion,
+    bk_loser,
+    games: gamesSummary
+  });
 });
 
 // ---------------------------------------------------------------------------

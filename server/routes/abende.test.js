@@ -424,9 +424,9 @@ function linkGameToAbend(gameId, abendId) {
 // Status: RED — route does not exist yet
 // ---
 test('AB30: GET /api/abende/last-summary returns null when no closed abend exists', async () => {
-  // The seed function creates players but no closed abend rows.
-  // Any abend created by previous tests (AB01..AB06) is either ended_at IS NULL
-  // or was cleaned up by those tests. We rely on the seed not creating closed abende.
+  // AB01..AB06 close abende via /end which sets ended_at — delete them first so
+  // there are no closed abende when this test runs.
+  db.prepare('DELETE FROM abende WHERE ended_at IS NOT NULL').run();
   const res = await fetch(`${baseUrl}/api/abende/last-summary`);
   assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
   const body = await res.json();
