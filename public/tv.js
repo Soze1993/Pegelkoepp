@@ -199,8 +199,15 @@ function renderKDABracket(state) {
   gameEl.classList.add('active');
 
   var wR1Count = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; }).length;
-  var slotWidth  = wR1Count <= 2 ? 200 : wR1Count <= 4 ? 160 : 140;
-  var slotHeight = wR1Count <= 2 ?  80 : wR1Count <= 4 ?  72 :  64;
+
+  // Adaptive sizing: compute total columns to fit viewport
+  var wColCount = (new Set(state.bracket.filter(function(m){return m.bracket==='W';}).map(function(m){return m.round;}))).size;
+  var lColCount = (new Set(state.bracket.filter(function(m){return m.bracket==='L';}).map(function(m){return m.round;}))).size;
+  var totalCols = wColCount + lColCount;
+  var vw = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1920;
+  var colGap = totalCols > 9 ? 8 : 12;
+  var slotWidth = Math.max(80, Math.min(200, Math.floor((vw - 48 - 24 - colGap * (totalCols - 2)) / totalCols)));
+  var slotHeight = wR1Count <= 2 ? 80 : wR1Count <= 4 ? 72 : wR1Count <= 6 ? 64 : 52;
 
   // Outer container: flex column — top row (W + L side by side), GF centered at bottom
   var container = document.createElement('div');
@@ -213,7 +220,7 @@ function renderKDABracket(state) {
 
   // W bracket
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:1;min-width:0';
+  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:' + wColCount + ';min-width:0;overflow:hidden';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
@@ -221,7 +228,7 @@ function renderKDABracket(state) {
   wSection.appendChild(wLabel);
 
   var wRoundsRow = document.createElement('div');
-  wRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:12px;align-items:flex-start';
+  wRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:' + colGap + 'px;align-items:flex-start';
 
   var wMatches = state.bracket.filter(function(m) { return m.bracket === 'W'; });
   var wRounds = Array.from(new Set(wMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
@@ -249,7 +256,7 @@ function renderKDABracket(state) {
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   if (lMatches.length > 0) {
     var lSection = document.createElement('div');
-    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:1;min-width:0';
+    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:' + lColCount + ';min-width:0;overflow:hidden';
 
     var lLabel = document.createElement('div');
     lLabel.textContent = 'Loser Bracket';
@@ -257,7 +264,7 @@ function renderKDABracket(state) {
     lSection.appendChild(lLabel);
 
     var lRoundsRow = document.createElement('div');
-    lRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:12px;align-items:flex-start';
+    lRoundsRow.style.cssText = 'display:flex;flex-direction:row;gap:' + colGap + 'px;align-items:flex-start';
 
     var lRounds = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
     var lTotalRounds = lRounds.length;
@@ -347,7 +354,8 @@ function buildTVSlotEl(slot, w, h) {
     var nameSpan = document.createElement('span');
     if (p) {
       nameSpan.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe (T-06-04-01)
-      nameSpan.style.cssText = 'font-size:20px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      var nameFontSize = w >= 160 ? 20 : w >= 120 ? 16 : 13;
+      nameSpan.style.cssText = 'font-size:' + nameFontSize + 'px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     } else {
       // Empty: waiting for player to arrive
       nameSpan.textContent = '·  ·  ·';
