@@ -293,15 +293,17 @@ test('GT9: Completing all dreiVollen throws finishes game (status=finished, acti
 // ---------------------------------------------------------------------------
 // GT10: Duplicate throw (same game+player+throw_index) returns 409 before
 //        mutating in-memory state (DB-first ordering verified)
+//        Uses plusMinus (client-provided throw_index, no auto-increment).
+//        dreiVollen uses auto-increment to avoid Stechen index collisions.
 // ---------------------------------------------------------------------------
 test('GT10: Duplicate throw returns 409; state not mutated by second throw', async () => {
   const cookie = await loginAndGetCookie();
 
-  // Create a game
+  // Create a plusMinus game — uses client-provided throw_index (UNIQUE guard intact)
   const createRes = await fetch(`${baseUrl}/api/games`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+    body: JSON.stringify({ type_key: 'plusMinus', player_ids: [1, 2] })
   });
   const { id: gameId } = await createRes.json();
 
@@ -334,6 +336,53 @@ test('GT10: Duplicate throw returns 409; state not mutated by second throw', asy
     stateAfterFirst.players.find(p => p.id === 1).wuerfe,
     `State should not change after 409 duplicate throw`
   );
+});
+
+// ---------------------------------------------------------------------------
+// GT10b: dreiVollen Stechen — throw after regular 3 throws succeeds (no UNIQUE collision)
+//         Regression test for: Stechen sends throw_index=0, colliding with regular throw.
+//         Fix: dreiVollen uses auto-increment throw_index, same as kda/bilderkegel.
+// ---------------------------------------------------------------------------
+test('GT10b: dreiVollen Stechen throw is accepted after 3 regular throws per player', async () => {
+  const cookie = await loginAndGetCookie();
+
+  // Start a 2-player dreiVollen game
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'dreiVollen', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  // Helper: submit throw
+  async function t(pid, val) {
+    const r = await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: pid, throw_index: 0, value: val })
+    });
+    assert.equal(r.status, 200, `throw pid=${pid} val=${val}: expected 200, got ${r.status}`);
+    return r.json();
+  }
+
+  // Both players score 15 (5+5+5) — triggers Stechen
+  await t(1, 5); await t(1, 5); await t(1, 5);
+  await t(2, 5); await t(2, 5); await t(2, 5);
+
+  // Verify Stechen is active
+  const getRes = await fetch(`${baseUrl}/api/games/${gameId}`);
+  const { state } = await getRes.json();
+  assert.equal(state.stechen, true, 'Stechen should be active after tie');
+
+  // Stechen throw for player 1 — previously failed with UNIQUE collision (throw_index=0 duplicate)
+  const stechenRes = await t(1, 7);
+  assert.equal(stechenRes.state.stechen, true, 'Still in Stechen until all players have thrown');
+
+  // Stechen throw for player 2 — resolves Stechen
+  const finalRes = await t(2, 6);
+  assert.equal(finalRes.finished, true, 'Game should finish after Stechen resolves');
+  const winner = finalRes.state.stechenPlayers;
+  assert.deepEqual(winner, [1], 'Player 1 (7) beats player 2 (6) in Stechen');
 });
 
 // ---------------------------------------------------------------------------

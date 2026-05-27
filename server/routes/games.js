@@ -159,12 +159,15 @@ router.post('/:id/throws', requireSession, (req, res) => {
   }
 
   // 3. INSERT into throws FIRST — synchronous + crash-safe (CONTEXT.md C2 + C3).
-  //    KDA bracket games auto-compute throw_index as MAX(existing)+1 per player per game:
-  //    the multi-slot bracket means the client cannot reliably track the DB index across
-  //    match boundaries. All other game types use the client-provided throw_index with
-  //    the UNIQUE constraint as an idempotency guard.
+  //    These game types auto-compute throw_index as MAX(existing)+1 per player per game:
+  //    - kda/bilderkegel/grosseHaus/kleineHaus: multi-slot or bracket logic means the
+  //      client cannot reliably track the DB index across phase boundaries.
+  //    - dreiVollen: Stechen phase re-starts throw_index from 0 on the client, which
+  //      would collide with the 3 regular throws already stored (throw_index 0-2).
+  //    All other game types use the client-provided throw_index with the UNIQUE constraint
+  //    as an idempotency guard.
   let effectiveThrowIndex = throw_index;
-  if (game.type_key === 'kda' || game.type_key === 'bilderkegel' || game.type_key === 'grosseHaus' || game.type_key === 'kleineHaus') {
+  if (game.type_key === 'kda' || game.type_key === 'bilderkegel' || game.type_key === 'grosseHaus' || game.type_key === 'kleineHaus' || game.type_key === 'dreiVollen') {
     const { mx } = db.prepare(
       'SELECT MAX(throw_index) AS mx FROM throws WHERE game_id = ? AND player_id = ?'
     ).get(game.id, player_id);
