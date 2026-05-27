@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
 status: verifying
-stopped_at: context exhaustion at 81% (2026-05-26)
-last_updated: "2026-05-26T21:26:50.700Z"
+stopped_at: context exhaustion at 76% (2026-05-27)
+last_updated: "2026-05-27T04:41:17.393Z"
 last_activity: "2026-05-26 — Quick 260526-wvg: BK außer Konkurrenz + DreiVollen Turnier-Rekord complete; 420 tests pass"
 progress:
   total_phases: 4
@@ -58,10 +58,13 @@ Progress bar: [----------] 0% (0/4 phases)
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260526-wvg | BK außer Konkurrenz + DreiVollen Turnier-Rekord | 2026-05-26 | 8dc55b2 | [260526-wvg-bk-au-er-konkurrenz-dreivollen-turnier-r](./quick/260526-wvg-bk-au-er-konkurrenz-dreivollen-turnier-r/) |
+| 260527-kda-pudel | KDA Pudel tracking (pudelCounts map + meta param) | 2026-05-27 | 5b45093 | [260527-kda-pudel-tracking](./quick/260527-kda-pudel-tracking/) |
+| 260527-kda-pudel-btn | KDA throw modal: P / kein-Pudel buttons | 2026-05-27 | a099fb2 | [260527-kda-pudel-button](./quick/260527-kda-pudel-button/) |
+| 260527-kda-tv-fix | KDA TV bracket: proportional sections + adaptive sizing | 2026-05-27 | 31c2d25 | [260527-kda-tv-bracket-fix](./quick/260527-kda-tv-bracket-fix/) |
 
 ## Session Continuity
 
-Last session: 2026-05-26
-Stopped at: Quick task 260526-wvg complete
+Last session: 2026-05-27T04:41:17.383Z
+Stopped at: context exhaustion at 76% (2026-05-27)
 Resume file: None
 Next: Continue v2.0 — Phase 8 (Statistiken & Rückblick) or Phase 6 Plan 06-03 (Tablet KDA bracket UI).
