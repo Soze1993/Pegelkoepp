@@ -96,19 +96,23 @@ function buildBracket(seededPlayers) {
       p1: seededPlayers[0],
       p2: seededPlayers[3],
       advancesWinnerTo: 'W-Final',
-      advancesLoserTo: 'L-Final'
+      advancesLoserTo: 'L-R1'
     }));
     bracket.push(makeSlot('W-R1-2', 'W', 1, {
       p1: seededPlayers[1],
       p2: seededPlayers[2],
       advancesWinnerTo: 'W-Final',
-      advancesLoserTo: 'L-Final'
+      advancesLoserTo: 'L-R1'
     }));
     bracket.push(makeSlot('W-Final', 'W', 2, {
       advancesWinnerTo: 'GF',
       advancesLoserTo: 'L-Final'
     }));
-    bracket.push(makeSlot('L-Final', 'L', 1, {
+    bracket.push(makeSlot('L-R1', 'L', 1, {
+      advancesWinnerTo: 'L-Final',
+      advancesLoserTo: null
+    }));
+    bracket.push(makeSlot('L-Final', 'L', 2, {
       advancesWinnerTo: 'GF',
       advancesLoserTo: null
     }));
@@ -381,11 +385,12 @@ module.exports = {
       bracket,
       done: false,
       gewinner: null,
+      pudelCounts: {},
       _seed: seed
     };
   },
 
-  applyThrow(state, player_id, value) {
+  applyThrow(state, player_id, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     if (s.done) return s;
 
@@ -399,6 +404,11 @@ module.exports = {
 
     // Pin count validation (security T-06-02-01)
     if (typeof value !== 'number' || value < 0 || value > 9) return s;
+
+    // Track Pudel
+    if (value === 0 && !(meta && meta.keinPudel)) {
+      s.pudelCounts[player_id] = (s.pudelCounts[player_id] || 0) + 1;
+    }
 
     // Record throw
     const throwIndex = match.throws.length;
@@ -465,7 +475,8 @@ module.exports = {
     return allPlayers.map(p => ({
       playerId: p.id,
       score: state.gewinner && p.id === state.gewinner.id ? 0 : -1,
-      winner: state.gewinner ? p.id === state.gewinner.id : false
+      winner: state.gewinner ? p.id === state.gewinner.id : false,
+      pudel: state.pudelCounts ? (state.pudelCounts[p.id] || 0) : 0
     }));
   }
 };

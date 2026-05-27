@@ -388,3 +388,34 @@ test('KDA11: completing W-R1 matches populates L-R1 with both losers', () => {
   assert.ok(lR1Players.includes(loser1.id), 'L-R1 must have W-R1-1 loser');
   assert.ok(lR1Players.includes(loser2.id), 'L-R1 must have W-R1-2 loser');
 });
+
+// KDA12: Pudel tracking — value=0 increments pudelCounts; meta.keinPudel suppresses it
+test('KDA12: value=0 increments pudel counter; meta.keinPudel suppresses it', () => {
+  let state = kda.initState(players4, { seed: 'pudel' });
+  const match = state.bracket.find(m => !m.done && !m.isBye && m.p1 && m.p2);
+  const p1 = match.p1;
+  const p2 = match.p2;
+
+  // p1 throws 0 — should be counted as Pudel
+  state = kda.applyThrow(state, p1.id, 0);
+  assert.equal(state.pudelCounts[p1.id], 1, 'value=0 must increment pudel');
+
+  // p2 throws 0 with keinPudel — must NOT be counted
+  state = kda.applyThrow(state, p2.id, 0, { keinPudel: true });
+  assert.equal(state.pudelCounts[p2.id] || 0, 0, 'meta.keinPudel must suppress pudel');
+
+  // getFinalResults includes pudel field
+  // Play out to completion to get results
+  let s = kda.initState(players4, { seed: 'pudel' });
+  while (!kda.isFinished(s)) {
+    const m = s.bracket.find(x => !x.done && !x.isBye && x.p1 && x.p2);
+    if (!m) break;
+    s = kda.applyThrow(s, m.p1.id, 0); // p1 throws Pudel
+    s = kda.applyThrow(s, m.p2.id, 9); // p2 wins
+  }
+  const results = kda.getFinalResults(s);
+  results.forEach(r => {
+    assert.ok('pudel' in r, `getFinalResults must include pudel for playerId ${r.playerId}`);
+    assert.ok(typeof r.pudel === 'number', 'pudel must be a number');
+  });
+});
