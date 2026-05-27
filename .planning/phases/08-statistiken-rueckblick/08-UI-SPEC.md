@@ -1,7 +1,8 @@
 ---
 phase: 8
 slug: statistiken-rueckblick
-status: draft
+status: approved
+reviewed_at: 2026-05-27
 shadcn_initialized: false
 preset: none
 created: 2026-05-27
@@ -44,8 +45,7 @@ Declared values (multiples of 4 only). All values pre-populated from established
 | 3xl | 64px | Not used in this phase |
 
 Exceptions:
-- Touch targets for year picker `<select>` and H2H player dropdowns: minimum 44px height (accessibility, existing project pattern for `input`/`select` elements — computed from `padding:10px 14px` + `font-size:14px`).
-- H2H "Vergleichen" button: full width (`width:100%`) inside its container, height set by `.btn` padding (`10px 18px`).
+- Touch target: `<select>` and `<input>` elements maintain 44px minimum height (existing CSS — not re-declared in this phase; no new spacing values outside the standard scale introduced).
 
 Source: `public/index.html` `.card`, `.fg`, `.chip`, `input/select` styles — HIGH confidence.
 
