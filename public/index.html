@@ -968,6 +968,38 @@ async function renderSpiele() {
     recapPanel.appendChild(recapTbl);
     recapCard.appendChild(recapToggle);
     recapCard.appendChild(recapPanel);
+    // Toggle for player list
+    var recapToggle2 = document.createElement('div');
+    recapToggle2.style.cssText = 'font-size:13px;color:var(--mut);cursor:pointer;margin-top:8px;width:100%';
+    recapToggle2.textContent = '▼ Spieler des Abends';
+    var recapPanel2 = document.createElement('div');
+    recapPanel2.style.display = 'none';
+    recapToggle2.addEventListener('click', function() {
+      var open = recapPanel2.style.display !== 'none';
+      recapPanel2.style.display = open ? 'none' : 'block';
+      recapToggle2.textContent = (open ? '▼' : '▶') + ' Spieler des Abends';
+    });
+    var recapTbl2 = document.createElement('table');
+    recapTbl2.className = 'stbl';
+    recapTbl2.innerHTML = '<thead><tr><th>Spieler</th><th style="text-align:right">Spiele</th><th style="text-align:right">Siege</th></tr></thead>';
+    var recapTbody2 = document.createElement('tbody');
+    var recapPlayers = recapData.players || [];
+    if (!recapPlayers.length) {
+      recapTbody2.innerHTML = '<tr><td colspan="3" class="empty" style="padding:16px;text-align:center">Keine Spieler aufgezeichnet</td></tr>';
+    } else {
+      recapPlayers.forEach(function(p) {
+        var tr = document.createElement('tr');
+        var tdName = document.createElement('td'); tdName.textContent = (p.emoji || '') + ' ' + p.name;
+        var tdGames = document.createElement('td'); tdGames.style.textAlign = 'right'; tdGames.style.color = 'var(--mut)'; tdGames.textContent = p.games_played;
+        var tdWins = document.createElement('td'); tdWins.style.textAlign = 'right'; tdWins.className = 'snum'; tdWins.style.color = p.wins > 0 ? 'var(--ac)' : 'var(--mut)'; tdWins.textContent = p.wins || '—';
+        tr.appendChild(tdName); tr.appendChild(tdGames); tr.appendChild(tdWins);
+        recapTbody2.appendChild(tr);
+      });
+    }
+    recapTbl2.appendChild(recapTbody2);
+    recapPanel2.appendChild(recapTbl2);
+    recapCard.appendChild(recapToggle2);
+    recapCard.appendChild(recapPanel2);
     frag.appendChild(recapCard);
   }
 

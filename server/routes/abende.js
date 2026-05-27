@@ -50,6 +50,7 @@ router.get('/last-summary', (req, res) => {
   let kda_champion = null;
   let bk_loser = null;
   const gamesSummary = [];
+  const playerStatsMap = {};
 
   for (const game of abendGames) {
     const gameModule = gameTypes[game.type_key];
@@ -74,7 +75,8 @@ router.get('/last-summary', (req, res) => {
     }
 
     const winners = results.filter(r => r.winner);
-    const winnerEntry = winners.length === 1 ? winners[0] : null;
+    const isDraw = winners.length !== 1;
+    const winnerEntry = !isDraw ? winners[0] : null;
     let winner_name = null;
     if (winnerEntry) {
       const wp = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
@@ -87,13 +89,27 @@ router.get('/last-summary', (req, res) => {
       winner_name,
       player_count: results.length
     });
+
+    // Accumulate per-player evening stats
+    for (const r of results) {
+      if (!playerStatsMap[r.playerId]) {
+        const p = db.prepare('SELECT id, name, emoji FROM players WHERE id = ?').get(r.playerId);
+        if (!p) continue;
+        playerStatsMap[r.playerId] = { id: p.id, name: p.name, emoji: p.emoji, games_played: 0, wins: 0 };
+      }
+      playerStatsMap[r.playerId].games_played++;
+      if (!isDraw && r.winner) playerStatsMap[r.playerId].wins++;
+    }
   }
+
+  const players = Object.values(playerStatsMap).sort((a, b) => b.wins - a.wins || b.games_played - a.games_played);
 
   res.json({
     abend: { id: lastAbend.id, name: lastAbend.name, started_at: lastAbend.started_at, ended_at: lastAbend.ended_at },
     kda_champion,
     bk_loser,
-    games: gamesSummary
+    games: gamesSummary,
+    players
   });
 });
 
