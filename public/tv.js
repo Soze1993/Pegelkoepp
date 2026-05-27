@@ -550,7 +550,7 @@ function renderBilderkegelTV(state) {
     });
   }
 
-  var aktId = (!state.done && players[state.aktSpIdx]) ? players[state.aktSpIdx].id : null;
+  var aktId = (!state.done && state.players[state.aktSpIdx]) ? state.players[state.aktSpIdx].id : null;
 
   // Player list fills remaining height; rows share space equally via flex
   var ul = document.createElement('ul');
