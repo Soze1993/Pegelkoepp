@@ -101,12 +101,13 @@ router.get('/', (req, res) => {
     }
   }
 
-  // Step 3: Pudel counts from throws.meta
-  // json_extract(t.meta, '$.pudel') = 1 (integer 1, not boolean true — SQLite JSON)
+  // Step 3: Pudel counts from throws.
+  // Pudel = value=0 AND meta.keinPudel is not set.
+  // "kein Pudel" button sends meta={keinPudel:true} for intentional 0-value throws.
   const pudelRows = db.prepare(`
     SELECT t.player_id,
            COUNT(*) AS total_throws,
-           SUM(CASE WHEN json_extract(t.meta, '$.pudel') = 1 THEN 1 ELSE 0 END) AS pudel_count,
+           SUM(CASE WHEN t.value = 0 AND (t.meta IS NULL OR json_extract(t.meta, '$.keinPudel') IS NULL) THEN 1 ELSE 0 END) AS pudel_count,
            SUM(CASE WHEN t.value = 9 THEN 1 ELSE 0 END) AS neun_count
     FROM throws t
     JOIN games g ON t.game_id = g.id

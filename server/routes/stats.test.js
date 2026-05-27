@@ -502,15 +502,17 @@ test('ST16: pudel_count counts throws where meta.pudel = 1', async () => {
 });
 
 // ---------------------------------------------------------------------------
-// ST17: Throws with value=0 but no meta.pudel flag are NOT counted as pudel
+// ST17: value=0 without meta.keinPudel IS counted as pudel
+// Pudel are stored as value=0 with meta=null (no special flag needed).
+// Only value=0 WITH meta.keinPudel=true is excluded (intentional 0).
 // ---------------------------------------------------------------------------
-test('ST17: value=0 without meta.pudel flag is NOT counted as pudel', async () => {
+test('ST17: value=0 without meta.keinPudel IS counted as pudel', async () => {
   const p1 = insertPlayer('Mia', '🎳');
   const p2 = insertPlayer('Nick', '🎳');
 
-  // dreiVollen: value=0 throw but meta=null (no pudel flag)
+  // dreiVollen: value=0, meta=null → pudel
   insertFinishedGame('dreiVollen', [
-    { id: p1, throws: [9, 0, 9], meta: [null, null, null] }, // value=0 but no meta.pudel
+    { id: p1, throws: [9, 0, 9], meta: [null, null, null] },
     { id: p2, throws: [5, 5, 5] }
   ]);
 
@@ -520,7 +522,7 @@ test('ST17: value=0 without meta.pudel flag is NOT counted as pudel', async () =
 
   const mia = players.find(e => e.player_id === p1);
   assert.ok(mia, 'Mia should be in stats');
-  assert.equal(mia.pudel_count, 0, `Mia should have pudel_count=0 (value=0 without meta.pudel), got ${mia.pudel_count}`);
+  assert.equal(mia.pudel_count, 1, `Mia should have pudel_count=1 (value=0 counts as pudel), got ${mia.pudel_count}`);
 });
 
 // ---------------------------------------------------------------------------
