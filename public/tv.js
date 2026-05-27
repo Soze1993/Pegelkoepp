@@ -110,6 +110,7 @@ function renderGame(state) {
   if (currentTypeKey === 'grosseHaus' || currentTypeKey === 'kleineHaus') { renderHausnummerTV(state); return; }
   if (currentTypeKey === 'plusMinus') { renderPlusMinusTV(state); return; }
   if (currentTypeKey === 'anker')     { renderAnkerTV(state); return; }
+  if (currentTypeKey === 'dreiVollen') { renderDreiVollenTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -159,21 +160,6 @@ function renderGame(state) {
     playerListEl.appendChild(li);
   }
 
-  // Drei in die Vollen Turnierergebnis — show top6Sum banner when game done with >=6 players
-  if (currentTypeKey === 'dreiVollen' && state.done && state.players.length >= 6) {
-    var sorted6 = state.players.slice().sort(function(a, b) {
-      var sa = a.wuerfe ? a.wuerfe.reduce(function(x, y) { return x + y; }, 0) : 0;
-      var sb = b.wuerfe ? b.wuerfe.reduce(function(x, y) { return x + y; }, 0) : 0;
-      return sb - sa;
-    });
-    var top6Sum = sorted6.slice(0, 6).reduce(function(acc, p) {
-      return acc + (p.wuerfe ? p.wuerfe.reduce(function(x, y) { return x + y; }, 0) : 0);
-    }, 0);
-    var turEl = document.createElement('div');
-    turEl.style.cssText = 'text-align:center;font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:var(--ac);margin-top:12px';
-    turEl.textContent = 'Turnierergebnis: ' + top6Sum + ' Volle';  // textContent — safe (numeric)
-    gameEl.appendChild(turEl);
-  }
 }
 
 function isActivePlayer(state, playerId) {
@@ -1077,6 +1063,146 @@ function renderPlusMinusTV(state) {
   });
 
   container.appendChild(grid);
+  gameEl.replaceChildren(container);
+}
+
+// Drei in die Vollen TV layout — 2-column grid, W1/W2/W3/∑ per player, scales to 12 players
+function renderDreiVollenTV(state) {
+  if (!state || !state.players) return;
+  if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var players = state.players || [];
+  var n = players.length;
+  var aktId = (!state.done && !state.stechen && players[state.aktSpIdx])
+    ? players[state.aktSpIdx].id : null;
+
+  // Stechen players still needing to throw in current round
+  var stechenPendingIds = [];
+  if (state.stechen && state.stechenPlayers) {
+    stechenPendingIds = state.stechenPlayers.filter(function(id) {
+      var p = players.find(function(pl) { return pl.id === id; });
+      return p && (!p.stechenWuerfe || p.stechenWuerfe.length === 0);
+    });
+  }
+
+  // Sort: players with at least one throw by score desc; untouched players at bottom
+  var sorted = players.slice().sort(function(a, b) {
+    var aHas = (a.wuerfe || []).length > 0;
+    var bHas = (b.wuerfe || []).length > 0;
+    if (aHas && !bHas) return -1;
+    if (!aHas && bHas) return 1;
+    var aScore = (a.wuerfe || []).reduce(function(s, v) { return s + v; }, 0);
+    var bScore = (b.wuerfe || []).reduce(function(s, v) { return s + v; }, 0);
+    return bScore - aScore;
+  });
+
+  var container = document.createElement('div');
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:1.5vw 2vw;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
+  container.appendChild(makeGameNameHeader());
+
+  var statusEl = document.createElement('div');
+  statusEl.style.cssText = 'text-align:center;margin-bottom:0.6vw;flex-shrink:0';
+  if (state.done) {
+    statusEl.textContent = 'Spiel beendet';
+    statusEl.style.cssText += ';font-size:1.2vw;color:var(--mut)';
+  } else if (state.stechen) {
+    statusEl.textContent = 'Stechen!';
+    statusEl.style.cssText += ';font-size:1.8vw;color:var(--ac);font-family:var(--fh,"Bebas Neue",sans-serif)';
+  } else {
+    statusEl.textContent = 'Spieler ' + (state.aktSpIdx + 1) + ' / ' + n;
+    statusEl.style.cssText += ';font-size:1.2vw;color:var(--mut)';
+  }
+  container.appendChild(statusEl);
+
+  var grid = document.createElement('div');
+  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:start;overflow:hidden';
+
+  sorted.forEach(function(p, i) {
+    var wuerfe = p.wuerfe || [];
+    var total = wuerfe.reduce(function(s, v) { return s + v; }, 0);
+    var isActive = p.id === aktId;
+    var isStechenPending = stechenPendingIds.indexOf(p.id) >= 0;
+    var isStechenPlayer = !!(state.stechen && state.stechenPlayers && state.stechenPlayers.indexOf(p.id) >= 0);
+    var isLeader = i === 0 && state.done && wuerfe.length >= 3;
+    var highlight = isActive || isStechenPending;
+
+    var row = document.createElement('div');
+    row.style.cssText = [
+      'display:flex;align-items:center;gap:0.5vw;padding:0.55vw 0.9vw',
+      'border-radius:10px;border:2px solid ' + (highlight ? 'var(--ac)' : 'var(--brd)'),
+      'background:' + (highlight ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
+      'box-shadow:' + (highlight ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
+    ].join(';');
+
+    var rank = document.createElement('div');
+    rank.textContent = String(i + 1);
+    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.5vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.4vw;text-align:center;flex-shrink:0';
+    row.appendChild(rank);
+
+    var name = document.createElement('div');
+    name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+    name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    row.appendChild(name);
+
+    // Stechen badge — sword icon when pending, green score when thrown
+    if (isStechenPlayer) {
+      var threw = p.stechenWuerfe && p.stechenWuerfe.length > 0;
+      var badge = document.createElement('div');
+      badge.textContent = threw ? 'S:' + String(p.stechenWuerfe[p.stechenWuerfe.length - 1]) : '⚔';  // ⚔ — textContent safe
+      badge.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.3vw;color:' + (threw ? 'var(--grn)' : 'var(--ac)') + ';flex-shrink:0;letter-spacing:.03em';
+      row.appendChild(badge);
+    }
+
+    // W1, W2, W3
+    for (var wi = 0; wi < 3; wi++) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2vw;flex-shrink:0';
+      var wLbl = document.createElement('div');
+      wLbl.textContent = 'W' + (wi + 1);
+      wLbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+      var wVal = document.createElement('div');
+      wVal.textContent = wuerfe.length > wi ? String(wuerfe[wi]) : '—';  // — em dash
+      wVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.7vw;color:' + (wuerfe.length > wi ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      cell.appendChild(wLbl);
+      cell.appendChild(wVal);
+      row.appendChild(cell);
+    }
+
+    // Total ∑
+    var totCell = document.createElement('div');
+    totCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.6vw;flex-shrink:0';
+    var totLbl = document.createElement('div');
+    totLbl.textContent = '∑';  // ∑
+    totLbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+    var totVal = document.createElement('div');
+    totVal.textContent = wuerfe.length > 0 ? String(total) : '·';  // · middle dot
+    totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (wuerfe.length > 0 ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)') + ';line-height:1';
+    totCell.appendChild(totLbl);
+    totCell.appendChild(totVal);
+    row.appendChild(totCell);
+
+    grid.appendChild(row);
+  });
+
+  container.appendChild(grid);
+
+  // Turnierergebnis — top-6 sum shown when done and >=6 players
+  if (state.done && n >= 6) {
+    var top6Sum = players.slice()
+      .sort(function(a, b) {
+        return (b.wuerfe || []).reduce(function(s, v) { return s + v; }, 0)
+             - (a.wuerfe || []).reduce(function(s, v) { return s + v; }, 0);
+      })
+      .slice(0, 6)
+      .reduce(function(acc, q) { return acc + (q.wuerfe || []).reduce(function(s, v) { return s + v; }, 0); }, 0);
+    var turEl = document.createElement('div');
+    turEl.textContent = 'Turnierergebnis: ' + top6Sum + ' Volle';  // textContent — safe (numeric)
+    turEl.style.cssText = 'text-align:center;font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:var(--ac);margin-top:8px;padding-top:8px;border-top:1px solid var(--brd);flex-shrink:0';
+    container.appendChild(turEl);
+  }
+
   gameEl.replaceChildren(container);
 }
 
