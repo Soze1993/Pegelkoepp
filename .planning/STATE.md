@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
 status: completed
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-05-27"
-last_activity: 2026-05-27 — Phase 8 Plan 01 executed; 10 RED test stubs written (ST30..ST36 + AB30..AB32)
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-05-27T14:20:00.000Z"
+last_activity: 2026-05-27 — 08-02 executed; 5 stats sub-routes implemented; ST30..ST36 GREEN
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 18
   completed_plans: 16
-  percent: 53
+  percent: 50
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 8 — Statistiken & Rückblick — IN PROGRESS (1/4 plans executed)
-Plan: 08-01 complete (RED stubs); 08-02..08-04 queued
-Status: Wave 0 complete. 10 RED test stubs locked in contracts. Ready for Wave 1 (08-02, 08-03).
-Last activity: 2026-05-27 — 08-01 executed; ST30..ST36 + AB30..AB32 RED stubs written
+Phase: 8 — Statistiken & Rückblick — IN PROGRESS (2/4 plans executed)
+Plan: 08-02 complete (Wave 1 backend stats routes); 08-03..08-04 queued
+Status: ST30..ST36 GREEN. AB30..AB32 still RED (08-03). Ready for Wave 1 continuation (08-03).
+Last activity: 2026-05-27 — 08-02 executed; 5 stats sub-routes + getBKLoserId export
 
-Progress bar: [##--------] 53% (2/4 phases complete, 16/18 plans done)
+Progress bar: [##--------] 53% (2/4 phases complete, 17/18 plans done)
 
 ## Accumulated Context
 
@@ -67,6 +67,6 @@ Progress bar: [##--------] 53% (2/4 phases complete, 16/18 plans done)
 ## Session Continuity
 
 Last session: 2026-05-27
-Stopped at: Completed 08-01-PLAN.md
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
-Next: /clear then /gsd:execute-phase 8 (to run 08-02 + 08-03 Wave 1)
+Next: /clear then /gsd:execute-phase 8 (to run 08-03 Wave 1 — abende last-summary)
