@@ -103,22 +103,24 @@ function insertPlayer(name, emoji = '🎳', archived = 0) {
 
 /**
  * Insert a finished game with players and throws.
- * players: [{ id, throws: [value, ...], meta: [metaObj|null, ...] }]
+ * playerRows: [{ id, throws: [value, ...], meta: [metaObj|null, ...] }]
+ * finishedAt: optional ISO datetime string to set finished_at explicitly
  * Returns gameId.
  */
-function insertFinishedGame(type_key, players) {
-  // Insert game row
-  const gameResult = db.prepare("INSERT INTO games (type_key, status) VALUES (?, 'finished')").run(type_key);
+function insertFinishedGame(type_key, playerRows, finishedAt) {
+  const ts = finishedAt || "datetime('now')";
+  const stmt = finishedAt
+    ? db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES (?, 'finished', ?)")
+    : db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES (?, 'finished', datetime('now'))");
+  const gameResult = finishedAt ? stmt.run(type_key, finishedAt) : stmt.run(type_key);
   const gameId = gameResult.lastInsertRowid;
 
-  // Insert game_players
-  players.forEach((p, seat) => {
+  playerRows.forEach((p, seat) => {
     db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)').run(gameId, p.id, seat);
   });
 
-  // Insert throws
   let throwIdx = 0;
-  for (const p of players) {
+  for (const p of playerRows) {
     const metas = p.meta || [];
     for (let i = 0; i < (p.throws || []).length; i++) {
       const metaObj = metas[i] || null;
@@ -129,6 +131,145 @@ function insertFinishedGame(type_key, players) {
   }
 
   return gameId;
+}
+
+/**
+ * Insert a complete 4-player KDA game using a deterministic seed so the bracket
+ * layout is fixed. With seed='test', the shuffle order of [p1,p2,p3,p4] is
+ * determined by seededShuffle. We give player at seat 0 high throws in every
+ * match so they win the whole tournament. Returns winnerId (always the first
+ * player in the seededPlayers array after shuffle).
+ *
+ * Since we cannot predict the shuffle without running the same LCG, we instead
+ * force a win for ALL matches by making every throw from p1 = 9 and every throw
+ * from others = 0. This means whichever player occupies p1 in each slot always
+ * wins — but to guarantee one player wins the whole tournament, we build throws
+ * that are submitted in throw_index order covering ALL slots.
+ *
+ * SIMPLER APPROACH: directly insert DB throws that replay to a finished KDA state.
+ * The KDA initState with 4 players creates 5 slots. We supply throws that drive
+ * one player to win all their matches. We use the 'kda' module directly to
+ * compute the required throw sequence and insert those rows.
+ */
+function insertFinishedKDAGame(p1Id, p2Id, p3Id, p4Id, finishedAt) {
+  const kda = require('../game-types/kegler-des-abends');
+
+  // Build players array — KDA initState shuffles them randomly.
+  const players = [
+    { id: p1Id, name: 'P1', emoji: '1' },
+    { id: p2Id, name: 'P2', emoji: '2' },
+    { id: p3Id, name: 'P3', emoji: '3' },
+    { id: p4Id, name: 'P4', emoji: '4' }
+  ];
+
+  // Insert the game FIRST so we have the gameId.
+  // reconstructState uses String(game.id) as the KDA bracket seed — we must
+  // use the same seed here so the throw sequence matches on reconstruction.
+  const stmt = finishedAt
+    ? db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('kda', 'finished', ?)")
+    : db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('kda', 'finished', datetime('now'))");
+  const gameResult = finishedAt ? stmt.run(finishedAt) : stmt.run();
+  const gameId = gameResult.lastInsertRowid;
+
+  // Insert game_players (seat = index in players array)
+  players.forEach((p, seat) => {
+    db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)').run(gameId, p.id, seat);
+  });
+
+  // Use String(gameId) as seed to match reconstructState exactly
+  let state = kda.initState(players, { seed: String(gameId) });
+
+  // Play out the tournament: for each undone match, give match.p1 high scores and match.p2 low scores.
+  const throwRows = [];
+
+  while (!state.done) {
+    // Find the next undone, non-bye, fully-seated match
+    const match = state.bracket.find(m =>
+      !m.done && !m.isBye && m.p1 && m.p2
+    );
+    if (!match) break;
+
+    // Determine required throw count
+    const required = match.throwsRequired || (match.bracket === 'GF' ? 4 : 2);
+    const halfReq = required / 2;
+    for (let i = 0; i < halfReq; i++) {
+      throwRows.push({ playerId: match.p1.id, value: 5 });
+      state = kda.applyThrow(state, match.p1.id, 5);
+      throwRows.push({ playerId: match.p2.id, value: 1 });
+      state = kda.applyThrow(state, match.p2.id, 1);
+    }
+  }
+
+  if (!state.done || !state.gewinner) {
+    throw new Error('insertFinishedKDAGame: tournament did not finish as expected');
+  }
+
+  const winnerId = state.gewinner.id;
+
+  // Insert throws in order
+  throwRows.forEach((t, idx) => {
+    db.prepare(
+      'INSERT INTO throws (game_id, player_id, throw_index, value) VALUES (?, ?, ?, ?)'
+    ).run(gameId, t.playerId, idx, t.value);
+  });
+
+  return { gameId, winnerId };
+}
+
+/**
+ * Insert a finished Bilderkegeln game with 2 players where p1 scores more than p2.
+ * BK: 5 images × 2 throws per player = 10 throws per player (alternating by player).
+ * p1 gets value=9 per throw, p2 gets value=1 per throw → p1 is the winner, p2 is the loser.
+ * Returns the loserId (p2Id).
+ */
+function insertFinishedBKGame(p1Id, p2Id, finishedAt) {
+  const bilderkegel = require('../game-types/bilderkegel');
+  const players = [
+    { id: p1Id, name: 'BKP1', emoji: 'A' },
+    { id: p2Id, name: 'BKP2', emoji: 'B' }
+  ];
+
+  let state = bilderkegel.initState(players);
+  const throwRows = [];
+
+  // BK alternates: player at aktSpIdx throws twice, then next player, etc.
+  // 5 images × 2 players × 2 throws = 20 throws total
+  // We interleave throws to drive both players through all images.
+  // aktSpIdx cycles 0,1,0,1... within each Bild round.
+  // For each Bild: p1 throws twice (value=9 each), p2 throws twice (value=1 each).
+  // But the order depends on aktSpIdx — let's replay to see:
+  while (!state.done) {
+    const aktP = state.players[state.aktSpIdx];
+    const value = aktP.id === p1Id ? 9 : 1;
+    throwRows.push({ playerId: aktP.id, value });
+    state = bilderkegel.applyThrow(state, aktP.id, value);
+  }
+
+  if (!state.done) {
+    throw new Error('insertFinishedBKGame: BK game did not finish as expected');
+  }
+
+  // p2 is the loser (lowest score)
+  const loserId = p2Id;
+
+  // Insert game in DB
+  const stmt = finishedAt
+    ? db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('bilderkegel', 'finished', ?)")
+    : db.prepare("INSERT INTO games (type_key, status, finished_at) VALUES ('bilderkegel', 'finished', datetime('now'))");
+  const gameResult = finishedAt ? stmt.run(finishedAt) : stmt.run();
+  const gameId = gameResult.lastInsertRowid;
+
+  players.forEach((p, seat) => {
+    db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)').run(gameId, p.id, seat);
+  });
+
+  throwRows.forEach((t, idx) => {
+    db.prepare(
+      'INSERT INTO throws (game_id, player_id, throw_index, value) VALUES (?, ?, ?, ?)'
+    ).run(gameId, t.playerId, idx, t.value);
+  });
+
+  return { gameId, loserId };
 }
 
 // ---------------------------------------------------------------------------
@@ -489,4 +630,157 @@ test('ST22: tournament_records.dreiVollen is null when no qualifying dreiVollen 
     assert.equal(typeof tr.best_sum, 'number', 'If present, best_sum must be a number');
     assert.ok(tr.game_id != null, 'If present, game_id must be non-null');
   }
+});
+
+// ---
+// ST30: GET /api/stats/year?year=abc → 400 with { error: 'Invalid year' }
+// Status: RED — route does not exist yet
+// ---
+test('ST30: GET /api/stats/year?year=abc returns 400 with { error: \'Invalid year\' }', async () => {
+  const res = await fetch(`${baseUrl}/api/stats/year?year=abc`);
+  assert.equal(res.status, 400, `Expected 400, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body.error, 'Invalid year', `Expected error 'Invalid year', got ${JSON.stringify(body)}`);
+});
+
+// ---
+// ST31: GET /api/stats/year?year=2026 returns leaderboard with the winner in it
+// Status: RED — route does not exist yet
+// ---
+test('ST31: GET /api/stats/year?year=2026 returns leaderboard with winner having wins >= 1', async () => {
+  const p1 = insertPlayer('ST31-Winner', '🏆');
+  const p2 = insertPlayer('ST31-Loser', '🎳');
+
+  // Insert two finished games in year 2026 with known winner (p1 wins both)
+  insertFinishedGame('dreiVollen', [
+    { id: p1, throws: [9, 9, 0] },
+    { id: p2, throws: [5, 5, 5] }
+  ], '2026-06-01 12:00:00');
+  insertFinishedGame('dreiVollen', [
+    { id: p1, throws: [7, 7, 7] },
+    { id: p2, throws: [3, 3, 3] }
+  ], '2026-06-02 12:00:00');
+
+  const res = await fetch(`${baseUrl}/api/stats/year?year=2026`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body.year, '2026', `Expected year '2026', got ${body.year}`);
+  assert.ok(Array.isArray(body.leaderboard), 'leaderboard should be an array');
+  assert.ok(Array.isArray(body.available_years), 'available_years should be an array');
+  assert.ok(body.available_years.includes('2026'), 'available_years should contain 2026');
+
+  const winner = body.leaderboard.find(e => e.id === p1);
+  assert.ok(winner, `Winner (id=${p1}) should be in leaderboard`);
+  assert.ok(winner.wins >= 1, `Winner should have wins >= 1, got ${winner.wins}`);
+
+  // Leaderboard sorted by wins desc
+  for (let i = 0; i < body.leaderboard.length - 1; i++) {
+    assert.ok(
+      body.leaderboard[i].wins >= body.leaderboard[i + 1].wins,
+      'Leaderboard should be sorted by wins desc'
+    );
+  }
+});
+
+// ---
+// ST32: GET /api/stats/streaks returns { current: 0, longest: 2 } for player with 2-win streak then a loss
+// Status: RED — route does not exist yet
+// ---
+test('ST32: GET /api/stats/streaks returns correct current and longest streak', async () => {
+  const p1 = insertPlayer('ST32-P1', 'A');
+  const p2 = insertPlayer('ST32-P2', 'B');
+
+  // Game 1: p1 wins (high throws)
+  insertFinishedGame('dreiVollen', [
+    { id: p1, throws: [9, 9, 0] },
+    { id: p2, throws: [5, 5, 5] }
+  ], '2025-01-01 10:00:00');
+  // Game 2: p1 wins again
+  insertFinishedGame('dreiVollen', [
+    { id: p1, throws: [7, 7, 7] },
+    { id: p2, throws: [3, 3, 3] }
+  ], '2025-01-02 10:00:00');
+  // Game 3: p2 wins (p1 loses)
+  insertFinishedGame('dreiVollen', [
+    { id: p2, throws: [9, 9, 9] },
+    { id: p1, throws: [1, 1, 1] }
+  ], '2025-01-03 10:00:00');
+
+  const res = await fetch(`${baseUrl}/api/stats/streaks`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  const p1Streak = body[String(p1)];
+  assert.ok(p1Streak, `p1 (id=${p1}) should be in streaks response`);
+  assert.equal(p1Streak.current, 0, `p1 current streak should be 0 (lost last game), got ${p1Streak.current}`);
+  assert.equal(p1Streak.longest, 2, `p1 longest streak should be 2, got ${p1Streak.longest}`);
+});
+
+// ---
+// ST33: GET /api/stats/h2h?a={a}&b={b} returns correct shape after one shared game
+// Status: RED — route does not exist yet
+// ---
+test('ST33: GET /api/stats/h2h returns correct h2h shape after shared game', async () => {
+  const a = insertPlayer('ST33-A', 'X');
+  const b = insertPlayer('ST33-B', 'Y');
+
+  // Insert one dreiVollen game where a wins
+  insertFinishedGame('dreiVollen', [
+    { id: a, throws: [9, 9, 0] },
+    { id: b, throws: [5, 5, 5] }
+  ], '2025-03-01 10:00:00');
+
+  const res = await fetch(`${baseUrl}/api/stats/h2h?a=${a}&b=${b}`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body.player_a, a, `player_a should be ${a}, got ${body.player_a}`);
+  assert.equal(body.player_b, b, `player_b should be ${b}, got ${body.player_b}`);
+  assert.equal(body.wins_a, 1, `wins_a should be 1, got ${body.wins_a}`);
+  assert.equal(body.wins_b, 0, `wins_b should be 0, got ${body.wins_b}`);
+  assert.equal(body.draws, 0, `draws should be 0, got ${body.draws}`);
+  assert.equal(body.total, 1, `total should be 1, got ${body.total}`);
+});
+
+// ---
+// ST34: GET /api/stats/h2h?a=0&b=-1 → 400 with { error: 'a and b must be positive integers' }
+// Status: RED — route does not exist yet
+// ---
+test('ST34: GET /api/stats/h2h?a=0&b=-1 returns 400 with correct error message', async () => {
+  const res = await fetch(`${baseUrl}/api/stats/h2h?a=0&b=-1`);
+  assert.equal(res.status, 400, `Expected 400, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body.error, 'a and b must be positive integers', `Expected error message, got ${JSON.stringify(body)}`);
+});
+
+// ---
+// ST35: GET /api/stats/kda-counts returns count for KDA winner after one finished KDA game
+// Status: RED — route does not exist yet
+// ---
+test('ST35: GET /api/stats/kda-counts returns count 1 for winner after one finished KDA game', async () => {
+  const p1 = insertPlayer('ST35-P1', '1');
+  const p2 = insertPlayer('ST35-P2', '2');
+  const p3 = insertPlayer('ST35-P3', '3');
+  const p4 = insertPlayer('ST35-P4', '4');
+
+  const { winnerId } = insertFinishedKDAGame(p1, p2, p3, p4, null);
+
+  const res = await fetch(`${baseUrl}/api/stats/kda-counts`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body[String(winnerId)], 1, `Winner (id=${winnerId}) should have kda-count=1, got ${JSON.stringify(body)}`);
+});
+
+// ---
+// ST36: GET /api/stats/bk-counts returns count 1 for BK loser after one finished BK game
+// Status: RED — route does not exist yet
+// ---
+test('ST36: GET /api/stats/bk-counts returns count 1 for loser after one finished BK game', async () => {
+  const p1 = insertPlayer('ST36-BKWinner', 'W');
+  const p2 = insertPlayer('ST36-BKLoser', 'L');
+
+  const { loserId } = insertFinishedBKGame(p1, p2, null);
+
+  const res = await fetch(`${baseUrl}/api/stats/bk-counts`);
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body[String(loserId)], 1, `Loser (id=${loserId}) should have bk-count=1, got ${JSON.stringify(body)}`);
 });
