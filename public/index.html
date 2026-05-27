@@ -1398,6 +1398,7 @@ function renderKDABracket(el, state) {
 // Module-level state for throw modal
 var kdaWurfSlotId = null;
 var kdaWurfVals = {};
+var kdaWurfKeinPudel = {};
 
 // Count how many throws a player has made across ALL bracket slots (game-wide index).
 // The DB UNIQUE constraint is (game_id, player_id, throw_index) — not per-match.
@@ -1429,6 +1430,7 @@ function openKDAWurfModal(slotId) {
 
   kdaWurfSlotId = slotId;
   kdaWurfVals = {};
+  kdaWurfKeinPudel = {};
   renderKDAWurfBody();
   openM('m-kda-wurf');
 }
@@ -1492,8 +1494,10 @@ function renderKDAWurfBody() {
 
       for (var v = 0; v <= 9; v++) {
         var btn = document.createElement('button');
-        btn.className = 'kb' + (kdaWurfVals[key] === v ? ' sel' : '');
-        btn.textContent = String(v);
+        var isPudelSel = v === 0 && kdaWurfVals[key] === 0 && !kdaWurfKeinPudel[key];
+        var isNormalSel = v !== 0 && kdaWurfVals[key] === v;
+        btn.className = 'kb' + (v === 0 ? ' pudel' : '') + (isPudelSel || isNormalSel ? ' sel' : '');
+        btn.textContent = v === 0 ? 'P' : String(v);
         btn.setAttribute('type', 'button');
         (function(pid, tidx, val) {
           btn.onclick = function() { kdaSelPin(pid, tidx, val); };
@@ -1501,6 +1505,17 @@ function renderKDAWurfBody() {
         grid.appendChild(btn);
       }
       section.appendChild(grid);
+
+      // "0 (kein Pudel)" button — mirrors kgrid() pattern
+      var kpSel = kdaWurfVals[key] === 0 && kdaWurfKeinPudel[key];
+      var kpBtn = document.createElement('button');
+      kpBtn.setAttribute('type', 'button');
+      kpBtn.textContent = '0 (kein Pudel)';
+      kpBtn.style.cssText = 'display:block;width:100%;margin-top:4px;padding:5px;border-radius:8px;border:1px solid ' + (kpSel ? 'var(--ac)' : 'var(--brd)') + ';background:' + (kpSel ? 'var(--ac)22' : 'var(--bg3)') + ';color:' + (kpSel ? 'var(--ac)' : 'var(--mut)') + ';font-size:12px;font-weight:600;cursor:pointer;text-align:center';
+      (function(pid, tidx) {
+        kpBtn.onclick = function() { kdaSelKeinPudel(pid, tidx); };
+      })(p.id, throwIdx);
+      section.appendChild(kpBtn);
     }
 
     // Running total for GF
@@ -1529,6 +1544,13 @@ function renderKDAWurfBody() {
 
 function kdaSelPin(playerId, throwIdx, value) {
   kdaWurfVals[playerId + '-' + throwIdx] = value;
+  if (value !== 0) kdaWurfKeinPudel[playerId + '-' + throwIdx] = false;
+  renderKDAWurfBody();
+}
+
+function kdaSelKeinPudel(playerId, throwIdx) {
+  kdaWurfVals[playerId + '-' + throwIdx] = 0;
+  kdaWurfKeinPudel[playerId + '-' + throwIdx] = true;
   renderKDAWurfBody();
 }
 
@@ -1562,7 +1584,8 @@ async function submitKDAWurfe() {
       var p = players[i];
       var val = kdaWurfVals[p.id + '-' + t];
       if (val !== undefined) {
-        throwList.push({ playerId: p.id, value: val });
+        var kp = kdaWurfKeinPudel[p.id + '-' + t];
+        throwList.push({ playerId: p.id, value: val, meta: (val === 0 && kp) ? { keinPudel: true } : undefined });
       }
     }
   }
@@ -1571,7 +1594,7 @@ async function submitKDAWurfe() {
     var entry = throwList[j];
     // Re-read count from current state after each submitThrow updates S.aktSpiel.state
     var throwIndex = kdaPlayerThrowCount(S.aktSpiel.state.bracket, entry.playerId);
-    var data = await submitThrow(entry.playerId, throwIndex, entry.value, undefined);
+    var data = await submitThrow(entry.playerId, throwIndex, entry.value, entry.meta);
     if (!data) return;
     S.aktSpiel.state = data.state;
     if (data.finished) {
