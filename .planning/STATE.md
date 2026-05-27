@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: completed
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-05-27T14:20:00.000Z"
-last_activity: 2026-05-27 — 08-02 executed; 5 stats sub-routes implemented; ST30..ST36 GREEN
+status: Phase 9 COMPLETE. All v2.0 phases done. 433 tests green.
+last_updated: "2026-05-27T18:00:00.000Z"
+last_activity: 2026-05-27 — Phase 9 complete (self-hosted fonts + WhatsApp share button)
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 18
-  completed_plans: 16
-  percent: 50
+  completed_phases: 4
+  total_plans: 20
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-22)
 
 **Core value:** Ein Tablet tippt, der Fernseher zeigt es sofort — live, ohne Reload.
-**Current focus:** v2.0 — Statistiken, Highlights & Turnierbaum
+**Current focus:** v2.0 — COMPLETE
 
 ## Current Position
 
-Phase: 8 — Statistiken & Rückblick — IN PROGRESS (2/4 plans executed)
-Plan: 08-02 complete (Wave 1 backend stats routes); 08-03..08-04 queued
-Status: ST30..ST36 GREEN. AB30..AB32 still RED (08-03). Ready for Wave 1 continuation (08-03).
-Last activity: 2026-05-27 — 08-02 executed; 5 stats sub-routes + getBKLoserId export
+Phase: 9 — Polish — COMPLETE (2/2 plans executed)
+Last plan: 09-02 complete (WhatsApp share button in game detail modal)
+Status: All tests GREEN (433/433). All v2.0 phases complete.
+Last activity: 2026-05-27 — Phase 9 complete; commits 14c23c8 (fonts) + 669ba36 (share)
 
-Progress bar: [##--------] 53% (2/4 phases complete, 17/18 plans done)
+Progress bar: [##########] 100% (4/4 v2.0 phases complete, 20/20 plans done)
 
 ## Accumulated Context
 
@@ -40,6 +39,7 @@ Progress bar: [##--------] 53% (2/4 phases complete, 17/18 plans done)
 - renderKDASpiel became a dispatcher: state.bracket routes to renderKDABracket, else renderKDALegacy (old body preserved verbatim)
 - submitKDAWurfe uses sequential await pattern — each throw awaited before next, matching PATTERNS.md Pitfall 2
 - throw_index for submitKDAWurfe derived from slot.throws.length + loop offset to match server expectation
+- Fonts: 6 woff2 files (Bebas Neue + DM Sans variable + Pirata One, latin+latin-ext), served from /fonts/, @font-face in /fonts.css
 - All decisions logged in PROJECT.md Key Decisions table.
 
 ### Deferred Items
@@ -47,11 +47,8 @@ Progress bar: [##--------] 53% (2/4 phases complete, 17/18 plans done)
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | v2 | Monthly leaderboard | Deferred | Init |
-| v2 | Win streak tracking | Active (STATS-02) | v2.0 |
-| v2 | WhatsApp share link | Active (SHARE-01) | v2.0 |
-| v2 | Head-to-head stats | Active (STATS-03) | v2.0 |
-| v2 | TV layout variants per game type | Active (TV-01) | v2.0 |
-| v2 | Self-hosted fonts (offline venue) | Active (OFFLINE-01) | v2.0 |
+
+All other v2.0 deferred items have been delivered.
 
 ### Quick Tasks Completed
 
@@ -66,7 +63,6 @@ Progress bar: [##--------] 53% (2/4 phases complete, 17/18 plans done)
 
 ## Session Continuity
 
-Last session: 2026-05-27
-Stopped at: Completed 08-02-PLAN.md
-Resume file: None
-Next: /clear then /gsd:execute-phase 8 (to run 08-03 Wave 1 — abende last-summary)
+Last session: 2026-05-27T18:00:00.000Z
+v2.0 milestone complete. All 4 phases (6–9) shipped.
+Next: /gsd-complete-milestone or /gsd-new-milestone for v3.0

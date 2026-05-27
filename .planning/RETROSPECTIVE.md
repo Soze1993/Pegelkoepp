@@ -55,8 +55,53 @@
 
 ---
 
+---
+
+## Milestone: v2.0 — Statistiken, Highlights & Turnierbaum
+
+**Shipped:** 2026-05-27
+**Phases:** 4 (6–9) | **Plans:** 20 | **Tests:** 433 | **Duration:** 5 days
+
+### What Was Built
+
+- **Phase 6:** Double-Elimination KDA tournament engine (initState/applyThrow/getFinalResults), tablet bracket UI, live TV bracket tree
+- **Phase 7:** End-game TV overlays for all game types, 9 dedicated TV renderers, audio feedback, game-cancel persistence
+- **Phase 8:** 7 new stat endpoints (year leaderboard, streaks, H2H, KDA/BK counts, last-summary), frontend stats wiring
+- **Phase 9:** WhatsApp share button + self-hosted fonts (6 woff2 files, no CDN)
+
+### What Worked
+
+- **RED→GREEN for bracket engine** — writing the test contract first for KDA made the engine implementation clean; no ambiguity about expected state shapes
+- **Wave-based parallel execution** — Phase 8 Wave 1 (08-02 + 08-03) ran in parallel; backend endpoints ready before frontend needed them
+- **Quick-task mechanism** — 6 post-phase fixes applied without disturbing phase plans; kept plans as clean historical records
+- **getBKLoserId in highlights.js** — extracting the BK loser logic as an export prevented duplication when Phase 8 needed it too
+- **Phase 9 as a true polish phase** — two small self-contained plans, both Wave 0, executed in parallel in ~20 minutes total
+
+### What Was Inefficient
+
+- **Phase 7 scope underestimate** — planned 4 plans, shipped 10. TV renderer work was 1 plan per game type + multiple UAT fix cycles. Should have planned 1 plan per game type from the start.
+- **REQUIREMENTS.md traceability not updated during Phase 7** — HIGHLIGHT-*/TV-01 stayed "Pending" throughout v2.0 despite being shipped in Phase 7. Should update traceability at phase summary time, not milestone close.
+- **No milestone audit** — gaps could surface earlier with a pre-close audit, especially for a milestone with 4 phases and iterative TV work.
+
+### Patterns Established
+
+- `reconstructState(game) + getFinalResults(state)` — standard pattern for reading game results in stats/recap routes
+- `ORDER BY id ASC` (not `finished_at`) — required for BK exemption chain iteration; finished_at can be null for active games
+- `encodeURIComponent` for all user-data-in-URL — no direct innerHTML injection for WhatsApp share URL
+- `state.bracket BEFORE state.players` guard in renderGame — KDA has bracket, not players; guard order matters for dispatcher pattern
+
+### Key Lessons
+
+- **TV renderer work scales with game type count** — plan N plans for N game types, not 1 plan total for "TV layouts"
+- **Self-hosting fonts is a one-time 30-minute task** — should be in v1.0 for any venue-operated app; venue internet is unreliable
+- **Quick tasks are the right mechanism for post-UAT iterative fixes** — they keep phase plans clean and make git history readable
+- **Parallel Wave 0 execution works well for truly independent plans** — Phase 9's two plans had zero dependencies; parallel execution cut time in half
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Duration | Phases | Tests | Key Pain Point |
 |-----------|----------|--------|-------|----------------|
 | v1.0 MVP | 3 days | 5 | 194 | Requirements checkbox drift; Helmet CSP at Phase 3 |
+| v2.0 Stats+Highlights | 5 days | 4 | 433 | Phase 7 scope underestimate (4→10 plans); traceability drift |
