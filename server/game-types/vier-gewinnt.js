@@ -45,8 +45,8 @@ module.exports = {
 
     const team = s.aktT;
 
-    if (meta && meta.pudel) {
-      // Pudel: no piece placed, turn advances
+    if (meta && (meta.pudel || meta.keinPudel)) {
+      // Pudel / kein Pudel: no piece placed, turn advances
       if (team === 'X') { s.iX++; s.aktT = 'O'; }
       else { s.iO++; s.aktT = 'X'; }
       return s;
