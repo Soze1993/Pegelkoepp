@@ -2,10 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Statistiken, Highlights & Turnierbaum
-status: verifying
-stopped_at: context exhaustion at 76% (2026-05-27)
-last_updated: "2026-05-27T04:41:17.393Z"
-last_activity: "2026-05-26 — Quick 260526-wvg: BK außer Konkurrenz + DreiVollen Turnier-Rekord complete; 420 tests pass"
+status: active
+last_updated: "2026-05-27T12:00:00.000Z"
+last_activity: "2026-05-27 — Phase 6 verified 21/21 must-haves; 421 tests pass"
 progress:
   total_phases: 4
   completed_phases: 2
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 7 — Highlights & TV-Layouts
+Phase: 6 + 7 — COMPLETE
 Plan: ALL COMPLETE (14/14)
-Status: All gap closure plans executed. Phase 7 ready for final verification.
-Last activity: 2026-05-26 — Quick 260526-wvg: BK außer Konkurrenz + DreiVollen Turnier-Rekord complete; 420 tests pass
+Status: Phase 6 verified 21/21 must-haves (2026-05-27). Phase 7 verified (2026-05-24). Both phases complete.
+Last activity: 2026-05-27 — Phase 6 Turnierbaum verification passed; 421 tests pass
 
 Progress bar: [----------] 0% (0/4 phases)
 
@@ -67,4 +66,4 @@ Progress bar: [----------] 0% (0/4 phases)
 Last session: 2026-05-27T04:41:17.383Z
 Stopped at: context exhaustion at 76% (2026-05-27)
 Resume file: None
-Next: Continue v2.0 — Phase 8 (Statistiken & Rückblick) or Phase 6 Plan 06-03 (Tablet KDA bracket UI).
+Next: Phase 8 (Statistiken & Rückblick) — year leaderboard, streaks, head-to-head stats, last-evening recap.

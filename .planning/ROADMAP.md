@@ -22,7 +22,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 ### v2.0 Statistiken, Highlights & Turnierbaum
 
-- [ ] **Phase 6: Turnierbaum** — Double-Elimination bracket engine for "Kegler des Abends" game type (4–12 players)
+- [x] **Phase 6: Turnierbaum** — Double-Elimination bracket engine for "Kegler des Abends" game type (4–12 players) (completed 2026-05-27)
 - [x] **Phase 7: Highlights & TV-Layouts** — End-of-game winner/loser overlays on TV and symbols in player table, game-type-specific TV layouts (completed 2026-05-24)
 - [ ] **Phase 8: Statistiken & Rückblick** — Year leaderboard, streaks, head-to-head stats, historical award counts, last-evening recap on homepage
 - [ ] **Phase 9: Polish** — WhatsApp share link and self-hosted fonts for offline venue operation
@@ -42,7 +42,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 Plans:
 - [x] 06-01-PLAN.md — Wave 0: Rewrite KDA test suite (RED state — DE engine contract)
 - [x] 06-02-PLAN.md — Wave 1: Implement DE bracket engine (initState + applyThrow + getFinalResults)
-- [ ] 06-03-PLAN.md — Wave 2: Tablet UI — bracket tree renderer + throw modal + start dialog validation
+- [x] 06-03-PLAN.md — Wave 2: Tablet UI — bracket tree renderer + throw modal + start dialog validation
 - [x] 06-04-PLAN.md — Wave 2: TV — renderKDABracket + renderGame KDA branch
 
 ### Phase 7: Highlights & TV-Layouts
@@ -96,7 +96,7 @@ Plans:
 | 3. Frontend Wiring | v1.0 | 3/3 | Complete | 2026-05-21 |
 | 4. Club Features | v1.0 | 2/2 | Complete | 2026-05-22 |
 | 5. Production Deployment | v1.0 | 2/2 | Complete | 2026-05-22 |
-| 6. Turnierbaum | v2.0 | 3/4 | In Progress|  |
-| 7. Highlights & TV-Layouts | v2.0 | 0/4 | Planned | - |
+| 6. Turnierbaum | v2.0 | 4/4 | Complete | 2026-05-27 |
+| 7. Highlights & TV-Layouts | v2.0 | 4/4 | Complete | 2026-05-24 |
 | 8. Statistiken & Rückblick | v2.0 | 0/? | Not started | - |
 | 9. Polish | v2.0 | 0/? | Not started | - |
