@@ -649,7 +649,9 @@ function handleGameFinished(state) {
 function renderSpEmo(){document.getElementById('m-sp-emoji').innerHTML=EMOJIS.map(function(e){return'<div class="eo'+(e===selEmo?' sel':'')+'" onclick="selEmo=\''+e+'\';renderSpEmo()">'+e+'</div>';}).join('');}
 function addSpieler(){var name=document.getElementById('m-sp-name').value.trim();if(!name){notify('Name eingeben','var(--red)');return;}S.spieler.push(mkSp(Date.now(),name,selEmo));closeM('m-neu-sp');document.getElementById('m-sp-name').value='';notify('Spieler hinzugefuegt!');renderAll();}
 function renderSpielerListe(){var el=document.getElementById('r-spieler');if(!S.spieler.length){el.innerHTML='<div class="empty"><div class="icon">👤</div><p>Noch keine Spieler.</p></div>';return;}el.innerHTML=S.spieler.map(function(s){return'<div class="uc" onclick="showSpDetail('+s.id+')"><div class="uav">'+s.emoji+'</div><div class="uinfo"><div class="nm">'+s.name+'</div><div class="sub">'+(s.spiele||0)+' Sp &middot; <span style="color:var(--grn)">'+(s.siege||0)+'S</span> &middot; <span style="color:var(--red)">'+(s.niederlagen||0)+'N</span>'+((s.bezahlCount||0)?' &middot; <span style="color:var(--red)">'+(s.bezahlCount||0)+'x&#128184;</span>':'')+'</div></div><div style="display:flex;gap:6px"><div class="chip"><div class="v">'+((s.spiele||0)?Math.round((s.pts||0)/(s.spiele||1)):'-')+'</div><div class="l">&#8960;</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel</div></div></div></div>';}).join('');}
-function showSpDetail(id){var s=S.spieler.find(function(x){return x.id===id;});if(!s)return;var avg=(s.spiele||0)?Math.round((s.pts||0)/(s.spiele||1)):0;var rate=(s.wuerfe||0)?Math.round((s.pudel||0)/(s.wuerfe||1)*100):0;var h=today();var tAkt=s.tDatum===h&&((s.tSiege||0)+(s.tNiederlagen||0))>0;document.getElementById('m-sp-detail-c').innerHTML='<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div style="width:56px;height:56px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--ac)">'+s.emoji+'</div><div><div style="font-family:var(--fh);font-size:28px">'+s.name+'</div><div style="color:var(--mut);font-size:12px">'+(s.spiele||0)+' Spiele</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"><div class="chip"><div class="v">'+avg+'</div><div class="l">&#8960; Score</div></div><div class="chip"><div class="v" style="color:var(--grn)">'+(s.siege||0)+'</div><div class="l">Siege</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.niederlagen||0)+'</div><div class="l">Niederlagen</div></div></div>'+((s.bezahlCount||0)?'<div style="background:#e0525218;border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center;margin-bottom:12px"><div style="font-size:13px;color:var(--red);font-weight:600">&#128184; '+(s.bezahlCount||0)+'x zahlen gemuessen</div></div>':'')+(tAkt?'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Heute</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div class="chip"><div class="v" style="color:var(--grn)">'+(s.tSiege||0)+'</div><div class="l">Siege heute</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.tNiederlagen||0)+'</div><div class="l">Niederl. heute</div></div></div>':'')+'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div class="chip"><div class="v">'+(s.best||0)+'</div><div class="l">Bester</div></div><div class="chip"><div class="v">'+(s.wuerfe||0)+'</div><div class="l">Wuerfe</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel '+rate+'%</div></div></div>';openM('m-sp-detail');}
+function showSpDetail(id){var s=S.spieler.find(function(x){return x.id===id;});if(!s)return;var avg=(s.spiele||0)?Math.round((s.pts||0)/(s.spiele||1)):0;var rate=(s.wuerfe||0)?Math.round((s.pudel||0)/(s.wuerfe||1)*100):0;var h=today();var tAkt=s.tDatum===h&&((s.tSiege||0)+(s.tNiederlagen||0))>0;document.getElementById('m-sp-detail-c').innerHTML='<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px"><div style="width:56px;height:56px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid var(--ac)">'+s.emoji+'</div><div><div style="font-family:var(--fh);font-size:28px">'+s.name+'</div><div style="color:var(--mut);font-size:12px">'+(s.spiele||0)+' Spiele</div></div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px"><div class="chip"><div class="v">'+avg+'</div><div class="l">&#8960; Score</div></div><div class="chip"><div class="v" style="color:var(--grn)">'+(s.siege||0)+'</div><div class="l">Siege</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.niederlagen||0)+'</div><div class="l">Niederlagen</div></div></div>'+((s.bezahlCount||0)?'<div style="background:#e0525218;border:1px solid var(--red);border-radius:8px;padding:10px;text-align:center;margin-bottom:12px"><div style="font-size:13px;color:var(--red);font-weight:600">&#128184; '+(s.bezahlCount||0)+'x zahlen gemuessen</div></div>':'')+(tAkt?'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Heute</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div class="chip"><div class="v" style="color:var(--grn)">'+(s.tSiege||0)+'</div><div class="l">Siege heute</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(s.tNiederlagen||0)+'</div><div class="l">Niederl. heute</div></div></div>':'')+'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div class="chip"><div class="v">'+(s.best||0)+'</div><div class="l">Bester</div></div><div class="chip"><div class="v">'+(s.wuerfe||0)+'</div><div class="l">Wuerfe</div></div><div class="chip pc"><div class="v">'+(s.pudel||0)+'</div><div class="l">Pudel '+rate+'%</div></div></div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="chip"><div class="v" style="color:var(--ac)">'+(S.kdaCounts && S.kdaCounts[id] || 0)+'</div><div class="l">KdA-Titel</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(S.bkCounts && S.bkCounts[id] || 0)+'</div><div class="l">BK Verlierer</div></div></div>';
+openM('m-sp-detail');}
 
 // Bibliothek
 function renderSTEmo(){var el=document.getElementById('m-st-emoji');if(!el)return;el.innerHTML=EMOJIS.map(function(e){return'<div class="eo'+(e===selSTEmo?' sel':'')+'" onclick="selSTEmo=\''+e+'\';renderSTEmo()">'+e+'</div>';}).join('');}
@@ -794,6 +796,113 @@ async function renderSpiele() {
     startBtn.textContent = '▶ Abend starten';
     startBtn.onclick = function(){ openM('m-start-abend'); };
     frag.appendChild(startBtn);
+  }
+
+  // Recap card — last closed abend
+  var recapData = null;
+  try {
+    var recapRes = await fetch('/api/abende/last-summary');
+    recapData = await recapRes.json();
+  } catch(e) {}
+  if (recapData && recapData.abend) {
+    var recapCard = document.createElement('div');
+    recapCard.className = 'card';
+    recapCard.style.marginBottom = '16px';
+    var recapTitle = document.createElement('div');
+    recapTitle.className = 'stitle';
+    recapTitle.textContent = 'Letzter Abend';
+    recapCard.appendChild(recapTitle);
+    // Date row
+    var dateRow = document.createElement('div');
+    dateRow.className = 'wi';
+    var dateLeft = document.createElement('span');
+    var recapEnded = recapData.abend.ended_at || '';
+    var recapDateStr = '';
+    try {
+      var recapD = new Date(recapEnded.replace(' ', 'T'));
+      if (!isNaN(recapD.getTime())) {
+        var dd = String(recapD.getDate()).padStart(2, '0');
+        var mm = String(recapD.getMonth() + 1).padStart(2, '0');
+        var yyyy = recapD.getFullYear();
+        recapDateStr = dd + '.' + mm + '.' + yyyy;
+      }
+    } catch(e) {}
+    dateLeft.textContent = '📅 ' + (recapDateStr || '—');
+    var dateRight = document.createElement('span');
+    dateRight.style.color = 'var(--mut)';
+    dateRight.textContent = recapData.abend.name || '—';
+    dateRow.appendChild(dateLeft);
+    dateRow.appendChild(dateRight);
+    recapCard.appendChild(dateRow);
+    // KDA row
+    var kdaRow = document.createElement('div');
+    kdaRow.className = 'wi';
+    var kdaLeft = document.createElement('span');
+    kdaLeft.textContent = '🏆 Kegler des Abends';
+    var kdaRight = document.createElement('span');
+    if (recapData.kda_champion) {
+      kdaRight.textContent = recapData.kda_champion.emoji + ' ' + recapData.kda_champion.name;
+    } else {
+      kdaRight.textContent = '—';
+      kdaRight.style.color = 'var(--mut)';
+    }
+    kdaRow.appendChild(kdaLeft);
+    kdaRow.appendChild(kdaRight);
+    recapCard.appendChild(kdaRow);
+    // BK row
+    var bkRow = document.createElement('div');
+    bkRow.className = 'wi';
+    var bkLeft = document.createElement('span');
+    bkLeft.textContent = '💩 BK Verlierer';
+    var bkRight = document.createElement('span');
+    if (recapData.bk_loser) {
+      bkRight.textContent = recapData.bk_loser.emoji + ' ' + recapData.bk_loser.name;
+    } else {
+      bkRight.textContent = '—';
+      bkRight.style.color = 'var(--mut)';
+    }
+    bkRow.appendChild(bkLeft);
+    bkRow.appendChild(bkRight);
+    recapCard.appendChild(bkRow);
+    // Toggle for game list
+    var recapToggle = document.createElement('div');
+    recapToggle.style.cssText = 'font-size:13px;color:var(--mut);cursor:pointer;margin-top:10px;width:100%';
+    recapToggle.textContent = '▼ Spiele des Abends';
+    var recapPanel = document.createElement('div');
+    recapPanel.style.display = 'none';
+    recapToggle.addEventListener('click', function() {
+      var open = recapPanel.style.display !== 'none';
+      recapPanel.style.display = open ? 'none' : 'block';
+      recapToggle.textContent = (open ? '▼' : '▶') + ' Spiele des Abends';
+    });
+    // Game table inside panel
+    var recapTbl = document.createElement('table');
+    recapTbl.className = 'stbl';
+    recapTbl.innerHTML = '<thead><tr><th>Spieltyp</th><th>Gewinner</th><th>Spieler</th></tr></thead>';
+    var recapTbody = document.createElement('tbody');
+    if (!recapData.games || !recapData.games.length) {
+      recapTbody.innerHTML = '<tr><td colspan="3" class="empty" style="padding:16px;text-align:center">Keine Spiele aufgezeichnet</td></tr>';
+    } else {
+      recapData.games.forEach(function(game) {
+        var tr = document.createElement('tr');
+        var tdTyp = document.createElement('td');
+        var typObj = S.typen && S.typen.find(function(t){return t.id === game.type_key;});
+        tdTyp.textContent = typObj ? typObj.name : game.type_key;
+        var tdWinner = document.createElement('td');
+        tdWinner.textContent = game.winner_name || '—';
+        var tdCount = document.createElement('td');
+        tdCount.textContent = game.player_count;
+        tr.appendChild(tdTyp);
+        tr.appendChild(tdWinner);
+        tr.appendChild(tdCount);
+        recapTbody.appendChild(tr);
+      });
+    }
+    recapTbl.appendChild(recapTbody);
+    recapPanel.appendChild(recapTbl);
+    recapCard.appendChild(recapToggle);
+    recapCard.appendChild(recapPanel);
+    frag.appendChild(recapCard);
   }
 
   // Fetch abende list for grouping
@@ -1612,15 +1721,216 @@ async function submitKDAWurfe() {
 async function renderStats() {
   var el = document.getElementById('r-stats');
   el.innerHTML = '<div class="empty"><p>Laden…</p></div>';
-  var statsData;
-  try { statsData = await fetch('/api/stats').then(function(r){return r.json();}); }
-  catch(e) { el.innerHTML = '<div class="empty"><div class="icon">📊</div><p>Laden fehlgeschlagen.</p></div>'; return; }
-  var stats = statsData.players || statsData;  // compat: new shape {players:[...]} or legacy array
+
+  // Section C: parallel fetch of all 5 stats endpoints
+  var statsData, yearData, streaksData, kdaData, bkData;
+  try {
+    var currentYear = new Date().getFullYear();
+    var results = await Promise.all([
+      fetch('/api/stats'),
+      fetch('/api/stats/year?year=' + currentYear),
+      fetch('/api/stats/streaks'),
+      fetch('/api/stats/kda-counts'),
+      fetch('/api/stats/bk-counts')
+    ]);
+    try { statsData = await results[0].json(); } catch(e) { statsData = null; }
+    try { yearData = await results[1].json(); } catch(e) { yearData = null; }
+    try { streaksData = await results[2].json(); } catch(e) { streaksData = null; }
+    try { kdaData = await results[3].json(); } catch(e) { kdaData = null; }
+    try { bkData = await results[4].json(); } catch(e) { bkData = null; }
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="icon">📊</div><p>Laden fehlgeschlagen.</p></div>';
+    return;
+  }
+
+  // Store new state slots
+  S.streaks = streaksData || {};
+  S.kdaCounts = kdaData || {};
+  S.bkCounts = bkData || {};
+
+  var stats = (statsData && (statsData.players || statsData)) || [];
   if (!stats.length || stats.every(function(p){return !p.wins && !p.losses && !p.draws;})) {
     el.innerHTML = '<div class="empty"><div class="icon">🎳</div><p>Noch keine Spiele gespielt.<br><span style="color:var(--mut);font-size:12px">Spielt ein Spiel zu Ende, um Statistiken zu sehen.</span></p></div>';
     return;
   }
   var frag = document.createDocumentFragment();
+
+  // Section D: Year leaderboard card
+  var yearCard = document.createElement('div');
+  yearCard.className = 'card';
+  yearCard.style.marginBottom = '16px';
+  var yearHeader = document.createElement('div');
+  yearHeader.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px';
+  var yearTitle = document.createElement('div');
+  yearTitle.className = 'stitle';
+  yearTitle.style.margin = '0';
+  yearTitle.textContent = 'Jahres-Leaderboard';
+  var yearPicker = document.createElement('select');
+  yearPicker.id = 'year-picker';
+  yearPicker.style.cssText = 'width:auto;min-width:80px';
+  var availableYears = (yearData && yearData.available_years) || [];
+  var cyStr = String(currentYear);
+  if (availableYears.indexOf(cyStr) === -1) availableYears = [cyStr].concat(availableYears);
+  availableYears.forEach(function(y) {
+    var opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === cyStr) opt.selected = true;
+    yearPicker.appendChild(opt);
+  });
+  yearHeader.appendChild(yearTitle);
+  yearHeader.appendChild(yearPicker);
+  yearCard.appendChild(yearHeader);
+  var yearTbl = document.createElement('table');
+  yearTbl.className = 'stbl';
+  yearTbl.innerHTML = '<thead><tr><th>#</th><th>Spieler</th><th style="text-align:right">Siege</th></tr></thead>';
+  var yearTbody = document.createElement('tbody');
+  yearTbody.id = 'year-leaderboard-tbody';
+  function buildYearRows(yData, yr) {
+    var lb = (yData && yData.leaderboard) || [];
+    if (!lb.length) {
+      return '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--mut);font-size:13px">Keine Spiele in ' + yr + ' abgeschlossen.</td></tr>';
+    }
+    return lb.map(function(entry, idx) {
+      var rank = idx + 1;
+      var rankCls = rank === 1 ? 'rnk gold' : 'rnk';
+      var nameTd = document.createElement('td');
+      nameTd.textContent = (entry.emoji || '') + ' ' + (entry.name || '');
+      var nameTdHtml = '<td>' + (entry.emoji || '') + ' ' + (entry.name || '') + '</td>';
+      return '<tr><td class="' + rankCls + '">' + rank + '</td>' + nameTdHtml + '<td class="snum" style="text-align:right">' + entry.wins + '</td></tr>';
+    }).join('');
+  }
+  yearTbody.innerHTML = buildYearRows(yearData, cyStr);
+  yearTbl.appendChild(yearTbody);
+  yearCard.appendChild(yearTbl);
+  yearPicker.addEventListener('change', function() {
+    var selectedYear = yearPicker.value;
+    var tbody2 = document.getElementById('year-leaderboard-tbody');
+    if (tbody2) tbody2.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:12px;color:var(--mut);font-size:13px">Laden…</td></tr>';
+    fetch('/api/stats/year?year=' + selectedYear)
+      .then(function(r){ return r.json(); })
+      .then(function(newYearData) {
+        var tbody3 = document.getElementById('year-leaderboard-tbody');
+        if (tbody3) tbody3.innerHTML = buildYearRows(newYearData, selectedYear);
+      })
+      .catch(function() {
+        var tbody3 = document.getElementById('year-leaderboard-tbody');
+        if (tbody3) tbody3.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:12px;color:var(--mut);font-size:13px">Laden fehlgeschlagen.</td></tr>';
+      });
+  });
+  frag.appendChild(yearCard);
+
+  // Section E: H2H card
+  var h2hCard = document.createElement('div');
+  h2hCard.className = 'card';
+  h2hCard.style.marginBottom = '16px';
+  var h2hTitle = document.createElement('div');
+  h2hTitle.className = 'stitle';
+  h2hTitle.textContent = 'Direkt-Vergleich';
+  h2hCard.appendChild(h2hTitle);
+  var activePlayers = (S.spieler || []).filter(function(p){ return !p.archived; }).slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  function buildPlayerOptions() {
+    return activePlayers.map(function(p){
+      var o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = (p.emoji || '') + ' ' + p.name;
+      return o;
+    });
+  }
+  var fgA = document.createElement('div');
+  fgA.className = 'fg';
+  var lblA = document.createElement('label');
+  lblA.textContent = 'Spieler A';
+  var selA = document.createElement('select');
+  selA.id = 'h2h-a';
+  buildPlayerOptions().forEach(function(o){ selA.appendChild(o); });
+  fgA.appendChild(lblA);
+  fgA.appendChild(selA);
+  h2hCard.appendChild(fgA);
+  var fgB = document.createElement('div');
+  fgB.className = 'fg';
+  var lblB = document.createElement('label');
+  lblB.textContent = 'Spieler B';
+  var selB = document.createElement('select');
+  selB.id = 'h2h-b';
+  buildPlayerOptions().forEach(function(o){ selB.appendChild(o); });
+  fgB.appendChild(lblB);
+  fgB.appendChild(selB);
+  h2hCard.appendChild(fgB);
+  var h2hBtn = document.createElement('button');
+  h2hBtn.className = 'btn bp';
+  h2hBtn.style.width = '100%';
+  h2hBtn.textContent = 'Vergleichen';
+  var h2hResult = document.createElement('div');
+  h2hResult.id = 'h2h-result';
+  h2hBtn.addEventListener('click', function() {
+    var idA = parseInt(document.getElementById('h2h-a').value);
+    var idB = parseInt(document.getElementById('h2h-b').value);
+    var resultEl = document.getElementById('h2h-result');
+    if (idA === idB) {
+      resultEl.innerHTML = '<div style="color:var(--red);font-size:13px;text-align:center;padding:8px">Bitte zwei verschiedene Spieler wählen.</div>';
+      return;
+    }
+    resultEl.innerHTML = '<div style="color:var(--mut);font-size:13px;text-align:center;padding:8px">Laden…</div>';
+    fetch('/api/stats/h2h?a=' + idA + '&b=' + idB)
+      .then(function(r){ return r.json(); })
+      .then(function(h2hData) {
+        var pA = activePlayers.find(function(p){ return p.id === idA; });
+        var pB = activePlayers.find(function(p){ return p.id === idB; });
+        var nameA = pA ? pA.name : String(idA);
+        var nameB = pB ? pB.name : String(idB);
+        if (!h2hData || h2hData.total === 0) {
+          var msgDiv = document.createElement('div');
+          msgDiv.style.cssText = 'color:var(--mut);font-size:13px;text-align:center;padding:12px';
+          msgDiv.textContent = nameA + ' und ' + nameB + ' haben noch keine gemeinsamen Spiele.';
+          resultEl.innerHTML = '';
+          resultEl.appendChild(msgDiv);
+          return;
+        }
+        var resWrap = document.createElement('div');
+        resWrap.style.cssText = 'display:flex;gap:16px;margin-top:16px';
+        var colA = document.createElement('div');
+        colA.style.cssText = 'flex:1;text-align:center';
+        var numA = document.createElement('div');
+        numA.className = 'snum';
+        numA.textContent = h2hData.wins_a;
+        var lblNameA = document.createElement('div');
+        lblNameA.style.cssText = 'font-size:12px;color:var(--mut)';
+        lblNameA.textContent = nameA;
+        colA.appendChild(numA);
+        colA.appendChild(lblNameA);
+        var colVs = document.createElement('div');
+        colVs.style.cssText = 'flex:0;padding:0 8px;color:var(--mut);align-self:center';
+        colVs.textContent = 'vs';
+        var colB = document.createElement('div');
+        colB.style.cssText = 'flex:1;text-align:center';
+        var numB = document.createElement('div');
+        numB.className = 'snum';
+        numB.textContent = h2hData.wins_b;
+        var lblNameB = document.createElement('div');
+        lblNameB.style.cssText = 'font-size:12px;color:var(--mut)';
+        lblNameB.textContent = nameB;
+        colB.appendChild(numB);
+        colB.appendChild(lblNameB);
+        resWrap.appendChild(colA);
+        resWrap.appendChild(colVs);
+        resWrap.appendChild(colB);
+        var footer = document.createElement('div');
+        footer.style.cssText = 'text-align:center;font-size:12px;color:var(--mut);margin-top:8px';
+        footer.textContent = h2hData.draws + ' Unentschieden · ' + h2hData.total + ' Spiele zusammen';
+        resultEl.innerHTML = '';
+        resultEl.appendChild(resWrap);
+        resultEl.appendChild(footer);
+      })
+      .catch(function() {
+        document.getElementById('h2h-result').innerHTML = '<div style="color:var(--red);font-size:13px;text-align:center;padding:8px">Laden fehlgeschlagen.</div>';
+      });
+  });
+  h2hCard.appendChild(h2hBtn);
+  h2hCard.appendChild(h2hResult);
+  frag.appendChild(h2hCard);
+
+  // Per-player cards (existing + Section F: streak chips)
   stats.forEach(function(p) {
     var card = document.createElement('div');
     card.className = 'uc';
@@ -1654,6 +1964,15 @@ async function renderStats() {
     chips.appendChild(mkChip(p.wins, 'Siege'));
     chips.appendChild(mkChip(p.losses, 'Niederl.'));
     chips.appendChild(mkChip(p.pudel_pct + '%', 'Pudel%', 'pc'));
+    // Section F: streak chips
+    var streakEntry = S.streaks && S.streaks[p.id];
+    var streakCurrent = streakEntry ? streakEntry.current : null;
+    var streakLongest = streakEntry ? streakEntry.longest : null;
+    var streakCurrentChip = mkChip(streakCurrent !== null ? streakCurrent : '—', 'Streak');
+    streakCurrentChip.querySelector('.v').style.color = (streakCurrent !== null && streakCurrent > 0) ? 'var(--grn)' : 'var(--mut)';
+    chips.appendChild(streakCurrentChip);
+    var streakLongestChip = mkChip(streakLongest !== null ? streakLongest : '—', 'Längster');
+    chips.appendChild(streakLongestChip);
     topRow.appendChild(av);
     topRow.appendChild(info);
     topRow.appendChild(chips);
