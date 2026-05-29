@@ -60,7 +60,7 @@ All other v2.0 deferred items have been delivered.
 | 260527-kda-tv-fix | KDA TV bracket: proportional sections + adaptive sizing | 2026-05-27 | 31c2d25 | [260527-kda-tv-bracket-fix](./quick/260527-kda-tv-bracket-fix/) |
 | 260527-dreivollen-tv | DreiVollen TV: dedicated renderer, 2-col grid, scales to 12p | 2026-05-27 | 9bba36a | [260527-dreivollen-tv-12p](./quick/260527-dreivollen-tv-12p/) |
 | 260527-bk-tv-active | BK TV: gold left border + bg on active player (aktSpIdx) | 2026-05-27 | 4444011 | [260527-bk-tv-active-player](./quick/260527-bk-tv-active-player/) |
-| 260529-replace-audio-mp3 | Replace synthesized tones with MP3 playback (index + TV) | 2026-05-29 | TBD | [20260529-replace-audio-mp3](./quick/20260529-replace-audio-mp3/) |
+| 260529-replace-audio-mp3 | Replace synthesized tones with MP3 playback (index + TV) | 2026-05-29 | 0939159 | [20260529-replace-audio-mp3](./quick/20260529-replace-audio-mp3/) |
 
 ## Session Continuity
 
