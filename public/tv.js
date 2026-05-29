@@ -8,6 +8,10 @@ const lastWinnerEl = document.getElementById('lastWinnerText');
 
 var currentTypeKey = null;  // set on game:started and game:state — used by renderGame dispatcher
 var overlayTimeoutId = null;
+
+function playKDAToneTV() {
+  new Audio('/sounds/kda-end.mp3').play().catch(function(){});
+}
 var tvHighlights = null;
 var currentIdleLastWinner = null;
 
@@ -453,6 +457,7 @@ function renderEndOverlay(typeKey, state, lastWinner) {
     nameEl.textContent = lastWinner || '—';  // textContent — XSS safe (T-07-03-01)
     nameEl.style.color = 'var(--ac)';
     subtitleEl.textContent = '— Kegler des Abends!';
+    playKDAToneTV();
   } else {
     // typeKey === 'bilderkegel'
     emojiEl.textContent = '💩';
@@ -469,7 +474,7 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   gameEl.classList.add('active');
   gameEl.replaceChildren(overlayEl);
 
-  overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 10000);
+  overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 30000);
 }
 
 // Bilderkegeln TV layout — scales for 4–12 players; bild section + row fonts shrink with player count

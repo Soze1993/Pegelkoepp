@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.0
-milestone_name: Statistiken, Highlights & Turnierbaum
-status: Phase 9 COMPLETE. All v2.0 phases done. 433 tests green.
-last_updated: "2026-05-27T18:00:00.000Z"
-last_activity: 2026-05-27 — Phase 9 complete (self-hosted fonts + WhatsApp share button)
+milestone_name: milestone
+status: completed
+last_updated: "2026-05-27T18:24:42.915Z"
+last_activity: 2026-05-27 — Phase 9 complete; commits 14c23c8 (fonts) + 669ba36 (share)
 progress:
   total_phases: 4
   completed_phases: 4
@@ -60,9 +60,10 @@ All other v2.0 deferred items have been delivered.
 | 260527-kda-tv-fix | KDA TV bracket: proportional sections + adaptive sizing | 2026-05-27 | 31c2d25 | [260527-kda-tv-bracket-fix](./quick/260527-kda-tv-bracket-fix/) |
 | 260527-dreivollen-tv | DreiVollen TV: dedicated renderer, 2-col grid, scales to 12p | 2026-05-27 | 9bba36a | [260527-dreivollen-tv-12p](./quick/260527-dreivollen-tv-12p/) |
 | 260527-bk-tv-active | BK TV: gold left border + bg on active player (aktSpIdx) | 2026-05-27 | 4444011 | [260527-bk-tv-active-player](./quick/260527-bk-tv-active-player/) |
+| 260529-replace-audio-mp3 | Replace synthesized tones with MP3 playback (index + TV) | 2026-05-29 | TBD | [20260529-replace-audio-mp3](./quick/20260529-replace-audio-mp3/) |
 
 ## Session Continuity
 
-Last session: 2026-05-27T18:00:00.000Z
+Last session: 2026-05-27T18:24:42.909Z
 v2.0 milestone complete. All 4 phases (6–9) shipped.
 Next: /gsd-complete-milestone or /gsd-new-milestone for v3.0

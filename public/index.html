@@ -613,56 +613,12 @@ function showWinnerBanner(state) {
   }, 2500);
 }
 
-var _audioCtx = null;
-function getAudioCtx() {
-  if (!_audioCtx) {
-    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-  }
-  return _audioCtx;
-}
-document.addEventListener('pointerdown', function warmAudio() {
-  var ctx = getAudioCtx();
-  if (ctx && ctx.state === 'suspended') ctx.resume();
-}, { once: true });
-
 function playKDATone() {
-  var ctx = getAudioCtx();
-  if (!ctx) return;
-  ctx.resume().then(function() {
-    var freqs = [523, 659, 784, 1047];
-    freqs.forEach(function(f, i) {
-      var osc = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.2);
-      gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.2);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.2 + 0.18);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.2);
-      osc.stop(ctx.currentTime + i * 0.2 + 0.18);
-    });
-  }).catch(function(){});
+  new Audio('/sounds/kda-end.mp3').play().catch(function(){});
 }
 
 function playBKTone() {
-  var ctx = getAudioCtx();
-  if (!ctx) return;
-  ctx.resume().then(function() {
-    var freqs = [523, 494, 466, 440];
-    freqs.forEach(function(f, i) {
-      var osc = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(f, ctx.currentTime + i * 0.25);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.25);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.25 + 0.23);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.25);
-      osc.stop(ctx.currentTime + i * 0.25 + 0.23);
-    });
-  }).catch(function(){});
+  new Audio('/sounds/bk-end.mp3').play().catch(function(){});
 }
 
 function handleGameFinished(state) {
