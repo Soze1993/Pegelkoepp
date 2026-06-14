@@ -646,7 +646,57 @@ async function showGameDetail(gameId) {
   var typIcon = typ ? typ.icon : '🎲';
   var dateStr = data.game.finished_at ? new Date(data.game.finished_at.replace(' ','T')).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
   var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div style="font-size:32px">' + typIcon + '</div><div><div style="font-family:var(--fh);font-size:22px">' + typName + '</div><div style="color:var(--mut);font-size:12px">' + dateStr + '</div></div></div>';
-  if (data.results && data.results.length) {
+  if (data.game.type_key === 'viergewinnt' && data.state && data.state.grid) {
+    var vgSt = data.state;
+    var VGX = '#e05252', VGO = '#5b8dee';
+    var winnerTeam = vgSt.winner;
+    function vgTeamHtml(players, color, teamKey) {
+      var won = winnerTeam === teamKey;
+      var lost = winnerTeam && winnerTeam !== 'draw' && winnerTeam !== teamKey;
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">'
+        + '<div style="font-family:var(--fh);font-size:16px;color:' + color + ';letter-spacing:.06em">TEAM ' + teamKey + (won ? ' 🏆' : '') + '</div>'
+        + (players || []).map(function(p) {
+            return '<div style="font-size:13px;color:' + (lost ? 'var(--mut)' : 'var(--txt)') + '">' + (p.emoji != null ? p.emoji : '') + ' ' + p.name + '</div>';
+          }).join('')
+        + '</div>';
+    }
+    var cs = 20, gap = 2, N = 9;
+    var svgW = N * cs + (N - 1) * gap, svgH = N * cs + (N - 1) * gap;
+    var circles = '';
+    for (var vgr = 0; vgr < N; vgr++) {
+      for (var vgc = 0; vgc < N; vgc++) {
+        var cx = vgc * (cs + gap) + cs / 2, cy = vgr * (cs + gap) + cs / 2;
+        var val = vgSt.grid[vgr] ? vgSt.grid[vgr][vgc] : null;
+        var fill = val === 'X' ? VGX + 'cc' : val === 'O' ? VGO + 'cc' : '#2a2a38';
+        var stroke = val === 'X' ? VGX : val === 'O' ? VGO : '#3a3a4e';
+        circles += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (cs / 2 - 1) + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.5"/>';
+      }
+    }
+    var colNs = '';
+    for (var vgn = 1; vgn <= N; vgn++) {
+      colNs += '<div style="width:' + cs + 'px;text-align:center;font-size:9px;color:var(--mut)">' + vgn + '</div>';
+    }
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+      + vgTeamHtml(vgSt.tX, VGX, 'X')
+      + '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">'
+      + '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" width="' + svgW + '" height="' + svgH + '" xmlns="http://www.w3.org/2000/svg">' + circles + '</svg>'
+      + '<div style="display:flex;gap:' + gap + 'px;margin-top:2px">' + colNs + '</div>'
+      + (winnerTeam === 'draw' ? '<div style="font-size:12px;color:var(--mut);margin-top:4px">Unentschieden</div>' : '')
+      + '</div>'
+      + vgTeamHtml(vgSt.tO, VGO, 'O')
+      + '</div>';
+    var vgShare = ['🎳 Pegelköpp – ' + typName];
+    if (dateStr) vgShare.push('📅 ' + dateStr);
+    vgShare.push('');
+    if (winnerTeam === 'draw') { vgShare.push('Unentschieden!'); }
+    else if (winnerTeam) {
+      var vgWinPl = (winnerTeam === 'X' ? vgSt.tX : vgSt.tO) || [];
+      vgShare.push('Team ' + winnerTeam + ' gewinnt! 🏆');
+      vgWinPl.forEach(function(p){ vgShare.push('  ' + (p.emoji||'') + ' ' + p.name); });
+    }
+    var vgWaUrl = 'https://wa.me/?text=' + encodeURIComponent(vgShare.join('\n'));
+    html += '<button class="btn bg sm" style="width:100%;margin-top:12px" onclick="window.open(\'' + vgWaUrl.replace(/\'/g, '%27') + '\',\'_blank\')">📤 Via WhatsApp teilen</button>';
+  } else if (data.results && data.results.length) {
     var sorted = data.results.slice().sort(function(a,b){
       if (a.winner && !b.winner) return -1;
       if (!a.winner && b.winner) return 1;
