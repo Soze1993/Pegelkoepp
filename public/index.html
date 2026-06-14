@@ -710,7 +710,7 @@ async function showGameDetail(gameId) {
     var fSp = S.spieler.find(function(p){return p.id===fjSt.fuchs.id;});
     var fName = fSp ? fSp.name : fjSt.fuchs.name;
     var fEmoji = fSp ? fSp.emoji : (fjSt.fuchs.emoji||'🦊');
-    html += '<div style="flex:1;background:var(--card);border-radius:10px;padding:12px;border:1px solid '+(fuchsWon?'var(--grn)':'var(--brd)'">'
+    html += '<div style="flex:1;background:var(--card);border-radius:10px;padding:12px;border:1px solid '+(fuchsWon?'var(--grn)':'var(--brd)')+'">'
       + '<div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🦊 Fuchs</div>'
       + '<div style="font-family:var(--fh);font-size:17px">' + fEmoji + ' ' + fName + '</div>'
       + '<div style="font-size:11px;color:var(--mut);margin-top:4px">Würfe: ' + (fjSt.fuchs.w||[]).join(', ') + '</div>'
