@@ -64,7 +64,15 @@ Mitglieder des Kegelclubs "Pegelköpp":
 - ✓ WhatsApp-Share-Link für abgeschlossene Spielergebnisse — v2.0
 - ✓ Self-hosted Fonts für Offline-Venue-Betrieb — v2.0
 
-### Active (v3.0 candidates)
+### Active (v3.0)
+
+- [ ] Profilbilder pro Spieler (hochladen, speichern, anzeigen) — v3.0
+- [ ] Gastkegler: temporäre Spieler ohne festen Account — v3.0
+- [ ] Team-Gewinner + Statistik (Viergewinnt, Fuchsjagd, Anker, BK): 2 Gewinner, Siege notieren — v3.0
+- [ ] Fuchsjagd TV-Layout: skaliert für bis zu 11 Jäger, kein Würfe-Überlappen — v3.0
+- [ ] KDA TV Bracket: Großes Finale erst einblenden wenn soweit, Winner oben / Loser unten — v3.0
+
+### Deferred (post-v3.0)
 
 - [ ] Letzter Abend: automatische Benachrichtigung / Push nach Abend-Ende
 - [ ] Monatliches Leaderboard (derzeit nur Jahres-Leaderboard)
@@ -100,6 +108,17 @@ Mitglieder des Kegelclubs "Pegelköpp":
 | ORDER BY id ASC for game iteration | BK exemption chain requires chronological order | ✓ Correct exemption logic across restarts |
 | Self-host fonts (6 woff2 committed) | Venue may have no internet — must work offline | ✓ No CDN dependency; ~129 KB committed |
 
+## Current Milestone: v3.0 Spielerprofile, Gastkegler & Realabend-Fixes
+
+**Goal:** Echte Kegelabend-Erfahrung verbessern — Profilbilder, Gastkegler, Team-Siege in der Statistik, und TV-Layouts die bei voller Spieleranzahl nicht mehr abschneiden.
+
+**Target features:**
+- Profilbilder pro Spieler (hochladen + anzeigen)
+- Gastkegler: temporäre Spieler ohne festen Account
+- Team-Gewinner + Statistik (Viergewinnt, Fuchsjagd, Anker, BK)
+- Fuchsjagd TV: skaliert für bis zu 11 Jäger, kein Überlappen
+- KDA TV Bracket: Großes Finale erst wenn soweit, Winner/Loser Layout
+
 ## What Done Looks Like
 
 1. ✅ Kegelabend startet → Spieler wählen → Spiel beginnen auf Tablet
@@ -129,4 +148,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-27 — after v2.0 milestone (Statistiken, Highlights & Turnierbaum)*
+*Last updated: 2026-06-14 — v3.0 milestone started (Spielerprofile, Gastkegler & Realabend-Fixes)*

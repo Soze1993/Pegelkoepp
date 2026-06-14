@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: milestone
-status: completed
-last_updated: "2026-05-27T18:24:42.915Z"
-last_activity: 2026-05-27 — Phase 9 complete; commits 14c23c8 (fonts) + 669ba36 (share)
+milestone: v3.0
+milestone_name: Spielerprofile, Gastkegler & Realabend-Fixes
+status: planning
+last_updated: "2026-06-14T20:06:15.690Z"
+last_activity: 2026-06-14
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 20
-  completed_plans: 20
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,12 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-22)
 
 ## Current Position
 
-Phase: 9 — Polish — COMPLETE (2/2 plans executed)
-Last plan: 09-02 complete (WhatsApp share button in game detail modal)
-Status: All tests GREEN (433/433). All v2.0 phases complete.
-Last activity: 2026-05-27 — Phase 9 complete; commits 14c23c8 (fonts) + 669ba36 (share)
-
-Progress bar: [##########] 100% (4/4 v2.0 phases complete, 20/20 plans done)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-14 — Milestone v3.0 started
 
 ## Accumulated Context
 
@@ -64,6 +62,6 @@ All other v2.0 deferred items have been delivered.
 
 ## Session Continuity
 
-Last session: 2026-05-27T18:24:42.909Z
+Last session: 2026-06-14T15:14:42.096Z
 v2.0 milestone complete. All 4 phases (6–9) shipped.
 Next: /gsd-complete-milestone or /gsd-new-milestone for v3.0
