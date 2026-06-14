@@ -1188,7 +1188,7 @@ function renderDreiVollenTV(state) {
     totCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.6vw;flex-shrink:0';
     var totLbl = document.createElement('div');
     totLbl.textContent = '∑';  // ∑
-    totLbl.style.cssText = 'font-size:1vw;color:var(--mut);line-height:1';
+    totLbl.style.cssText = 'font-size:1.2vw;color:var(--mut);line-height:1';
     var totVal = document.createElement('div');
     totVal.textContent = wuerfe.length > 0 ? String(total) : '·';  // · middle dot
     totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.8vw;color:' + (wuerfe.length > 0 ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)') + ';line-height:1';
