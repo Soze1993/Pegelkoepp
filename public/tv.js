@@ -1174,10 +1174,10 @@ function renderDreiVollenTV(state) {
       cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2vw;flex-shrink:0';
       var wLbl = document.createElement('div');
       wLbl.textContent = 'W' + (wi + 1);
-      wLbl.style.cssText = 'font-size:1vw;color:var(--mut);line-height:1';
+      wLbl.style.cssText = 'font-size:1.2vw;color:var(--mut);line-height:1';
       var wVal = document.createElement('div');
       wVal.textContent = wuerfe.length > wi ? String(wuerfe[wi]) : '—';  // — em dash
-      wVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:' + (wuerfe.length > wi ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      wVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.8vw;color:' + (wuerfe.length > wi ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
       cell.appendChild(wLbl);
       cell.appendChild(wVal);
       row.appendChild(cell);
