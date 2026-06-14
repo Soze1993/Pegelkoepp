@@ -1143,7 +1143,7 @@ function renderDreiVollenTV(state) {
 
     var row = document.createElement('div');
     row.style.cssText = [
-      'display:flex;align-items:center;gap:0.5vw;padding:0.55vw 0.9vw',
+      'display:flex;align-items:center;gap:0.5vw;padding:0.8vw 0.9vw',
       'border-radius:10px;border:2px solid ' + (highlight ? 'var(--ac)' : 'var(--brd)'),
       'background:' + (highlight ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
       'box-shadow:' + (highlight ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
@@ -1151,12 +1151,12 @@ function renderDreiVollenTV(state) {
 
     var rank = document.createElement('div');
     rank.textContent = String(i + 1);
-    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.5vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.4vw;text-align:center;flex-shrink:0';
+    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.8vw;text-align:center;flex-shrink:0';
     row.appendChild(rank);
 
     var name = document.createElement('div');
     name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
-    name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(name);
 
     // Stechen badge — sword icon when pending, green score when thrown
@@ -1164,7 +1164,7 @@ function renderDreiVollenTV(state) {
       var threw = p.stechenWuerfe && p.stechenWuerfe.length > 0;
       var badge = document.createElement('div');
       badge.textContent = threw ? 'S:' + String(p.stechenWuerfe[p.stechenWuerfe.length - 1]) : '⚔';  // ⚔ — textContent safe
-      badge.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.3vw;color:' + (threw ? 'var(--grn)' : 'var(--ac)') + ';flex-shrink:0;letter-spacing:.03em';
+      badge.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.8vw;color:' + (threw ? 'var(--grn)' : 'var(--ac)') + ';flex-shrink:0;letter-spacing:.03em';
       row.appendChild(badge);
     }
 
@@ -1174,10 +1174,10 @@ function renderDreiVollenTV(state) {
       cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2vw;flex-shrink:0';
       var wLbl = document.createElement('div');
       wLbl.textContent = 'W' + (wi + 1);
-      wLbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+      wLbl.style.cssText = 'font-size:1vw;color:var(--mut);line-height:1';
       var wVal = document.createElement('div');
       wVal.textContent = wuerfe.length > wi ? String(wuerfe[wi]) : '—';  // — em dash
-      wVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.7vw;color:' + (wuerfe.length > wi ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      wVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:' + (wuerfe.length > wi ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
       cell.appendChild(wLbl);
       cell.appendChild(wVal);
       row.appendChild(cell);
@@ -1188,10 +1188,10 @@ function renderDreiVollenTV(state) {
     totCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.6vw;flex-shrink:0';
     var totLbl = document.createElement('div');
     totLbl.textContent = '∑';  // ∑
-    totLbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+    totLbl.style.cssText = 'font-size:1vw;color:var(--mut);line-height:1';
     var totVal = document.createElement('div');
     totVal.textContent = wuerfe.length > 0 ? String(total) : '·';  // · middle dot
-    totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (wuerfe.length > 0 ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)') + ';line-height:1';
+    totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.8vw;color:' + (wuerfe.length > 0 ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)') + ';line-height:1';
     totCell.appendChild(totLbl);
     totCell.appendChild(totVal);
     row.appendChild(totCell);
