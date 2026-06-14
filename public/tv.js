@@ -1235,10 +1235,10 @@ function renderViergewinntTV(state) {
   var xDim = state.done && state.winner === 'O';
   var oDim = state.done && state.winner === 'X';
 
-  // Cell size: fit 9 cells into available space (55% of width or 85% of height minus title)
+  // Cell size: /9 for width (9 cols), /10 for height (9 rows + col-numbers row); 0.78 leaves room for header+padding
   var cellPx = Math.floor(Math.min(
     (window.innerWidth * 0.55 - 36) / 9,
-    (window.innerHeight * 0.85 - 36) / 9
+    (window.innerHeight * 0.78 - 36) / 10
   ));
   var cs = cellPx + 'px';
 
@@ -1251,25 +1251,29 @@ function renderViergewinntTV(state) {
   var mainRow = document.createElement('div');
   mainRow.style.cssText = 'flex:1;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:2vw;min-height:0';
 
-  function makeTeamPanel(players, color, label, dim, won) {
+  function makeTeamPanel(players, color, label, dim, won, teamKey, aktIdx) {
+    var isActiveTeam = !state.done && state.aktT === teamKey;
+    var opacity = dim ? '0.45' : (!state.done && !isActiveTeam ? '0.6' : '1');
     var panel = document.createElement('div');
-    panel.style.cssText = 'flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:' + (dim ? '0.45' : '1') + ';transition:opacity .8s';
+    panel.style.cssText = 'flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:' + opacity + ';transition:opacity .8s'
+      + (isActiveTeam ? ';border:2px solid ' + color + '88;border-radius:12px;padding:8px 12px;box-shadow:0 0 18px ' + color + '33' : '');
 
     var lbl = document.createElement('div');
     lbl.textContent = label + (won ? ' 🏆' : '');  // textContent — safe (fixed string)
     lbl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:3.5vw;color:' + color + ';letter-spacing:.06em;text-align:center';
     panel.appendChild(lbl);
 
-    players.forEach(function(p) {
+    players.forEach(function(p, idx) {
+      var isAkt = isActiveTeam && idx === (aktIdx % players.length);
       var n = document.createElement('div');
-      n.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
-      n.style.cssText = 'font-size:1.8vw;color:var(--txt);text-align:center;line-height:1.5';
+      n.textContent = (isAkt ? '▶ ' : '') + (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+      n.style.cssText = 'font-size:2.5vw;font-family:' + (isAkt ? 'var(--fh,"Bebas Neue",sans-serif)' : 'inherit') + ';color:' + (isAkt ? 'var(--ac)' : 'var(--txt)') + ';text-align:center;line-height:1.5';
       panel.appendChild(n);
     });
     return panel;
   }
 
-  mainRow.appendChild(makeTeamPanel(tX, VG_X, 'TEAM X', xDim, xWon));
+  mainRow.appendChild(makeTeamPanel(tX, VG_X, 'TEAM X', xDim, xWon, 'X', state.iX || 0));
 
   // Board center column
   var boardCol = document.createElement('div');
@@ -1294,7 +1298,7 @@ function renderViergewinntTV(state) {
   for (var c = 1; c <= 9; c++) {
     var num = document.createElement('div');
     num.textContent = String(c);  // textContent — safe (loop counter)
-    num.style.cssText = 'width:' + cs + ';text-align:center;font-size:1.2vw;color:var(--mut);font-family:var(--fb,"DM Sans",sans-serif)';
+    num.style.cssText = 'width:' + cs + ';text-align:center;font-size:1.8vw;color:var(--mut);font-family:var(--fb,"DM Sans",sans-serif)';
     colNums.appendChild(num);
   }
   boardCol.appendChild(colNums);
@@ -1307,7 +1311,7 @@ function renderViergewinntTV(state) {
   }
 
   mainRow.appendChild(boardCol);
-  mainRow.appendChild(makeTeamPanel(tO, VG_O, 'TEAM O', oDim, oWon));
+  mainRow.appendChild(makeTeamPanel(tO, VG_O, 'TEAM O', oDim, oWon, 'O', state.iO || 0));
   container.appendChild(mainRow);
 
   gameEl.replaceChildren(container);
