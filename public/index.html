@@ -696,6 +696,98 @@ async function showGameDetail(gameId) {
     }
     var vgWaUrl = 'https://wa.me/?text=' + encodeURIComponent(vgShare.join('\n'));
     html += '<button class="btn bg sm" style="width:100%;margin-top:12px" onclick="window.open(\'' + vgWaUrl.replace(/\'/g, '%27') + '\',\'_blank\')">📤 Via WhatsApp teilen</button>';
+  } else if (data.game.type_key === 'fuchsjagd' && data.state && data.state.fuchs) {
+    var fjSt = data.state;
+    var fuchsWon = fjSt.winner === 'fuchs';
+    var resultColor = fuchsWon ? 'var(--grn)' : 'var(--red)';
+    var resultBg = fuchsWon ? '#4caf7d18' : '#e0525218';
+    html += '<div style="text-align:center;padding:12px 16px;border-radius:8px;background:' + resultBg + ';border:1px solid ' + resultColor + ';margin-bottom:14px">'
+      + '<div style="font-family:var(--fh);font-size:20px;color:' + resultColor + ';letter-spacing:.04em">'
+      + (fuchsWon ? '🦊 Fuchs entkommen!' : '🏹 Fuchs gefangen!') + '</div>'
+      + '</div>';
+    html += '<div style="display:flex;gap:10px;align-items:flex-start">';
+    // Fuchs panel
+    var fSp = S.spieler.find(function(p){return p.id===fjSt.fuchs.id;});
+    var fName = fSp ? fSp.name : fjSt.fuchs.name;
+    var fEmoji = fSp ? fSp.emoji : (fjSt.fuchs.emoji||'🦊');
+    html += '<div style="flex:1;background:var(--card);border-radius:10px;padding:12px;border:1px solid '+(fuchsWon?'var(--grn)':'var(--brd)'">'
+      + '<div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🦊 Fuchs</div>'
+      + '<div style="font-family:var(--fh);font-size:17px">' + fEmoji + ' ' + fName + '</div>'
+      + '<div style="font-size:11px;color:var(--mut);margin-top:4px">Würfe: ' + (fjSt.fuchs.w||[]).join(', ') + '</div>'
+      + '<div style="font-family:var(--fh);font-size:22px;color:var(--ac);margin-top:6px">FP: ' + (fjSt.fp||0) + '</div>'
+      + (fuchsWon ? '<span class="badge bgrn" style="margin-top:6px;display:inline-block">Sieg</span>' : '')
+      + '</div>';
+    // Jäger panel
+    html += '<div style="flex:1.4;display:flex;flex-direction:column;gap:5px">'
+      + '<div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">🏹 Jäger ' + (!fuchsWon ? '<span class="badge bgrn" style="float:right">Sieg</span>' : '') + '</div>';
+    (fjSt.jaeger||[]).forEach(function(j){
+      var jSp = S.spieler.find(function(p){return p.id===j.id;});
+      var jName = jSp ? jSp.name : j.name;
+      var jEmoji = jSp ? jSp.emoji : (j.emoji||'🎳');
+      var jTotal = (j.w||[]).reduce(function(a,b){return a+b;},0);
+      html += '<div style="display:flex;align-items:center;background:var(--card);border-radius:8px;padding:7px 10px">'
+        + '<span style="flex:1;font-size:13px">' + jEmoji + ' ' + jName + '</span>'
+        + '<span style="font-family:var(--fh);font-size:16px;color:var(--red)">−' + jTotal + '</span>'
+        + '</div>';
+    });
+    html += '</div></div>';
+    var fjWaLines = ['🎳 Pegelköpp – Fuchsjagd'];
+    if (dateStr) fjWaLines.push('📅 ' + dateStr);
+    fjWaLines.push('');
+    fjWaLines.push(fuchsWon ? '🦊 Fuchs entkommen! ' + fEmoji + ' ' + fName + ' (FP: ' + (fjSt.fp||0) + ')' : '🏹 Fuchs gefangen! ' + fEmoji + ' ' + fName);
+    var fjWaUrl = 'https://wa.me/?text=' + encodeURIComponent(fjWaLines.join('\n'));
+    html += '<button class="btn bg sm" style="width:100%;margin-top:12px" onclick="window.open(\'' + fjWaUrl.replace(/\'/g,'%27') + '\',\'_blank\')">📤 Via WhatsApp teilen</button>';
+  } else if (data.game.type_key === 'kda' && data.state) {
+    var kdaSt = data.state;
+    var champ = kdaSt.gewinner;
+    // Find finalist from GF slot
+    var gfSlot = (kdaSt.bracket||[]).find(function(s){return s.id==='GF';});
+    var finalist = null;
+    if (gfSlot && gfSlot.done && champ) {
+      finalist = (gfSlot.p1 && gfSlot.p1.id !== champ.id) ? gfSlot.p1
+               : (gfSlot.p2 && gfSlot.p2.id !== champ.id) ? gfSlot.p2 : null;
+    }
+    // Collect all unique players
+    var kdaSeen = new Set();
+    var kdaAll = [];
+    (kdaSt.bracket||[]).forEach(function(sl){[sl.p1,sl.p2].forEach(function(p){if(p&&!kdaSeen.has(p.id)){kdaSeen.add(p.id);kdaAll.push(p);}});});
+    // Champion block
+    var cSp = champ && S.spieler.find(function(p){return p.id===champ.id;});
+    var cName = cSp ? cSp.name : (champ ? champ.name : '—');
+    var cEmoji = cSp ? cSp.emoji : (champ ? champ.emoji : '');
+    html += '<div style="text-align:center;padding:16px;border-radius:10px;background:#e8b84b18;border:1px solid var(--ac);margin-bottom:12px">'
+      + '<div style="font-size:10px;color:var(--ac);font-family:var(--fh);letter-spacing:.12em;margin-bottom:6px">🏆 KEGLER DES ABENDS</div>'
+      + '<div style="font-family:var(--fh);font-size:26px">' + cEmoji + ' ' + cName + '</div>'
+      + '</div>';
+    if (finalist) {
+      var fSp2 = S.spieler.find(function(p){return p.id===finalist.id;});
+      var fName2 = fSp2 ? fSp2.name : finalist.name;
+      var fEmoji2 = fSp2 ? fSp2.emoji : (finalist.emoji||'');
+      html += '<div style="display:flex;align-items:center;padding:8px 12px;background:var(--card);border-radius:8px;margin-bottom:6px">'
+        + '<span style="font-size:13px;color:var(--mut);margin-right:8px;font-family:var(--fh)">2.</span>'
+        + '<span style="flex:1;font-size:14px">' + fEmoji2 + ' ' + fName2 + '</span>'
+        + '<span class="badge bgry">Finalist</span>'
+        + '</div>';
+    }
+    var otherLabel = false;
+    kdaAll.forEach(function(p){
+      if (champ && p.id === champ.id) return;
+      if (finalist && p.id === finalist.id) return;
+      if (!otherLabel) { html += '<div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:8px 0 4px">Teilnehmer</div>'; otherLabel = true; }
+      var pSp = S.spieler.find(function(x){return x.id===p.id;});
+      var pName = pSp ? pSp.name : p.name;
+      var pEmoji = pSp ? pSp.emoji : (p.emoji||'');
+      html += '<div style="display:flex;align-items:center;padding:7px 12px;background:var(--card);border-radius:8px;margin-bottom:4px">'
+        + '<span style="flex:1;font-size:13px">' + pEmoji + ' ' + pName + '</span>'
+        + '</div>';
+    });
+    var kdaWaLines = ['🎳 Pegelköpp – Kegler des Abends'];
+    if (dateStr) kdaWaLines.push('📅 ' + dateStr);
+    kdaWaLines.push('');
+    kdaWaLines.push('🏆 ' + cEmoji + ' ' + cName);
+    if (finalist) { var fSp3=S.spieler.find(function(p){return p.id===finalist.id;}); kdaWaLines.push('2. ' + (fSp3?fSp3.emoji:finalist.emoji||'') + ' ' + (fSp3?fSp3.name:finalist.name)); }
+    var kdaWaUrl = 'https://wa.me/?text=' + encodeURIComponent(kdaWaLines.join('\n'));
+    html += '<button class="btn bg sm" style="width:100%;margin-top:12px" onclick="window.open(\'' + kdaWaUrl.replace(/\'/g,'%27') + '\',\'_blank\')">📤 Via WhatsApp teilen</button>';
   } else if (data.results && data.results.length) {
     var sorted = data.results.slice().sort(function(a,b){
       if (a.winner && !b.winner) return -1;
