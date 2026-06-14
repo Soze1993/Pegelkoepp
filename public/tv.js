@@ -779,12 +779,12 @@ function renderHausnummerTV(state) {
 
     var rank = document.createElement('div');
     rank.textContent = String(i + 1);
-    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.8vw;color:' + (isLeader && state.done ? 'gold' : 'var(--mut)') + ';min-width:1.8vw;text-align:center';
+    rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (isLeader && state.done ? 'gold' : 'var(--mut)') + ';min-width:1.8vw;text-align:center';
     row.appendChild(rank);
 
     var name = document.createElement('div');
     name.textContent = (p.emoji || '') + ' ' + p.name;
-    name.style.cssText = 'flex:1;font-size:1.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     row.appendChild(name);
 
     [['h','H'],['z','Z'],['e','E']].forEach(function(pair) {
@@ -793,10 +793,10 @@ function renderHausnummerTV(state) {
       wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.5vw';
       var lEl = document.createElement('div');
       lEl.textContent = lbl;
-      lEl.style.cssText = 'font-size:0.8vw;color:var(--mut);line-height:1';
+      lEl.style.cssText = 'font-size:1.2vw;color:var(--mut);line-height:1';
       var vEl = document.createElement('div');
       vEl.textContent = sl[slot] !== null ? String(sl[slot]) : '—';
-      vEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (sl[slot] !== null ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      vEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.8vw;color:' + (sl[slot] !== null ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
       wrap.appendChild(lEl);
       wrap.appendChild(vEl);
       row.appendChild(wrap);
@@ -804,7 +804,7 @@ function renderHausnummerTV(state) {
 
     var total = document.createElement('div');
     total.textContent = sc !== null ? String(sc) : '·';
-    total.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.4vw;min-width:4.5vw;text-align:right;color:' + (sc !== null ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)');
+    total.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.8vw;min-width:4.5vw;text-align:right;color:' + (sc !== null ? (isLeader ? 'var(--ac)' : 'var(--txt)') : 'var(--brd)');
     row.appendChild(total);
 
     grid.appendChild(row);
