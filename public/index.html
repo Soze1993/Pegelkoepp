@@ -644,7 +644,7 @@ async function showGameDetail(gameId) {
   var typ = S.typen.find(function(t){return t.id===data.game.type_key;});
   var typName = typ ? typ.name : data.game.type_key;
   var typIcon = typ ? typ.icon : '🎲';
-  var _mDate = data.game.finished_at ? new Date(data.game.finished_at.replace(' ','T')+'+01:00') : null;
+  var _mDate = data.game.finished_at ? new Date(data.game.finished_at.replace(' ','T')) : null;
   var dateStr = _mDate ? _mDate.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) + ', ' + _mDate.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr' : '';
   var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div style="font-size:32px">' + typIcon + '</div><div><div style="font-family:var(--fh);font-size:22px">' + typName + '</div><div style="color:var(--mut);font-size:12px">' + dateStr + '</div></div></div>';
   if (data.game.type_key === 'viergewinnt' && data.state && data.state.grid) {
@@ -1001,7 +1001,7 @@ async function renderSpiele() {
     var recapEnded = recapData.abend.ended_at || '';
     var recapDateStr = '';
     try {
-      var recapD = new Date(recapEnded.replace(' ', 'T') + '+01:00');
+      var recapD = new Date(recapEnded.replace(' ', 'T'));
       if (!isNaN(recapD.getTime())) {
         var dd = String(recapD.getDate()).padStart(2, '0');
         var mm = String(recapD.getMonth() + 1).padStart(2, '0');
@@ -1155,7 +1155,7 @@ async function renderSpiele() {
     var typ = S.typen.find(function(t){return t.id===g.type_key;});
     var icon = typ ? typ.icon : '🎲';
     var name = typ ? typ.name : g.type_key;
-    var _gDate = g.finished_at ? new Date(g.finished_at.replace(' ','T')+'+01:00') : (g.started_at ? new Date(g.started_at.replace(' ','T')+'+01:00') : null);
+    var _gDate = g.finished_at ? new Date(g.finished_at.replace(' ','T')) : (g.started_at ? new Date(g.started_at.replace(' ','T')) : null);
     var dateStr = _gDate ? _gDate.toLocaleDateString('de-DE') + ', ' + _gDate.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr' : '';
     var card = document.createElement('div');
     card.className = 'stc';
@@ -1197,7 +1197,7 @@ async function renderSpiele() {
     var abend = abendeMap[abendId];
     var headerText;
     if (abend) {
-      var dateLabel = abend.started_at ? new Date(abend.started_at.replace(' ','T')+'+01:00').toLocaleDateString('de-DE', {weekday:'short',day:'2-digit',month:'2-digit'}) : '';
+      var dateLabel = abend.started_at ? new Date(abend.started_at.replace(' ','T')).toLocaleDateString('de-DE', {weekday:'short',day:'2-digit',month:'2-digit'}) : '';
       headerText = abend.name + (dateLabel ? ' (' + dateLabel + ')' : '');
     } else {
       headerText = 'Abend #' + abendId;

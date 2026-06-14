@@ -139,7 +139,7 @@ router.post('/', requireSession, (req, res) => {
   const rawName = (req.body && typeof req.body.name === 'string') ? req.body.name.trim() : '';
   const name = rawName || defaultAbendName();
 
-  const result = db.prepare('INSERT INTO abende (name) VALUES (?)').run(name);
+  const result = db.prepare("INSERT INTO abende (name, started_at) VALUES (?, datetime('now','localtime'))").run(name);
   res.status(201).json({ id: result.lastInsertRowid, name });
 });
 
@@ -153,7 +153,7 @@ router.post('/:id/end', requireSession, (req, res) => {
     return res.status(400).json({ error: 'invalid id' });
   }
   const info = db.prepare(
-    "UPDATE abende SET ended_at = datetime('now') WHERE id = ?"
+    "UPDATE abende SET ended_at = datetime('now','localtime') WHERE id = ?"
   ).run(id);
   if (!info.changes) return res.status(404).json({ error: 'Abend not found' });
   res.json({ ok: true });

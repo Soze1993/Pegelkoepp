@@ -194,7 +194,7 @@ router.post('/:id/throws', requireSession, (req, res) => {
   // 5. If game is now finished: update DB + remove from cache
   const finished = gameModule.isFinished(newState);
   if (finished) {
-    db.prepare("UPDATE games SET status = 'finished', finished_at = datetime('now') WHERE id = ?").run(game.id);
+    db.prepare("UPDATE games SET status = 'finished', finished_at = datetime('now','localtime') WHERE id = ?").run(game.id);
     activeGames.delete(game.id);
     // T2: persist payer for BK so exemption survives server restart
     if (game.type_key === 'bilderkegel') {
@@ -290,7 +290,7 @@ router.post('/:id/skip-stechen', requireSession, (req, res) => {
 
   const finished = gameModule.isFinished(newState);
   if (finished) {
-    db.prepare("UPDATE games SET status = 'finished', finished_at = datetime('now') WHERE id = ?").run(game.id);
+    db.prepare("UPDATE games SET status = 'finished', finished_at = datetime('now','localtime') WHERE id = ?").run(game.id);
     activeGames.delete(gameId);
   }
 
@@ -325,7 +325,7 @@ router.delete('/:id', requireSession, (req, res) => {
   const game = db.prepare('SELECT * FROM games WHERE id = ?').get(gameId);
   if (!game) return res.status(404).json({ error: 'not found' });
   if (game.status !== 'active') return res.status(409).json({ error: 'not active' });
-  db.prepare("UPDATE games SET status = 'cancelled', finished_at = datetime('now') WHERE id = ?").run(gameId);
+  db.prepare("UPDATE games SET status = 'cancelled', finished_at = datetime('now','localtime') WHERE id = ?").run(gameId);
   activeGames.delete(gameId);
   const io = req.app.locals.io;
   if (io) io.to(`game:${gameId}`).emit('game:state', { idle: true, lastWinner: null });
