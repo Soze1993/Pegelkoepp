@@ -274,7 +274,10 @@ function renderKDABracket(state) {
   // GF: only show when both finalists are determined
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   var gfVisible = !!(gfSlot && gfSlot.p1 && gfSlot.p2);
+  // gfActive = GF in progress; bracket hides GF section (shown in spotlight view only)
+  var gfActive = gfVisible && !!(gfSlot && !gfSlot.done);
   var gfH = gfVisible ? 200 : 0;
+  var bracketGfH = gfActive ? 0 : gfH; // no GF reserved in bracket when spotlight handles it
 
   // Slot widths: each section spans full viewport width independently
   var availW = vw - 48;
@@ -285,7 +288,7 @@ function renderKDABracket(state) {
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
-  var availH = vh - 40 - 12 - gfH; // container padding(20×2) + section gap + GF
+  var availH = vh - 40 - 12 - bracketGfH; // container padding(20×2) + section gap + GF
   var wH = Math.floor(availH * 0.55);
   var lH = availH - wH - 12;
   // Overhead: section label (28px) + gap (6px) + col round-label (~18px) = 52px
@@ -362,7 +365,7 @@ function renderKDABracket(state) {
   }
 
   // --- Grand Final: only when both finalists are determined ---
-  if (gfVisible) {
+  if (gfVisible && !gfActive) {
     var gfStage = document.createElement('div');
     gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px 0 8px;border-top:2px solid var(--ac);width:100%;box-sizing:border-box;flex:0 0 ' + gfH + 'px';
     var gfLabel = document.createElement('div');
@@ -376,7 +379,6 @@ function renderKDABracket(state) {
   }
 
   // GF Focus mode: toggle between full bracket and GF spotlight every 20s
-  var gfActive = gfVisible && gfSlot && !gfSlot.done;
   if (gfActive) {
     var gfFocusContainer = document.createElement('div');
     gfFocusContainer.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;box-sizing:border-box;padding:24px';
