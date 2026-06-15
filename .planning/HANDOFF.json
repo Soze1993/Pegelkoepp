@@ -1,33 +1,38 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-15T08:56:43.886Z",
-  "phase": "10",
-  "phase_name": "team-gewinner-gastkegler",
-  "phase_dir": ".planning/phases/10-team-gewinner-gastkegler",
+  "timestamp": "2026-06-15T20:03:38.799Z",
+  "phase": "12",
+  "phase_name": "tv-layout-polish",
+  "phase_dir": ".planning/phases/12-tv-layout-polish",
   "plan": null,
   "task": null,
   "total_tasks": null,
-  "status": "human_uat_pending",
+  "status": "uat_in_progress",
   "completed_tasks": [
-    {"id": "10-02", "name": "Gastkegler Backend + Frontend", "status": "done", "commit": "8492902"},
-    {"id": "10-01", "name": "Stats isDraw Fix + Multi-Winner + Guest Guard", "status": "done", "commit": "1e16817"},
-    {"id": "post-fix", "name": "VG multi-winner idle screen + 90s result timeout", "status": "done", "commit": "8b92be2"}
+    {"id": "idle", "name": "Idle: untere Reihe abgeschnitten → max-height 40vh→55vh", "status": "done", "commit": "354c73f"},
+    {"id": "viergewinnt", "name": "Viergewinnt: 6. Spieler abgeschnitten + Avatare adaptiv", "status": "done", "commit": "343fe02"},
+    {"id": "bk", "name": "Bilderkegel: letzter Spieler abgeschnitten → gap-Korrektur", "status": "done", "commit": "9565156"}
   ],
   "remaining_tasks": [
-    {"id": "uat", "name": "Manuelles UAT (VG-Sieg, Gastkegler-Flow, TV-Idle)", "status": "not_started"},
-    {"id": "close", "name": "Phase 10 als Complete markieren nach UAT", "status": "not_started"},
-    {"id": "optional", "name": "Rückblick-Bug in abende.js Z.78 fixen (winners.length !== 1 → === 0)", "status": "optional"}
+    {"id": "fuchsjagd", "name": "Fuchsjagd Screenshot prüfen", "status": "not_started"},
+    {"id": "drei", "name": "Drei in die Vollen Screenshot prüfen", "status": "not_started"},
+    {"id": "anker", "name": "Anker Screenshot prüfen", "status": "not_started"},
+    {"id": "kleinehaus", "name": "Kleine Hausnummer Screenshot prüfen", "status": "not_started"},
+    {"id": "plusminus", "name": "Plus Minus Mal Screenshot prüfen", "status": "not_started"},
+    {"id": "kda", "name": "KDA Screenshot + UAT 4-7 abschließen", "status": "not_started"},
+    {"id": "close", "name": "12-UAT.md abschließen + Phase 12 complete + /gsd-complete-milestone", "status": "not_started"}
   ],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "UAT durchführen auf localhost:3000", "context": "Server läuft. Testen: VG-Team-Sieg, Gastkegler anlegen+spielen+archivieren, TV Idle-Screen", "blocking": true}
+    {"action": "VPS deployen: git pull && pm2 restart", "context": "Nach jedem Fix pushen und auf real TV testen", "blocking": false}
   ],
   "decisions": [
-    {"decision": "isDraw = winners.length === 0", "rationale": "Nur echte Draws (0 Gewinner), nicht Einzel-vs-Team-Unterscheidung"},
-    {"decision": "addSpieler() jetzt async mit API-Call", "rationale": "War fälschlicherweise lokal-only ohne persistente ID"},
-    {"decision": "Result-Screen 90s für alle Spieltypen", "rationale": "User-Feedback: 1-2 Minuten gewünscht, einheitlich"}
+    {"decision": "Samsung TV-Browser rendert mit 1280×720 logischem Viewport", "rationale": "Erklärt alle Abschneidungsprobleme die auf Monitor nicht auftraten"},
+    {"decision": "Viergewinnt avSz 52px bei ≥5 Spielern/Team", "rationale": "80px×6 übersteigt verfügbare Höhe bei 720p"},
+    {"decision": "BK playerRowH: gaps (3px×n) abziehen", "rationale": "Flex-Gap wurde nicht in Höhenformel berücksichtigt"},
+    {"decision": "Namen-Größenänderungen alle rückgängig", "rationale": "User war mit Originalgrößen zufrieden, hatte andere Intention gemeint"}
   ],
   "uncommitted_files": [],
-  "next_action": "UAT auf localhost:3000 durchführen. Dann Phase 10 Complete markieren.",
-  "context_notes": "Phase 10 vollständig implementiert und verifiziert. Nur manuelles UAT steht aus. Optionaler Rückblick-Bug bekannt."
+  "next_action": "Screenshot-Review: Fuchsjagd → Drei → Anker → Kleine Hausnummer → Plus Minus Mal → KDA. Pattern prüfen: abgeschnittene Spieler bei 720p-Viewport.",
+  "context_notes": "Alle Fixes dieser Session waren 720p-bedingt. Pattern: overflow:hidden + zu wenig vh → letzter Spieler unsichtbar. Screenshots liegen in Screnshots/ (Tippfehler im Ordnernamen)."
 }
