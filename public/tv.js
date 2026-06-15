@@ -750,7 +750,10 @@ function renderBilderkegelTV(state) {
 
     var nameSpan = document.createElement('span');
     nameSpan.textContent = player.name;  // textContent — XSS safe
-    nameSpan.style.cssText = 'font-size:' + namePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (isActive ? 'var(--ac)' : 'var(--txt)');
+    var textW = nameColW - avSz - 16;  // minus avatar + gap + padding
+    var fitPx = player.name.length > 0 ? Math.floor(textW / (player.name.length * 0.60)) : namePx;
+    var thisNamePx = Math.max(12, Math.min(namePx, fitPx));
+    nameSpan.style.cssText = 'font-size:' + thisNamePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (isActive ? 'var(--ac)' : 'var(--txt)');
     nameCell.appendChild(nameSpan);
     row.appendChild(nameCell);
 
