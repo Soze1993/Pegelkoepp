@@ -150,7 +150,7 @@ function renderPlayerGrid() {
 
     var nameEl = document.createElement('div');
     nameEl.textContent = p.name;  // textContent — T-02-02
-    nameEl.style.cssText = 'font-size:1.8vw;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;color:var(--txt);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%';
+    nameEl.style.cssText = 'font-size:1.4vw;color:var(--txt);margin-top:4px';
 
     cell.appendChild(avWrap);
     cell.appendChild(nameEl);
@@ -643,7 +643,7 @@ function renderBilderkegelTV(state) {
 
   // Font / avatar sizes from playerRowH
   var scorePx = Math.max(14, Math.min(52, Math.round(playerRowH * 0.58)));
-  var namePx  = Math.max(12, Math.min(52, Math.round(playerRowH * 0.55)));
+  var namePx  = Math.max(12, Math.min(36, Math.round(playerRowH * 0.40)));
   var avSz    = Math.max(20, Math.min(56, Math.round(playerRowH * 0.62)));
 
   // Active bild / player
@@ -1055,7 +1055,7 @@ function renderHausnummerTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:3vw;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     row.appendChild(hnAvEl);
     row.appendChild(name);
 
@@ -1210,7 +1210,7 @@ function renderAnkerTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:3vw;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:1.35vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(anAvEl);
     row.appendChild(name);
 
@@ -1337,7 +1337,7 @@ function renderPlusMinusTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:3vw;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(pmAvEl);
     row.appendChild(name);
 
@@ -1472,7 +1472,7 @@ function renderDreiVollenTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:3vw;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(dvAvEl);
     row.appendChild(name);
 
