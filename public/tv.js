@@ -130,12 +130,12 @@ function renderPlayerGrid() {
 
     // Avatar wrapper: emoji underneath, img on top (overlay pattern, D-10/D-11)
     var avWrap = document.createElement('div');
-    avWrap.style.cssText = 'position:relative;width:80px;height:80px;margin:0 auto 6px';
+    avWrap.style.cssText = 'position:relative;width:100px;height:100px;margin:0 auto 6px';
 
     var emojiEl = document.createElement('div');
     emojiEl.textContent = p.emoji;  // textContent — T-02-02 compliant
     emojiEl.style.cssText = 'display:flex;align-items:center;justify-content:center;' +
-      'width:100%;height:100%;font-size:36px;border-radius:50%;background:var(--card2)';
+      'width:100%;height:100%;font-size:44px;border-radius:50%;background:var(--card2)';
 
     var imgEl = document.createElement('img');
     imgEl.src = '/uploads/profiles/' + p.id + '.jpg';  // numeric id — safe (T-02-02)
@@ -185,17 +185,17 @@ function renderGame(state) {
 
     // 40px circle avatar (D-19) — emoji underneath, img on top
     var avEl = document.createElement('div');
-    avEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:10px';
+    avEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:10px';
 
     var avEmoji = document.createElement('span');
     avEmoji.textContent = (player.emoji != null ? player.emoji : '');  // textContent — T-02-02
     avEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;' +
-      'width:100%;height:100%;font-size:20px';
+      'width:100%;height:100%;font-size:38px';
 
     var avImg = document.createElement('img');
     avImg.src = '/uploads/profiles/' + player.id + '.jpg';  // numeric id — safe
     avImg.alt = '';
-    avImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    avImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     avImg.onerror = function() { this.style.display = 'none'; };
 
     avEl.appendChild(avEmoji);
@@ -647,14 +647,14 @@ function renderBilderkegelTV(state) {
 
     // 40px avatar — emoji underneath, photo on top (T-02-02)
     var bkAvEl = document.createElement('div');
-    bkAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:10px';
+    bkAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:10px';
     var bkAvEmoji = document.createElement('span');
     bkAvEmoji.textContent = player.emoji != null ? player.emoji : '';  // textContent — T-02-02
-    bkAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    bkAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
     var bkAvImg = document.createElement('img');
     bkAvImg.src = '/uploads/profiles/' + player.id + '.jpg';  // numeric id — safe
     bkAvImg.alt = '';
-    bkAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    bkAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     bkAvImg.onerror = function() { this.style.display = 'none'; };
     bkAvEl.appendChild(bkAvEmoji);
     bkAvEl.appendChild(bkAvImg);
@@ -724,14 +724,14 @@ function renderFuchsjagdTV(state) {
 
   // Fuchs avatar
   var fjFuchsAvEl = document.createElement('div');
-  fjFuchsAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0';
+  fjFuchsAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0';
   var fjFuchsAvEmoji = document.createElement('span');
   fjFuchsAvEmoji.textContent = state.fuchs.emoji != null ? state.fuchs.emoji : '';  // textContent — T-02-02
-  fjFuchsAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+  fjFuchsAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
   var fjFuchsAvImg = document.createElement('img');
   fjFuchsAvImg.src = '/uploads/profiles/' + state.fuchs.id + '.jpg';  // numeric id — safe
   fjFuchsAvImg.alt = '';
-  fjFuchsAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+  fjFuchsAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
   fjFuchsAvImg.onerror = function() { this.style.display = 'none'; };
   fjFuchsAvEl.appendChild(fjFuchsAvEmoji);
   fjFuchsAvEl.appendChild(fjFuchsAvImg);
@@ -793,14 +793,14 @@ function renderFuchsjagdTV(state) {
 
     // Jäger avatar
     var fjJAvEl = document.createElement('div');
-    fjJAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:8px';
+    fjJAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:8px';
     var fjJAvEmoji = document.createElement('span');
     fjJAvEmoji.textContent = j.emoji != null ? j.emoji : '';  // textContent — T-02-02
-    fjJAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    fjJAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
     var fjJAvImg = document.createElement('img');
     fjJAvImg.src = '/uploads/profiles/' + j.id + '.jpg';  // numeric id — safe
     fjJAvImg.alt = '';
-    fjJAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    fjJAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     fjJAvImg.onerror = function() { this.style.display = 'none'; };
     fjJAvEl.appendChild(fjJAvEmoji);
     fjJAvEl.appendChild(fjJAvImg);
@@ -901,14 +901,14 @@ function renderHausnummerTV(state) {
 
     // 40px avatar
     var hnAvEl = document.createElement('div');
-    hnAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    hnAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:6px';
     var hnAvEmoji = document.createElement('span');
     hnAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
-    hnAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    hnAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
     var hnAvImg = document.createElement('img');
     hnAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
     hnAvImg.alt = '';
-    hnAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    hnAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     hnAvImg.onerror = function() { this.style.display = 'none'; };
     hnAvEl.appendChild(hnAvEmoji);
     hnAvEl.appendChild(hnAvImg);
@@ -1056,14 +1056,14 @@ function renderAnkerTV(state) {
 
     // 40px avatar
     var anAvEl = document.createElement('div');
-    anAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    anAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:6px';
     var anAvEmoji = document.createElement('span');
     anAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
-    anAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    anAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
     var anAvImg = document.createElement('img');
     anAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
     anAvImg.alt = '';
-    anAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    anAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     anAvImg.onerror = function() { this.style.display = 'none'; };
     anAvEl.appendChild(anAvEmoji);
     anAvEl.appendChild(anAvImg);
@@ -1183,14 +1183,14 @@ function renderPlusMinusTV(state) {
 
     // 40px avatar
     var pmAvEl = document.createElement('div');
-    pmAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    pmAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:6px';
     var pmAvEmoji = document.createElement('span');
     pmAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
-    pmAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    pmAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
     var pmAvImg = document.createElement('img');
     pmAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
     pmAvImg.alt = '';
-    pmAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    pmAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     pmAvImg.onerror = function() { this.style.display = 'none'; };
     pmAvEl.appendChild(pmAvEmoji);
     pmAvEl.appendChild(pmAvImg);
@@ -1318,14 +1318,14 @@ function renderDreiVollenTV(state) {
 
     // 40px avatar
     var dvAvEl = document.createElement('div');
-    dvAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    dvAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:6px';
     var dvAvEmoji = document.createElement('span');
     dvAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
-    dvAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    dvAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
     var dvAvImg = document.createElement('img');
     dvAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
     dvAvImg.alt = '';
-    dvAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    dvAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
     dvAvImg.onerror = function() { this.style.display = 'none'; };
     dvAvEl.appendChild(dvAvEmoji);
     dvAvEl.appendChild(dvAvImg);
@@ -1448,14 +1448,14 @@ function renderViergewinntTV(state) {
       pRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
 
       var vgAvEl = document.createElement('div');
-      vgAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0';
+      vgAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0';
       var vgAvEmoji = document.createElement('span');
       vgAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
-      vgAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+      vgAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
       var vgAvImg = document.createElement('img');
       vgAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
       vgAvImg.alt = '';
-      vgAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+      vgAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
       vgAvImg.onerror = function() { this.style.display = 'none'; };
       vgAvEl.appendChild(vgAvEmoji);
       vgAvEl.appendChild(vgAvImg);
