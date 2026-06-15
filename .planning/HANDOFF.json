@@ -1,28 +1,33 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T04:45:36.403Z",
-  "phase": null,
-  "phase_name": "quick-tasks",
-  "phase_dir": null,
+  "timestamp": "2026-06-15T08:56:43.886Z",
+  "phase": "10",
+  "phase_name": "team-gewinner-gastkegler",
+  "phase_dir": ".planning/phases/10-team-gewinner-gastkegler",
   "plan": null,
   "task": null,
   "total_tasks": null,
-  "status": "paused",
+  "status": "human_uat_pending",
   "completed_tasks": [
-    {"id": 1, "name": "BK außer Konkurrenz + DreiVollen Turnier-Rekord", "status": "done", "commit": "8dc55b2"},
-    {"id": 2, "name": "Bug-Melder Floating Button (feedback DB route + modal)", "status": "done", "commit": "6e73586"},
-    {"id": 3, "name": "Fix stats TypeError (statsArr.forEach)", "status": "done", "commit": "bc3c916"},
-    {"id": 4, "name": "VG 0 kein Pudel consistency fix", "status": "done", "commit": "70a0339"}
+    {"id": "10-02", "name": "Gastkegler Backend + Frontend", "status": "done", "commit": "8492902"},
+    {"id": "10-01", "name": "Stats isDraw Fix + Multi-Winner + Guest Guard", "status": "done", "commit": "1e16817"},
+    {"id": "post-fix", "name": "VG multi-winner idle screen + 90s result timeout", "status": "done", "commit": "8b92be2"}
   ],
-  "remaining_tasks": [],
+  "remaining_tasks": [
+    {"id": "uat", "name": "Manuelles UAT (VG-Sieg, Gastkegler-Flow, TV-Idle)", "status": "not_started"},
+    {"id": "close", "name": "Phase 10 als Complete markieren nach UAT", "status": "not_started"},
+    {"id": "optional", "name": "Rückblick-Bug in abende.js Z.78 fixen (winners.length !== 1 → === 0)", "status": "optional"}
+  ],
   "blockers": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    {"action": "UAT durchführen auf localhost:3000", "context": "Server läuft. Testen: VG-Team-Sieg, Gastkegler anlegen+spielen+archivieren, TV Idle-Screen", "blocking": true}
+  ],
   "decisions": [
-    {"decision": "BK exempt global (über Abende hinweg)", "rationale": "User confirmed: exemption persists across all evenings, not just same evening", "phase": "quick"},
-    {"decision": "DreiVollen top6Sum nur bei >=6 Spielern", "rationale": "User confirmed: <6 Spieler → kein top6Sum, kein Record", "phase": "quick"},
-    {"decision": "GET /api/stats response shape geändert: bare array → { players, tournament_records }", "rationale": "Needed for tournament record tracking; breaking change — index.html init() updated accordingly", "phase": "quick"}
+    {"decision": "isDraw = winners.length === 0", "rationale": "Nur echte Draws (0 Gewinner), nicht Einzel-vs-Team-Unterscheidung"},
+    {"decision": "addSpieler() jetzt async mit API-Call", "rationale": "War fälschlicherweise lokal-only ohne persistente ID"},
+    {"decision": "Result-Screen 90s für alle Spieltypen", "rationale": "User-Feedback: 1-2 Minuten gewünscht, einheitlich"}
   ],
   "uncommitted_files": [],
-  "next_action": "Start Phase 8 (Statistiken & Rückblick) or Phase 6 Plan 06-03 (Tablet KDA bracket UI). All quick tasks from this session are committed.",
-  "context_notes": "Session completed 4 quick tasks cleanly. 420/420 tests pass. No in-progress work — clean stopping point."
+  "next_action": "UAT auf localhost:3000 durchführen. Dann Phase 10 Complete markieren.",
+  "context_notes": "Phase 10 vollständig implementiert und verifiziert. Nur manuelles UAT steht aus. Optionaler Rückblick-Bug bekannt."
 }
