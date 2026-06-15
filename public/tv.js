@@ -751,7 +751,7 @@ function renderFuchsjagdTV(state) {
   var jaeger = state.jaeger || [];
   var jCount = jaeger.length;
   var fjAvSize   = jCount >= 10 ? 40 : jCount >= 7 ? 56 : 80;
-  var fjNameSz   = jCount >= 10 ? 18 : jCount >= 7 ? 22 : 28;
+  var fjNameSz   = jCount >= 10 ? 32 : jCount >= 7 ? 36 : 40;
   var fjRowPadV  = jCount >= 10 ?  3 : jCount >= 7 ?  5 : 10;
   var fjRowPadH  = jCount >= 10 ?  8 : jCount >= 7 ? 10 : 12;
   var fjPanelGap = jCount >= 10 ?  4 : jCount >= 7 ?  8 : 16;
