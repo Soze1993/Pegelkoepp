@@ -283,10 +283,12 @@ function renderKDABracket(state) {
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
   var availH = vh - 40 - 12 - gfH; // container padding(20×2) + section gap + GF
-  var wH = Math.floor(availH * 0.45);
+  var wH = Math.floor(availH * 0.55);
   var lH = availH - wH - 12;
-  var wSlotHeight = Math.max(52, Math.min(110, Math.floor((wH - 44) / Math.max(1, wR1Count))));
-  var lSlotHeight = Math.max(52, Math.min(110, Math.floor((lH - 44) / Math.max(1, maxLColRows))));
+  // Overhead: section label (28px) + gap (6px) + col round-label (~18px) = 52px
+  // Plus inter-slot gaps: (N-1)*6px — subtract both before dividing
+  var wSlotHeight = Math.max(36, Math.min(90, Math.floor((wH - 52 - Math.max(0, wR1Count - 1) * 6) / Math.max(1, wR1Count))));
+  var lSlotHeight = Math.max(36, Math.min(90, Math.floor((lH - 52 - Math.max(0, maxLColRows - 1) * 6) / Math.max(1, maxLColRows))));
 
   // Outer container
   var container = document.createElement('div');
