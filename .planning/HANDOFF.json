@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-15T20:03:38.799Z",
+  "timestamp": "2026-06-15T20:59:18.395Z",
   "phase": "12",
   "phase_name": "tv-layout-polish",
   "phase_dir": ".planning/phases/12-tv-layout-polish",
@@ -9,30 +9,34 @@
   "total_tasks": null,
   "status": "uat_in_progress",
   "completed_tasks": [
-    {"id": "idle", "name": "Idle: untere Reihe abgeschnitten → max-height 40vh→55vh", "status": "done", "commit": "354c73f"},
-    {"id": "viergewinnt", "name": "Viergewinnt: 6. Spieler abgeschnitten + Avatare adaptiv", "status": "done", "commit": "343fe02"},
-    {"id": "bk", "name": "Bilderkegel: letzter Spieler abgeschnitten → gap-Korrektur", "status": "done", "commit": "9565156"}
+    {"id": "idle", "name": "Idle: max-height 40vh→55vh", "status": "done", "commit": "354c73f"},
+    {"id": "viergewinnt", "name": "Viergewinnt: adaptive Avatargröße bei großen Teams", "status": "done", "commit": "343fe02"},
+    {"id": "bk-gap", "name": "BK: gap-Korrektur in playerRowH", "status": "done", "commit": "9565156"},
+    {"id": "bk-fixed", "name": "BK: position:fixed + flex:1 rows + kein gameNameHeader + topPad für Ticker", "status": "done", "commit": "dadd303"}
   ],
   "remaining_tasks": [
+    {"id": "bk-verify", "name": "BK TV mit 12 Spielern final verifizieren (alle sichtbar, kein Ticker-Overlap)", "status": "in_progress"},
     {"id": "fuchsjagd", "name": "Fuchsjagd Screenshot prüfen", "status": "not_started"},
     {"id": "drei", "name": "Drei in die Vollen Screenshot prüfen", "status": "not_started"},
     {"id": "anker", "name": "Anker Screenshot prüfen", "status": "not_started"},
     {"id": "kleinehaus", "name": "Kleine Hausnummer Screenshot prüfen", "status": "not_started"},
     {"id": "plusminus", "name": "Plus Minus Mal Screenshot prüfen", "status": "not_started"},
-    {"id": "kda", "name": "KDA Screenshot + UAT 4-7 abschließen", "status": "not_started"},
+    {"id": "kda", "name": "KDA Screenshot + UAT-Tests 4–7 abschließen", "status": "not_started"},
     {"id": "close", "name": "12-UAT.md abschließen + Phase 12 complete + /gsd-complete-milestone", "status": "not_started"}
   ],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "VPS deployen: git pull && pm2 restart", "context": "Nach jedem Fix pushen und auf real TV testen", "blocking": false}
+    {"action": "BK TV mit 12 Spielern testen nach Push dadd303", "context": "topPad-Fix deployed — Bestätigung steht aus", "blocking": true},
+    {"action": "VPS deployen: git pull && pm2 restart kegelclub", "context": "Nach jedem Fix nötig", "blocking": false}
   ],
   "decisions": [
-    {"decision": "Samsung TV-Browser rendert mit 1280×720 logischem Viewport", "rationale": "Erklärt alle Abschneidungsprobleme die auf Monitor nicht auftraten"},
-    {"decision": "Viergewinnt avSz 52px bei ≥5 Spielern/Team", "rationale": "80px×6 übersteigt verfügbare Höhe bei 720p"},
-    {"decision": "BK playerRowH: gaps (3px×n) abziehen", "rationale": "Flex-Gap wurde nicht in Höhenformel berücksichtigt"},
-    {"decision": "Namen-Größenänderungen alle rückgängig", "rationale": "User war mit Originalgrößen zufrieden, hatte andere Intention gemeint"}
+    {"decision": "BK container auf position:fixed;top:0;left:0 gesetzt", "rationale": "#game { padding:2vw } verschob den Container und fraß vertikalen Platz"},
+    {"decision": "makeGameNameHeader aus BK entfernt", "rationale": "Sparte ~56px, eliminierte Ticker-Overlap und 'Bild 1/5'-Überlauf in colHdr"},
+    {"decision": "topPad = max(pad, vh*0.065) ~47px @720p", "rationale": "#tv-highlights-hdr (top:0.6rem, ~40px hoch) überlapte colHdr — topPad schiebt Content darunter"},
+    {"decision": "flex:1;min-height:32px auf Player-Rows", "rationale": "Browser verteilt Höhe selbst — robust gegen TV-spezifische Viewport-Abweichungen"},
+    {"decision": "Samsung TV effektive Höhe < window.innerHeight", "rationale": "SmartHub-Leisten o.ä. fressen px; mehrfache Fixes nötig — position:fixed + flex:1 als finale Lösung"}
   ],
   "uncommitted_files": [],
-  "next_action": "Screenshot-Review: Fuchsjagd → Drei → Anker → Kleine Hausnummer → Plus Minus Mal → KDA. Pattern prüfen: abgeschnittene Spieler bei 720p-Viewport.",
-  "context_notes": "Alle Fixes dieser Session waren 720p-bedingt. Pattern: overflow:hidden + zu wenig vh → letzter Spieler unsichtbar. Screenshots liegen in Screnshots/ (Tippfehler im Ordnernamen)."
+  "next_action": "BK TV mit 12 Spielern auf echtem TV prüfen (dadd303). Falls OK: weiter mit Fuchsjagd. Falls nicht: topPad erhöhen oder Samsung-Viewport debuggen.",
+  "context_notes": "BK hat 4 Fix-Runden gebraucht. Kernproblem: Samsung TV hat effektiv weniger Viewport-Höhe als JS meldet. Robuste Lösung: position:fixed (keine #game-Padding-Verschiebung) + flex:1 rows (Browser übernimmt Höhenverteilung) + topPad (Ticker-Clearance). Screenshots in Screnshots/ (Tippfehler im Ordnernamen). UAT 12-UAT.md: Tests 1-3 pass, Tests 4-7 pending."
 }
