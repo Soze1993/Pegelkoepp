@@ -606,131 +606,186 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 90000);
 }
 
-// Bilderkegeln TV layout — scales for 4–12 players; bild section + row fonts shrink with player count
+// Bilderkegeln TV layout — table view: players as rows, 5 Bilder as columns
 function renderBilderkegelTV(state) {
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
   var n = state.players.length;
+  var vw = (window && window.innerWidth)  || 1920;
+  var vh = (window && window.innerHeight) || 1080;
+  var pad = Math.round(vw * 0.02);
 
-  var BK_BILDER_TV = [
-    {id:'volle',name:'Volle',pins:[1,2,3,4,5,6,7,8,9]},
-    {id:'kleeblatt',name:'Kleeblatt',pins:[2,3,4,6,7,8]},
-    {id:'hint_kranz',name:'Hint. Kranz',pins:[4,6,7,8,9]},
-    {id:'damen',name:'Damen',pins:[2,3,7,8]},
-    {id:'bauern',name:'Bauern',pins:[4,6]}
+  var BK_BILDER = [
+    {name:'Volle',      pins:[1,2,3,4,5,6,7,8,9]},
+    {name:'Kleeblatt',  pins:[2,3,4,6,7,8]},
+    {name:'Hint.Kranz', pins:[4,6,7,8,9]},
+    {name:'Damen',      pins:[2,3,7,8]},
+    {name:'Bauern',     pins:[4,6]}
   ];
 
-  // Bild section sizing — compress SVG and font for large player counts
-  var svgW, svgH, bildNameVw, bildNumVw;
-  if (n <= 6)      { svgW = 120; svgH = 150; bildNameVw = 8;   bildNumVw = 2;   }
-  else if (n <= 8) { svgW = 88;  svgH = 110; bildNameVw = 6;   bildNumVw = 1.5; }
-  else             { svgW = 64;  svgH = 80;  bildNameVw = 4.5; bildNumVw = 1.2; }
+  // Column widths
+  var availW   = vw - 2 * pad;
+  var nameColW = Math.round(availW * 0.22);
+  var totColW  = Math.max(80, Math.round(availW * 0.09));
+  var bildColW = Math.floor((availW - nameColW - totColW) / 5);
 
-  // Player row sizing — fonts shrink so all rows fit in remaining height
-  var namePx, scorePx, rowPad;
-  if (n <= 4)       { namePx = 36; scorePx = 72; rowPad = '1.5vw 2vw'; }
-  else if (n <= 6)  { namePx = 32; scorePx = 60; rowPad = '1vw 2vw';   }
-  else if (n <= 8)  { namePx = 26; scorePx = 48; rowPad = '0.6vw 2vw'; }
-  else if (n <= 10) { namePx = 22; scorePx = 40; rowPad = '0.4vw 2vw'; }
-  else              { namePx = 18; scorePx = 32; rowPad = '0.2vw 2vw'; }
+  // Row heights: header + N player rows share available height
+  var hdrH  = 40;  // game name header
+  var availH = vh - 2 * pad - hdrH - 8;  // 8px gap below header
+  var rowH   = Math.floor(availH / (n + 1));  // +1 for column-header row
 
+  // Font / avatar sizes derived from rowH
+  var scorePx = Math.max(14, Math.min(52, Math.round(rowH * 0.58)));
+  var namePx  = Math.max(12, Math.min(36, Math.round(rowH * 0.40)));
+  var avSz    = Math.max(20, Math.min(56, Math.round(rowH * 0.62)));
+  var svgH    = Math.max(32, Math.round(rowH * 0.68));
+  var svgW    = Math.round(svgH * 0.78);
+  var lblPx   = Math.max(9,  Math.round(rowH * 0.11));
+
+  // Active bild / player
+  var aktBildIdx  = (!state.done && state.aktBildIdx >= 0 && state.aktBildIdx < 5) ? state.aktBildIdx : -1;
+  var aktPlayerId = (!state.done && state.players[state.aktSpIdx]) ? state.players[state.aktSpIdx].id : null;
+
+  // Loser detection
+  var gameStarted = state.aktBildIdx > 0 || state.players.some(function(p) {
+    return (p.bildPts || []).some(function(v) { return v !== null; });
+  });
+  var minTotal = null, loserIdx = -1;
+  if (gameStarted) {
+    state.players.forEach(function(p, i) {
+      if (p.id === state.exemptPlayerId) return;
+      var t = bkTotal(p);
+      if (minTotal === null || t < minTotal) { minTotal = t; loserIdx = i; }
+    });
+  }
+
+  // Container
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:2vw;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
-
+  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
   container.appendChild(makeGameNameHeader());
 
-  if (!state.done && state.aktBildIdx >= 0 && state.aktBildIdx < BK_BILDER_TV.length) {
-    var bildInfo = BK_BILDER_TV[state.aktBildIdx];
+  // Table area
+  var tbl = document.createElement('div');
+  tbl.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;gap:3px;overflow:hidden';
 
-    var bildSection = document.createElement('div');
-    bildSection.style.cssText = 'text-align:center;flex-shrink:0;margin-bottom:8px';
+  // --- Column header row (Bilder + Total) ---
+  var colHdr = document.createElement('div');
+  colHdr.style.cssText = 'display:flex;flex-direction:row;align-items:stretch;gap:3px;height:' + rowH + 'px;flex-shrink:0';
 
-    var bildNameEl = document.createElement('div');
-    bildNameEl.textContent = bildInfo.name;  // textContent — safe (static data)
-    bildNameEl.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + bildNameVw + 'vw;color:var(--ac);line-height:1';
+  // Empty cell above name column
+  var nameGap = document.createElement('div');
+  nameGap.style.cssText = 'width:' + nameColW + 'px;flex-shrink:0';
+  colHdr.appendChild(nameGap);
 
-    var svgEl = document.createElement('div');
-    svgEl.innerHTML = kegelSVGtv(bildInfo.pins, svgW, svgH);  // SVG built from static pin data — no user input
-    svgEl.style.cssText = 'margin:4px auto';
+  // One header cell per Bild
+  BK_BILDER.forEach(function(bild, bidx) {
+    var isAkt = bidx === aktBildIdx;
+    var hc = document.createElement('div');
+    hc.style.cssText = 'width:' + bildColW + 'px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:8px;box-sizing:border-box'
+      + (isAkt
+        ? ';background:rgba(232,184,75,0.12);border:2px solid var(--ac)'
+        : ';background:var(--card);border:1px solid var(--brd)');
 
-    var bildNumEl = document.createElement('div');
-    bildNumEl.textContent = 'Bild ' + (state.aktBildIdx + 1) + '/5';  // textContent — safe
-    bildNumEl.style.cssText = 'font-size:' + bildNumVw + 'vw;color:var(--mut);margin-top:2px';
+    var svgWrap = document.createElement('div');
+    svgWrap.innerHTML = kegelSVGtv(bild.pins, svgW, svgH);  // static pin data — safe
+    hc.appendChild(svgWrap);
 
-    bildSection.appendChild(bildNameEl);
-    bildSection.appendChild(svgEl);
-    bildSection.appendChild(bildNumEl);
-    container.appendChild(bildSection);
-  }
+    var lbl = document.createElement('div');
+    lbl.textContent = bild.name;
+    lbl.style.cssText = 'font-family:var(--fb,"DM Sans",sans-serif);font-size:' + lblPx + 'px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1;color:' + (isAkt ? 'var(--ac)' : 'var(--mut)');
+    hc.appendChild(lbl);
 
-  // Determine if game has started (any bildPts entry is non-null or aktBildIdx > 0)
-  var gameStarted = (state.aktBildIdx > 0) ||
-    state.players.some(function(p) {
-      return (p.bildPts || []).some(function(v) { return v !== null; });
-    });
-
-  // Find loser (player with minimum bkTotal) — only highlight after game has started
-  var minTotal = null;
-  var loserIdx  = -1;
-  if (gameStarted) {
-    state.players.forEach(function(p, idx) {
-      if (p.id === state.exemptPlayerId) return;  // außer Konkurrenz — excluded from loser
-      var tot = bkTotal(p);
-      if (minTotal === null || tot < minTotal) {
-        minTotal = tot;
-        loserIdx  = idx;
-      }
-    });
-  }
-
-  var aktId = (!state.done && state.players[state.aktSpIdx]) ? state.players[state.aktSpIdx].id : null;
-
-  // Player list fills remaining height; rows share space equally via flex
-  var ul = document.createElement('ul');
-  ul.style.cssText = 'list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden';
-
-  state.players.forEach(function(player, idx) {
-    var li = document.createElement('li');
-    var isLoser = idx === loserIdx;
-    var isActive = player.id === aktId;
-    // Active takes visual priority over loser; transparent border keeps padding consistent across all rows
-    var borderColor = isActive ? 'var(--ac)' : (isLoser ? 'var(--red)' : 'transparent');
-    var bgExtra = isActive ? ';background:color-mix(in srgb,var(--ac) 8%,transparent)'
-                : (isLoser  ? ';background:rgba(224,82,82,0.07)' : '');
-    li.style.cssText = 'flex:1;min-height:0;display:flex;align-items:center;padding:' + rowPad
-      + ';border-radius:8px;border-left:4px solid ' + borderColor + ';padding-left:calc(2vw - 4px)' + bgExtra;
-
-    // 40px avatar — emoji underneath, photo on top (T-02-02)
-    var bkAvEl = document.createElement('div');
-    bkAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0;margin-right:10px';
-    var bkAvEmoji = document.createElement('span');
-    bkAvEmoji.textContent = player.emoji != null ? player.emoji : '';  // textContent — T-02-02
-    bkAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
-    var bkAvImg = document.createElement('img');
-    bkAvImg.src = '/uploads/profiles/' + player.id + '.jpg';  // numeric id — safe
-    bkAvImg.alt = '';
-    bkAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
-    bkAvImg.onerror = function() { this.style.display = 'none'; };
-    bkAvEl.appendChild(bkAvEmoji);
-    bkAvEl.appendChild(bkAvImg);
-
-    var nameEl = document.createElement('span');
-    nameEl.style.cssText = 'flex:1;font-size:' + namePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
-    nameEl.textContent = player.name;  // textContent — XSS safe (T-07-03-04); emoji in avatar
-
-    var scoreEl = document.createElement('span');
-    scoreEl.style.cssText = 'width:12vw;text-align:right;font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + scorePx + 'px;color:var(--ac);flex-shrink:0';
-    scoreEl.textContent = bkTotal(player);  // textContent — safe
-
-    li.appendChild(bkAvEl);
-    li.appendChild(nameEl);
-    li.appendChild(scoreEl);
-    ul.appendChild(li);
+    if (isAkt && !state.done) {
+      var aktLbl = document.createElement('div');
+      aktLbl.textContent = 'Bild ' + (aktBildIdx + 1) + '/5';
+      aktLbl.style.cssText = 'font-size:' + Math.max(8, Math.round(lblPx * 0.85)) + 'px;font-family:var(--fb,"DM Sans",sans-serif);color:var(--ac);opacity:.7;line-height:1';
+      hc.appendChild(aktLbl);
+    }
+    colHdr.appendChild(hc);
   });
 
-  container.appendChild(ul);
+  // Total header
+  var totHdr = document.createElement('div');
+  totHdr.style.cssText = 'width:' + totColW + 'px;flex-shrink:0;display:flex;align-items:center;justify-content:center';
+  var totHdrLbl = document.createElement('span');
+  totHdrLbl.textContent = 'Total';
+  totHdrLbl.style.cssText = 'font-family:var(--fb,"DM Sans",sans-serif);font-size:' + Math.max(10, Math.round(lblPx * 1.2)) + 'px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em';
+  totHdr.appendChild(totHdrLbl);
+  colHdr.appendChild(totHdr);
+  tbl.appendChild(colHdr);
+
+  // --- Player rows ---
+  state.players.forEach(function(player, idx) {
+    var isActive = player.id === aktPlayerId;
+    var isLoser  = idx === loserIdx;
+    var bildPts  = player.bildPts || [];
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:3px;height:' + rowH + 'px;flex-shrink:0;border-radius:6px;box-sizing:border-box;padding-left:2px'
+      + (isActive ? ';border-left:4px solid var(--ac);background:rgba(232,184,75,0.06)'
+        : isLoser  ? ';border-left:4px solid var(--red);background:rgba(224,82,82,0.05)'
+        : ';border-left:4px solid transparent');
+
+    // Name cell: avatar + name
+    var nameCell = document.createElement('div');
+    nameCell.style.cssText = 'width:' + nameColW + 'px;flex-shrink:0;display:flex;align-items:center;gap:8px;overflow:hidden;padding-left:4px';
+
+    var avEl = document.createElement('div');
+    avEl.style.cssText = 'position:relative;width:' + avSz + 'px;height:' + avSz + 'px;flex-shrink:0;border-radius:50%;overflow:hidden';
+    var avEmoji = document.createElement('span');
+    avEmoji.textContent = player.emoji != null ? player.emoji : '';  // textContent — T-02-02
+    avEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:' + Math.round(avSz * 0.58) + 'px';
+    var avImg = document.createElement('img');
+    avImg.src = '/uploads/profiles/' + player.id + '.jpg';  // numeric id — safe
+    avImg.alt = '';
+    avImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+    avImg.onerror = function() { this.style.display = 'none'; };
+    avEl.appendChild(avEmoji);
+    avEl.appendChild(avImg);
+    nameCell.appendChild(avEl);
+
+    var nameSpan = document.createElement('span');
+    nameSpan.textContent = player.name;  // textContent — XSS safe
+    nameSpan.style.cssText = 'font-size:' + namePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (isActive ? 'var(--ac)' : 'var(--txt)');
+    nameCell.appendChild(nameSpan);
+    row.appendChild(nameCell);
+
+    // Score cells
+    BK_BILDER.forEach(function(bild, bidx) {
+      var isAkt = bidx === aktBildIdx;
+      var pts   = bildPts[bidx];
+
+      var sc = document.createElement('div');
+      sc.style.cssText = 'width:' + bildColW + 'px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:4px'
+        + (isAkt ? ';background:rgba(232,184,75,0.06)' : '');
+
+      var sv = document.createElement('span');
+      if (pts !== null && pts !== undefined) {
+        sv.textContent = String(pts);  // textContent — safe (number)
+        sv.style.cssText = 'font-size:' + scorePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);line-height:1;color:' + (isAkt && !state.done ? 'var(--ac)' : 'var(--txt)');
+      } else {
+        sv.textContent = '—';
+        sv.style.cssText = 'font-size:' + Math.round(scorePx * 0.5) + 'px;color:var(--mut);font-family:var(--fb,"DM Sans",sans-serif)';
+      }
+      sc.appendChild(sv);
+      row.appendChild(sc);
+    });
+
+    // Total
+    var totCell = document.createElement('div');
+    totCell.style.cssText = 'width:' + totColW + 'px;flex-shrink:0;display:flex;align-items:center;justify-content:center';
+    var totSpan = document.createElement('span');
+    totSpan.textContent = String(bkTotal(player));  // textContent — safe
+    totSpan.style.cssText = 'font-size:' + Math.round(scorePx * 1.15) + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);line-height:1;color:var(--ac)';
+    totCell.appendChild(totSpan);
+    row.appendChild(totCell);
+
+    tbl.appendChild(row);
+  });
+
+  container.appendChild(tbl);
   gameEl.replaceChildren(container);
 }
 
