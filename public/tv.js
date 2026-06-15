@@ -643,7 +643,7 @@ function renderBilderkegelTV(state) {
 
   // Font / avatar sizes from playerRowH
   var scorePx = Math.max(14, Math.min(52, Math.round(playerRowH * 0.58)));
-  var namePx  = Math.max(12, Math.min(36, Math.round(playerRowH * 0.40)));
+  var namePx  = Math.max(12, Math.min(52, Math.round(playerRowH * 0.55)));
   var avSz    = Math.max(20, Math.min(56, Math.round(playerRowH * 0.62)));
 
   // Active bild / player
