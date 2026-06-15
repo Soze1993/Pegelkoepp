@@ -29,7 +29,8 @@ const migrations = [
   "CREATE TABLE IF NOT EXISTS abende (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, started_at TEXT NOT NULL DEFAULT (datetime('now')), ended_at TEXT NULL)",
   'ALTER TABLE games ADD COLUMN abend_id INTEGER NULL REFERENCES abende(id)',
   "CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')))",
-  'ALTER TABLE games ADD COLUMN payer_player_id INTEGER NULL'
+  'ALTER TABLE games ADD COLUMN payer_player_id INTEGER NULL',
+  'ALTER TABLE players ADD COLUMN is_guest INTEGER NOT NULL DEFAULT 0'
 ];
 
 for (const sql of migrations) {
