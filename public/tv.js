@@ -8,6 +8,7 @@ const lastWinnerEl = document.getElementById('lastWinnerText');
 
 var currentTypeKey = null;  // set on game:started and game:state — used by renderGame dispatcher
 var overlayTimeoutId = null;
+var kdaGFToggleInterval = null;
 
 function playKDAToneTV() {
   new Audio('/sounds/kda-end.mp3').play().catch(function(){});
@@ -97,6 +98,7 @@ socket.on('game:finished', function({ state, lastWinner, typeKey }) {
 function renderIdle(lastWinner) {
   currentIdleLastWinner = lastWinner || null;
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  if (kdaGFToggleInterval) { clearInterval(kdaGFToggleInterval); kdaGFToggleInterval = null; }
   // Restore #playerList to #game (may have been displaced by overlay replaceChildren)
   gameEl.replaceChildren(playerListEl);
   gameEl.classList.remove('active');
@@ -257,6 +259,7 @@ function getScore(player) {
 
 // KDA bracket TV renderer — W top, L below, GF only when both finalists ready (TVFIX-02)
 function renderKDABracket(state) {
+  if (kdaGFToggleInterval) { clearInterval(kdaGFToggleInterval); kdaGFToggleInterval = null; }
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
@@ -271,7 +274,7 @@ function renderKDABracket(state) {
   // GF: only show when both finalists are determined
   var gfSlot = state.bracket.find(function(m) { return m.bracket === 'GF'; });
   var gfVisible = !!(gfSlot && gfSlot.p1 && gfSlot.p2);
-  var gfH = gfVisible ? 160 : 0;
+  var gfH = gfVisible ? 200 : 0;
 
   // Slot widths: each section spans full viewport width independently
   var availW = vw - 48;
@@ -361,7 +364,7 @@ function renderKDABracket(state) {
   // --- Grand Final: only when both finalists are determined ---
   if (gfVisible) {
     var gfStage = document.createElement('div');
-    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding-top:12px;border-top:2px solid var(--ac);width:100%;flex:0 0 ' + (gfH - 12) + 'px';
+    gfStage.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px 0 8px;border-top:2px solid var(--ac);width:100%;box-sizing:border-box;flex:0 0 ' + gfH + 'px';
     var gfLabel = document.createElement('div');
     gfLabel.textContent = 'Großes Finale';
     gfLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:32px;color:var(--ac);line-height:1;letter-spacing:0.06em;text-transform:uppercase';
@@ -372,7 +375,28 @@ function renderKDABracket(state) {
     container.appendChild(gfStage);
   }
 
-  gameEl.replaceChildren(container);
+  // GF Focus mode: toggle between full bracket and GF spotlight every 20s
+  var gfActive = gfVisible && gfSlot && !gfSlot.done;
+  if (gfActive) {
+    var gfFocusContainer = document.createElement('div');
+    gfFocusContainer.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;box-sizing:border-box;padding:24px';
+    var gfFocusLabel = document.createElement('div');
+    gfFocusLabel.textContent = 'Großes Finale';
+    gfFocusLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:5vw;color:var(--ac);line-height:1;letter-spacing:0.1em;text-transform:uppercase';
+    var gfFocusSlotH = Math.round(vh * 0.4);
+    var gfFocusSlotEl = buildTVSlotEl(gfSlot, Math.min(availW, Math.round(vw * 0.6)), gfFocusSlotH);
+    gfFocusSlotEl.style.boxShadow = '0 0 64px #e8b84b55';
+    gfFocusContainer.appendChild(gfFocusLabel);
+    gfFocusContainer.appendChild(gfFocusSlotEl);
+    var gfShowFocus = false;
+    gameEl.replaceChildren(container);
+    kdaGFToggleInterval = setInterval(function() {
+      gfShowFocus = !gfShowFocus;
+      gameEl.replaceChildren(gfShowFocus ? gfFocusContainer : container);
+    }, 20000);
+  } else {
+    gameEl.replaceChildren(container);
+  }
 }
 
 // Build a single TV bracket slot element — textContent only (T-06-04-01, no innerHTML)
@@ -419,9 +443,28 @@ function buildTVSlotEl(slot, w, h) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;min-width:0';
 
+    // Avatar overlay (emoji underneath, photo on top) — shown when slot is wide/tall enough
+    var showAvatar = !!(p && p.id && w >= 120 && elH >= 50);
+    if (showAvatar) {
+      var avSz = Math.min(28, Math.round((elH - 16) / 2));
+      var avWrap = document.createElement('div');
+      avWrap.style.cssText = 'position:relative;width:' + avSz + 'px;height:' + avSz + 'px;flex-shrink:0;margin-right:6px;border-radius:50%;overflow:hidden';
+      var avEmoji = document.createElement('span');
+      avEmoji.textContent = p.emoji != null ? p.emoji : '🎳';  // textContent — XSS safe
+      avEmoji.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:' + Math.round(avSz * 0.6) + 'px';
+      var avImg = document.createElement('img');
+      avImg.src = '/uploads/profiles/' + p.id + '.jpg';  // numeric id — safe
+      avImg.alt = '';
+      avImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+      avImg.onerror = function() { this.style.display = 'none'; };
+      avWrap.appendChild(avEmoji);
+      avWrap.appendChild(avImg);
+      row.appendChild(avWrap);
+    }
+
     var nameSpan = document.createElement('span');
     if (p) {
-      nameSpan.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe (T-06-04-01)
+      nameSpan.textContent = showAvatar ? p.name : ((p.emoji != null ? p.emoji : '') + ' ' + p.name);  // textContent — XSS safe (T-06-04-01)
       var nameFontSize = w >= 160 ? 20 : w >= 120 ? 16 : 13;
       nameSpan.style.cssText = 'font-size:' + nameFontSize + 'px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     } else {
@@ -484,6 +527,7 @@ function getBKLoserName(state) {
 // End-of-game full-screen overlay (UI-SPEC: tv-end-overlay)
 function renderEndOverlay(typeKey, state, lastWinner) {
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  if (kdaGFToggleInterval) { clearInterval(kdaGFToggleInterval); kdaGFToggleInterval = null; }
   // Unknown game type: skip overlay, go idle after short delay
   if (typeKey !== 'kda' && typeKey !== 'bilderkegel') {
     overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 90000);
