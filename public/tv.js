@@ -13,6 +13,7 @@ function playKDAToneTV() {
   new Audio('/sounds/kda-end.mp3').play().catch(function(){});
 }
 var tvHighlights = null;
+var tvPlayers = null;
 var currentIdleLastWinner = null;
 
 var GAME_NAMES = {
@@ -63,6 +64,10 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(function(r){ return r.json(); })
     .then(function(d){ tvHighlights = d; renderHighlightsHdr(); })
     .catch(function(){});
+  fetch('/api/players')
+    .then(function(r) { return r.json(); })
+    .then(function(d) { tvPlayers = d; })
+    .catch(function() {});
 });
 
 const socket = io();  // same-origin; socket.io.js auto-served at /socket.io/socket.io.js
@@ -101,6 +106,54 @@ function renderIdle(lastWinner) {
     ? 'Letzter Sieger: ' + lastWinner
     : 'Noch kein Spiel gespielt';
   renderHighlightsHdr();
+  renderPlayerGrid();
+}
+
+function renderPlayerGrid() {
+  var gridEl = document.getElementById('player-grid');
+  if (!gridEl) return;
+  if (!tvPlayers || !tvPlayers.length) {
+    // Race condition: renderIdle fired before DOMContentLoaded fetch completed (RESEARCH.md Pitfall 6)
+    fetch('/api/players')
+      .then(function(r) { return r.json(); })
+      .then(function(d) { tvPlayers = d; renderPlayerGrid(); })
+      .catch(function() {});
+    return;
+  }
+  gridEl.replaceChildren();
+  for (var i = 0; i < tvPlayers.length; i++) {
+    var p = tvPlayers[i];
+    if (p.is_guest) continue;  // guests have no photos and no persistent profile
+
+    var cell = document.createElement('div');
+    cell.style.cssText = 'text-align:center';
+
+    // Avatar wrapper: emoji underneath, img on top (overlay pattern, D-10/D-11)
+    var avWrap = document.createElement('div');
+    avWrap.style.cssText = 'position:relative;width:80px;height:80px;margin:0 auto 6px';
+
+    var emojiEl = document.createElement('div');
+    emojiEl.textContent = p.emoji;  // textContent — T-02-02 compliant
+    emojiEl.style.cssText = 'display:flex;align-items:center;justify-content:center;' +
+      'width:100%;height:100%;font-size:36px;border-radius:50%;background:var(--card2)';
+
+    var imgEl = document.createElement('img');
+    imgEl.src = '/uploads/profiles/' + p.id + '.jpg';  // numeric id — safe (T-02-02)
+    imgEl.alt = '';
+    imgEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover';
+    imgEl.onerror = function() { this.style.display = 'none'; };  // reveals emoji on 404
+
+    avWrap.appendChild(emojiEl);
+    avWrap.appendChild(imgEl);
+
+    var nameEl = document.createElement('div');
+    nameEl.textContent = p.name;  // textContent — T-02-02
+    nameEl.style.cssText = 'font-size:1.4vw;color:var(--txt);margin-top:4px';
+
+    cell.appendChild(avWrap);
+    cell.appendChild(nameEl);
+    gridEl.appendChild(cell);
+  }
 }
 
 function renderGame(state) {
