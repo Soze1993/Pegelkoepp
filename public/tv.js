@@ -587,21 +587,18 @@ function renderEndOverlay(typeKey, state, lastWinner) {
     nameEl.style.color = 'var(--ac)';
     subtitleEl.textContent = '— Kegler des Abends!';
     playKDAToneTV();
+
+    overlayEl.appendChild(emojiEl);
+    overlayEl.appendChild(nameEl);
+    overlayEl.appendChild(subtitleEl);
+
+    idleEl.style.display = 'none';
+    gameEl.classList.add('active');
+    gameEl.replaceChildren(overlayEl);
   } else {
-    // typeKey === 'bilderkegel'
-    emojiEl.textContent = '💩';
-    nameEl.textContent = getBKLoserName(state);  // textContent — XSS safe (T-07-03-01)
-    nameEl.style.color = 'var(--red)';
-    subtitleEl.textContent = '— Bilderkegeln-Verlierer!';
+    // bilderkegel — show final score table with loser banner instead of centered overlay
+    renderBilderkegelTV(state);
   }
-
-  overlayEl.appendChild(emojiEl);
-  overlayEl.appendChild(nameEl);
-  overlayEl.appendChild(subtitleEl);
-
-  idleEl.style.display = 'none';
-  gameEl.classList.add('active');
-  gameEl.replaceChildren(overlayEl);
 
   overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 90000);
 }
@@ -632,9 +629,10 @@ function renderBilderkegelTV(state) {
   var bildColW = Math.floor((availW - nameColW - totColW) / 5);
 
   // Row heights: header + N player rows share available height
-  var hdrH  = 40;  // game name header
-  var availH = vh - 2 * pad - hdrH - 8;  // 8px gap below header
-  var rowH   = Math.floor(availH / (n + 1));  // +1 for column-header row
+  var hdrH    = 40;  // game name header
+  var bannerH = state.done ? 68 : 0;  // loser banner at bottom when game over
+  var availH  = vh - 2 * pad - hdrH - 8 - bannerH;
+  var rowH    = Math.floor(availH / (n + 1));  // +1 for column-header row
 
   // Font / avatar sizes derived from rowH
   var scorePx = Math.max(14, Math.min(52, Math.round(rowH * 0.58)));
@@ -786,6 +784,23 @@ function renderBilderkegelTV(state) {
   });
 
   container.appendChild(tbl);
+
+  // Loser banner — only shown when game is over
+  if (state.done) {
+    var loserName = getBKLoserName(state);
+    var banner = document.createElement('div');
+    banner.style.cssText = 'flex-shrink:0;height:' + bannerH + 'px;display:flex;align-items:center;justify-content:center;gap:16px;border-top:2px solid var(--red);background:rgba(224,82,82,0.12);box-sizing:border-box';
+    var bannerEmoji = document.createElement('span');
+    bannerEmoji.textContent = '💩';
+    bannerEmoji.style.cssText = 'font-size:32px;line-height:1';
+    var bannerText = document.createElement('span');
+    bannerText.textContent = loserName + '  —  Bilderkegeln-Verlierer!';  // textContent — XSS safe
+    bannerText.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:3vw;color:var(--red);line-height:1;letter-spacing:.04em';
+    banner.appendChild(bannerEmoji);
+    banner.appendChild(bannerText);
+    container.appendChild(banner);
+  }
+
   gameEl.replaceChildren(container);
 }
 
