@@ -183,10 +183,28 @@ function renderGame(state) {
     const li = document.createElement('li');
     li.className = 'player-row' + (isActivePlayer(state, player.id) ? ' active-player' : '');
 
-    // Name span — min 36px via CSS class (TV-03)
+    // 40px circle avatar (D-19) — emoji underneath, img on top
+    var avEl = document.createElement('div');
+    avEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:10px';
+
+    var avEmoji = document.createElement('span');
+    avEmoji.textContent = (player.emoji != null ? player.emoji : '');  // textContent — T-02-02
+    avEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;' +
+      'width:100%;height:100%;font-size:20px';
+
+    var avImg = document.createElement('img');
+    avImg.src = '/uploads/profiles/' + player.id + '.jpg';  // numeric id — safe
+    avImg.alt = '';
+    avImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    avImg.onerror = function() { this.style.display = 'none'; };
+
+    avEl.appendChild(avEmoji);
+    avEl.appendChild(avImg);
+
+    // Name span — emoji removed from textContent (avatar carries it now)
     const nameEl = document.createElement('span');
     nameEl.className = 'player-name';
-    nameEl.textContent = (player.emoji != null ? player.emoji : '') + ' ' + player.name;  // textContent — safe (T-02-02)
+    nameEl.textContent = player.name;  // textContent only — T-02-02
 
     // Last throw column (D-03 permanent column)
     const throwEl = document.createElement('div');
@@ -211,6 +229,7 @@ function renderGame(state) {
     scoreEl.className = 'player-score';
     scoreEl.textContent = getScore(player);  // textContent — safe (T-02-02)
 
+    li.appendChild(avEl);
     li.appendChild(nameEl);
     li.appendChild(throwEl);
     li.appendChild(scoreEl);
