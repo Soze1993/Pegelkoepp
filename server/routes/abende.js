@@ -156,6 +156,8 @@ router.post('/:id/end', requireSession, (req, res) => {
     "UPDATE abende SET ended_at = datetime('now','localtime') WHERE id = ?"
   ).run(id);
   if (!info.changes) return res.status(404).json({ error: 'Abend not found' });
+  // Archive all guest players when abend ends (D-12, GUEST-04)
+  db.prepare('UPDATE players SET archived = 1 WHERE is_guest = 1 AND archived = 0').run();
   res.json({ ok: true });
 });
 
