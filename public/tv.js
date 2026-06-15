@@ -1547,6 +1547,10 @@ function renderViergewinntTV(state) {
   var VG_O = '#5b8dee';
   var tX = state.tX || [];
   var tO = state.tO || [];
+  var maxTeam = Math.max(tX.length, tO.length);
+  var vgAvSz   = maxTeam >= 5 ? 52 : maxTeam >= 3 ? 64 : 80;
+  var vgRowGap = maxTeam >= 5 ?  3 : maxTeam >= 3 ?  4 :  6;
+  var vgNameFz = maxTeam >= 5 ? '1.8vw' : maxTeam >= 3 ? '2.2vw' : '2.5vw';
   var xWon = state.done && state.winner === 'X';
   var oWon = state.done && state.winner === 'O';
   var xDim = state.done && state.winner === 'O';
@@ -1572,7 +1576,7 @@ function renderViergewinntTV(state) {
     var isActiveTeam = !state.done && state.aktT === teamKey;
     var opacity = dim ? '0.45' : (!state.done && !isActiveTeam ? '0.6' : '1');
     var panel = document.createElement('div');
-    panel.style.cssText = 'flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:' + opacity + ';transition:opacity .8s'
+    panel.style.cssText = 'flex:0 0 20vw;display:flex;flex-direction:column;align-items:center;gap:' + vgRowGap + 'px;opacity:' + opacity + ';transition:opacity .8s'
       + (isActiveTeam ? ';border:2px solid ' + color + '88;border-radius:12px;padding:8px 12px;box-shadow:0 0 18px ' + color + '33' : '');
 
     var lbl = document.createElement('div');
@@ -1588,21 +1592,21 @@ function renderViergewinntTV(state) {
       pRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
 
       var vgAvEl = document.createElement('div');
-      vgAvEl.style.cssText = 'position:relative;width:80px;height:80px;flex-shrink:0';
+      vgAvEl.style.cssText = 'position:relative;width:' + vgAvSz + 'px;height:' + vgAvSz + 'px;flex-shrink:0';
       var vgAvEmoji = document.createElement('span');
       vgAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
-      vgAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:38px';
+      vgAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:' + Math.round(vgAvSz * 0.52) + 'px';
       var vgAvImg = document.createElement('img');
       vgAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
       vgAvImg.alt = '';
-      vgAvImg.style.cssText = 'position:absolute;inset:0;width:80px;height:80px;border-radius:50%;object-fit:cover';
+      vgAvImg.style.cssText = 'position:absolute;inset:0;width:' + vgAvSz + 'px;height:' + vgAvSz + 'px;border-radius:50%;object-fit:cover';
       vgAvImg.onerror = function() { this.style.display = 'none'; };
       vgAvEl.appendChild(vgAvEmoji);
       vgAvEl.appendChild(vgAvImg);
 
       var n = document.createElement('div');
       n.textContent = (isAkt ? '▶ ' : '') + p.name;  // textContent — XSS safe; emoji in avatar
-      n.style.cssText = 'font-size:2.5vw;font-family:' + (isAkt ? 'var(--fh,"Bebas Neue",sans-serif)' : 'inherit') + ';color:' + (isAkt ? 'var(--ac)' : 'var(--txt)') + ';text-align:center;line-height:1.5';
+      n.style.cssText = 'font-size:' + vgNameFz + ';font-family:' + (isAkt ? 'var(--fh,"Bebas Neue",sans-serif)' : 'inherit') + ';color:' + (isAkt ? 'var(--ac)' : 'var(--txt)') + ';text-align:center;line-height:1.5';
 
       pRow.appendChild(vgAvEl);
       pRow.appendChild(n);
