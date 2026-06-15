@@ -75,7 +75,7 @@ router.get('/last-summary', (req, res) => {
     }
 
     const winners = results.filter(r => r.winner);
-    const isDraw = winners.length !== 1;
+    const isDraw = winners.length === 0;
     const winnerEntry = !isDraw ? winners[0] : null;
     let winner_name = null;
     if (winnerEntry) {
