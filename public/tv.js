@@ -1300,17 +1300,21 @@ function renderPlusMinusTV(state) {
     { label: '÷', color: '#5b8dee' }        // W5 — blue (÷)
   ];
 
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var pmPadV   = Math.round(vw * 0.015);
+  var pmPadH   = Math.round(vw * 0.02);
+  var pmTopPad = Math.max(pmPadV, Math.round(vh * 0.065));
+
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
-  container.appendChild(makeGameNameHeader());
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:' + pmTopPad + 'px ' + pmPadH + 'px ' + pmPadV + 'px ' + pmPadH + 'px';
 
   var rndEl = document.createElement('div');
-  rndEl.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.8vw';
+  rndEl.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.8vw;flex-shrink:0';
   rndEl.textContent = state.done ? 'Spiel beendet' : 'Runde ' + (state.pmRunde || 1) + ' / 5';
   container.appendChild(rndEl);
 
   var grid = document.createElement('div');
-  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:start;overflow:hidden';
+  grid.style.cssText = 'flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:stretch;overflow:hidden';
 
   sorted.forEach(function(p, i) {
     var isActive = p.id === aktId;
@@ -1320,7 +1324,7 @@ function renderPlusMinusTV(state) {
 
     var row = document.createElement('div');
     row.style.cssText = [
-      'display:flex;align-items:center;gap:0.5vw;padding:0.6vw 0.8vw',
+      'display:flex;align-items:center;gap:0.5vw;padding:0.6vw 0.8vw;overflow:hidden',
       'border-radius:10px;border:2px solid ' + (isActive ? 'var(--ac)' : 'var(--brd)'),
       'background:' + (isActive ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
       'box-shadow:' + (isActive ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
@@ -1357,7 +1361,7 @@ function renderPlusMinusTV(state) {
 
       var opEl = document.createElement('div');
       opEl.textContent = op.label;
-      opEl.style.cssText = 'font-size:0.9vw;font-weight:700;color:' + op.color + ';line-height:1';
+      opEl.style.cssText = 'font-size:1.4vw;font-weight:700;color:' + op.color + ';line-height:1';
 
       var valEl = document.createElement('div');
       valEl.textContent = w.length > idx ? String(w[idx]) : '—';  // em dash for empty
@@ -1373,7 +1377,7 @@ function renderPlusMinusTV(state) {
 
     var eqOp = document.createElement('div');
     eqOp.textContent = '=';
-    eqOp.style.cssText = 'font-size:0.9vw;font-weight:700;color:var(--mut);line-height:1';
+    eqOp.style.cssText = 'font-size:1.4vw;font-weight:700;color:var(--mut);line-height:1';
 
     var eqVal = document.createElement('div');
     var resultStr = result !== null ? String(result) : '·';  // middle dot for no result yet
