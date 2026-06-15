@@ -51,23 +51,23 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROFILE-01 | TBD | Pending |
-| PROFILE-02 | TBD | Pending |
-| PROFILE-03 | TBD | Pending |
-| PROFILE-04 | TBD | Pending |
-| GUEST-01 | TBD | Pending |
-| GUEST-02 | TBD | Pending |
-| GUEST-03 | TBD | Pending |
-| GUEST-04 | TBD | Pending |
-| STATS-01 | TBD | Pending |
-| STATS-02 | TBD | Pending |
-| TVFIX-01 | TBD | Pending |
-| TVFIX-02 | TBD | Pending |
+| STATS-01 | Phase 10 | Pending |
+| STATS-02 | Phase 10 | Pending |
+| GUEST-01 | Phase 10 | Pending |
+| GUEST-02 | Phase 10 | Pending |
+| GUEST-03 | Phase 10 | Pending |
+| GUEST-04 | Phase 10 | Pending |
+| PROFILE-01 | Phase 11 | Pending |
+| PROFILE-02 | Phase 11 | Pending |
+| PROFILE-03 | Phase 11 | Pending |
+| PROFILE-04 | Phase 11 | Pending |
+| TVFIX-01 | Phase 12 | Pending |
+| TVFIX-02 | Phase 12 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 12 total
-- Mapped to phases: 0 (TBD — roadmapper assigns)
-- Unmapped: 12 (pending roadmap)
+- Mapped to phases: 12
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-15*
