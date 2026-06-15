@@ -634,7 +634,7 @@ function renderBilderkegelTV(state) {
   var availH     = vh - 2 * pad - hdrH - 8 - bannerH;
   // Header row gets a fixed fraction (bigger for SVGs); player rows share the rest
   var headerRowH = Math.max(90, Math.min(170, Math.round(availH * 0.22)));
-  var playerRowH = Math.max(32, Math.floor((availH - headerRowH) / n));
+  var playerRowH = Math.max(32, Math.floor((availH - headerRowH - 3 * n) / n));
 
   // SVG / label sizes from headerRowH
   var svgH  = Math.max(52, Math.round(headerRowH * 0.60));
