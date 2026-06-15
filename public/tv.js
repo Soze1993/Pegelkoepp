@@ -631,16 +631,20 @@ function renderBilderkegelTV(state) {
   // Row heights: header + N player rows share available height
   var hdrH    = 40;  // game name header
   var bannerH = state.done ? 68 : 0;  // loser banner at bottom when game over
-  var availH  = vh - 2 * pad - hdrH - 8 - bannerH;
-  var rowH    = Math.floor(availH / (n + 1));  // +1 for column-header row
+  var availH     = vh - 2 * pad - hdrH - 8 - bannerH;
+  // Header row gets a fixed fraction (bigger for SVGs); player rows share the rest
+  var headerRowH = Math.max(90, Math.min(170, Math.round(availH * 0.22)));
+  var playerRowH = Math.max(32, Math.floor((availH - headerRowH) / n));
 
-  // Font / avatar sizes derived from rowH
-  var scorePx = Math.max(14, Math.min(52, Math.round(rowH * 0.58)));
-  var namePx  = Math.max(12, Math.min(36, Math.round(rowH * 0.40)));
-  var avSz    = Math.max(20, Math.min(56, Math.round(rowH * 0.62)));
-  var svgH    = Math.max(32, Math.round(rowH * 0.68));
-  var svgW    = Math.round(svgH * 0.78);
-  var lblPx   = Math.max(9,  Math.round(rowH * 0.11));
+  // SVG / label sizes from headerRowH
+  var svgH  = Math.max(52, Math.round(headerRowH * 0.60));
+  var svgW  = Math.round(svgH * 0.78);
+  var lblPx = Math.max(10, Math.round(headerRowH * 0.12));
+
+  // Font / avatar sizes from playerRowH
+  var scorePx = Math.max(14, Math.min(52, Math.round(playerRowH * 0.58)));
+  var namePx  = Math.max(12, Math.min(36, Math.round(playerRowH * 0.40)));
+  var avSz    = Math.max(20, Math.min(56, Math.round(playerRowH * 0.62)));
 
   // Active bild / player
   var aktBildIdx  = (!state.done && state.aktBildIdx >= 0 && state.aktBildIdx < 5) ? state.aktBildIdx : -1;
@@ -670,7 +674,7 @@ function renderBilderkegelTV(state) {
 
   // --- Column header row (Bilder + Total) ---
   var colHdr = document.createElement('div');
-  colHdr.style.cssText = 'display:flex;flex-direction:row;align-items:stretch;gap:3px;height:' + rowH + 'px;flex-shrink:0';
+  colHdr.style.cssText = 'display:flex;flex-direction:row;align-items:stretch;gap:3px;height:' + headerRowH + 'px;flex-shrink:0';
 
   // Empty cell above name column
   var nameGap = document.createElement('div');
@@ -721,7 +725,7 @@ function renderBilderkegelTV(state) {
     var bildPts  = player.bildPts || [];
 
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:3px;height:' + rowH + 'px;flex-shrink:0;border-radius:6px;box-sizing:border-box;padding-left:2px'
+    row.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:3px;height:' + playerRowH + 'px;flex-shrink:0;border-radius:6px;box-sizing:border-box;padding-left:2px'
       + (isActive ? ';border-left:4px solid var(--ac);background:rgba(232,184,75,0.06)'
         : isLoser  ? ';border-left:4px solid var(--red);background:rgba(224,82,82,0.05)'
         : ';border-left:4px solid transparent');
