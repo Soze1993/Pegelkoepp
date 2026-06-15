@@ -311,7 +311,12 @@ function renderKDABracket(state) {
     wSlotHeight = Math.max(32, Math.round(wSlotHeight * _s));
     lSlotHeight = Math.max(32, Math.round(lSlotHeight * _s));
     _bh = kdaBracketH(wSlotHeight, lSlotHeight);
-    if (_bh.wH + _bh.lH > _avail) _bh.lH = _avail - _bh.wH;
+    if (_bh.wH + _bh.lH > _avail) {
+      var _lHmax = _avail - _bh.wH;
+      lSlotHeight = Math.max(32, Math.floor((_lHmax - 62 - Math.max(0, maxLColRows - 1) * 6) / Math.max(1, maxLColRows)));
+      _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+      if (_bh.wH + _bh.lH > _avail) _bh.lH = _avail - _bh.wH;
+    }
   } else {
     var _bonus = Math.min(24, Math.floor((_avail - _bh.wH - _bh.lH) / Math.max(1, wR1Count + maxLColRows)));
     if (_bonus >= 4) {
@@ -453,7 +458,7 @@ function buildTVSlotEl(slot, w, h) {
     var p = slot.winner || slot.p1;
     var byeName = document.createElement('span');
     byeName.textContent = p ? ((p.emoji != null ? p.emoji : '') + ' ' + p.name) : '—';  // textContent — XSS safe (T-06-04-01)
-    var byeNameFontSize = w >= 160 ? 18 : w >= 120 ? 15 : 12;
+    var byeNameFontSize = Math.max(9, Math.min(w >= 160 ? 18 : w >= 120 ? 15 : 12, byeH - 13));
     byeName.style.cssText = 'font-size:' + byeNameFontSize + 'px;font-weight:600;color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     el.appendChild(byeName);
 
@@ -496,7 +501,7 @@ function buildTVSlotEl(slot, w, h) {
     var nameSpan = document.createElement('span');
     if (p) {
       nameSpan.textContent = showAvatar ? p.name : ((p.emoji != null ? p.emoji : '') + ' ' + p.name);  // textContent — XSS safe (T-06-04-01)
-      var nameFontSize = w >= 160 ? 20 : w >= 120 ? 16 : 13;
+      var nameFontSize = Math.max(9, Math.min(w >= 160 ? 20 : w >= 120 ? 16 : 13, rowBudget));
       nameSpan.style.cssText = 'font-size:' + nameFontSize + 'px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     } else {
       // Empty: waiting for player to arrive
