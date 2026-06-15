@@ -416,8 +416,8 @@ function renderKDABracket(state) {
     gfFocusSlotEl.style.boxShadow = '0 0 64px #e8b84b55';
     gfFocusContainer.appendChild(gfFocusLabel);
     gfFocusContainer.appendChild(gfFocusSlotEl);
-    var gfShowFocus = false;
-    gameEl.replaceChildren(container);
+    var gfShowFocus = true;
+    gameEl.replaceChildren(gfFocusContainer);
     kdaGFToggleInterval = setInterval(function() {
       gfShowFocus = !gfShowFocus;
       gameEl.replaceChildren(gfShowFocus ? gfFocusContainer : container);
