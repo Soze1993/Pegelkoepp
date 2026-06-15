@@ -284,19 +284,43 @@ function renderKDABracket(state) {
   var wSlotWidth = Math.max(80, Math.min(220, Math.floor((availW - colGap * Math.max(0, wColCount - 1)) / Math.max(1, wColCount))));
   var lSlotWidth = Math.max(80, Math.min(220, Math.floor((availW - colGap * Math.max(0, lColCount - 1)) / Math.max(1, lColCount))));
 
-  // Slot heights: stacked sections share available vertical space
+  // Slot heights: content-driven — size each section to fit its content exactly, then expand
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
-  var availH = vh - 40 - 12 - bracketGfH; // container padding(20×2) + section gap + GF
-  // W ratio scales with R1 match count so all slots fit without overflow
-  var wRatio = wR1Count >= 8 ? 0.62 : wR1Count >= 6 ? 0.55 : 0.45;
-  var wH = Math.floor(availH * wRatio);
-  // lSection has border-top(1px)+padding-top(4px) → subtract 5 so total stays within availH
-  var lH = availH - wH - 17;
-  // Overhead per section: label(28)+gap(6)+col-label(20)=54px; N gaps inside col: N*6px
-  var wSlotHeight = Math.max(36, Math.min(80, Math.floor((wH - 54 - wR1Count * 6) / Math.max(1, wR1Count))));
-  var lSlotHeight = Math.max(36, Math.min(80, Math.floor((lH - 54 - maxLColRows * 6) / Math.max(1, maxLColRows))));
+  var availH = vh - 40 - 12 - bracketGfH;
+  // Count bye vs normal matches in W-R1; bye slots render at 55% height (buildTVSlotEl byeH)
+  var wR1Matches = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; });
+  var wR1Byes = wR1Matches.filter(function(m) { return m.isBye; }).length;
+  var wR1Normals = wR1Count - wR1Byes;
+  // Overhead: section-label(28)+section-gap(6)+col-label(~16)+col-label-margin(2)+col-first-gap(6)=58
+  // lSection adds border-top(1)+padding-top(4)=+4 to content area → L_OH=62 (padding inside content-box)
+  // Total layout space: wH + lH + 17 (12px gap + 5px border+padding on lSection outside content-box)
+  function kdaBracketH(wSH, lSH) {
+    var wBH = Math.round(wSH * 0.55);
+    return {
+      wH: 58 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
+      lH: 62 + maxLColRows * lSH + Math.max(0, maxLColRows - 1) * 6
+    };
+  }
+  var wSlotHeight = 64, lSlotHeight = 56;
+  var _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+  var _avail = availH - 17; // 17 = 12px container-gap + 5px lSection border+padding outside content
+  if (_bh.wH + _bh.lH > _avail) {
+    var _s = _avail / (_bh.wH + _bh.lH);
+    wSlotHeight = Math.max(32, Math.round(wSlotHeight * _s));
+    lSlotHeight = Math.max(32, Math.round(lSlotHeight * _s));
+    _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+    if (_bh.wH + _bh.lH > _avail) _bh.lH = _avail - _bh.wH;
+  } else {
+    var _bonus = Math.min(24, Math.floor((_avail - _bh.wH - _bh.lH) / Math.max(1, wR1Count + maxLColRows)));
+    if (_bonus >= 4) {
+      wSlotHeight = Math.min(80, wSlotHeight + _bonus);
+      lSlotHeight = Math.min(80, lSlotHeight + _bonus);
+      _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+    }
+  }
+  var wH = _bh.wH, lH = _bh.lH;
 
   // Outer container
   var container = document.createElement('div');
