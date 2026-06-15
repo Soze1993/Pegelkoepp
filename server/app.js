@@ -9,6 +9,9 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const UPLOADS_DIR = path.join(__dirname, '../public/uploads/profiles');
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const app = express();
 app.set('trust proxy', 1);  // Trust first proxy hop (Nginx) for req.secure + X-Forwarded-*

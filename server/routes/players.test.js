@@ -420,3 +420,100 @@ test('P11: PUT /api/players/:id/archive on already-archived or non-existent retu
   assert.equal(nonExistent.status, 404,
     `Archive of non-existent player should return 404, got ${nonExistent.status}`);
 });
+
+// ---------------------------------------------------------------------------
+// Test PHOTO-01: POST /api/players/:id/photo without cookie → 401
+// ---------------------------------------------------------------------------
+test('PHOTO-01: POST /api/players/1/photo without session cookie returns 401', async () => {
+  const buf = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46]);
+  const res = await fetch(`${baseUrl}/api/players/1/photo`, {
+    method: 'POST',
+    headers: { 'content-type': 'image/jpeg' },
+    body: buf
+  });
+  assert.equal(res.status, 401, `Expected 401, got ${res.status}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test PHOTO-02: POST /api/players/1/photo with valid JPEG magic bytes + cookie → 200 { ok: true }
+// ---------------------------------------------------------------------------
+test('PHOTO-02: POST /api/players/1/photo with valid JPEG bytes and session returns 200 { ok: true }', async () => {
+  const { port } = server.address();
+  const cookie = await loginAndGetCookie(port);
+  const buf = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46]);
+  const res = await fetch(`${baseUrl}/api/players/1/photo`, {
+    method: 'POST',
+    headers: { 'content-type': 'image/jpeg', cookie },
+    body: buf
+  });
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body.ok, true, `Expected { ok: true }, got ${JSON.stringify(body)}`);
+  // Verify file was written
+  const filePath = path.join(process.cwd(), 'public/uploads/profiles/1.jpg');
+  assert.ok(fs.existsSync(filePath), `File should exist at ${filePath}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test PHOTO-03: POST /api/players/1/photo with valid PNG magic bytes + cookie → 200 { ok: true }
+// ---------------------------------------------------------------------------
+test('PHOTO-03: POST /api/players/1/photo with valid PNG bytes and session returns 200 { ok: true }', async () => {
+  const { port } = server.address();
+  const cookie = await loginAndGetCookie(port);
+  const buf = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  const res = await fetch(`${baseUrl}/api/players/1/photo`, {
+    method: 'POST',
+    headers: { 'content-type': 'image/png', cookie },
+    body: buf
+  });
+  assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
+  const body = await res.json();
+  assert.equal(body.ok, true, `Expected { ok: true }, got ${JSON.stringify(body)}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test PHOTO-04: POST /api/players/1/photo with invalid magic bytes → 400
+// ---------------------------------------------------------------------------
+test('PHOTO-04: POST /api/players/1/photo with invalid magic bytes returns 400', async () => {
+  const { port } = server.address();
+  const cookie = await loginAndGetCookie(port);
+  const buf = Buffer.from([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
+  const res = await fetch(`${baseUrl}/api/players/1/photo`, {
+    method: 'POST',
+    headers: { 'content-type': 'image/jpeg', cookie },
+    body: buf
+  });
+  assert.equal(res.status, 400, `Expected 400, got ${res.status}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test PHOTO-05: POST /api/players/999999/photo → 404 (player not found)
+// ---------------------------------------------------------------------------
+test('PHOTO-05: POST /api/players/999999/photo with session returns 404 (player not found)', async () => {
+  const { port } = server.address();
+  const cookie = await loginAndGetCookie(port);
+  const buf = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46]);
+  const res = await fetch(`${baseUrl}/api/players/999999/photo`, {
+    method: 'POST',
+    headers: { 'content-type': 'image/jpeg', cookie },
+    body: buf
+  });
+  assert.equal(res.status, 404, `Expected 404, got ${res.status}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test PHOTO-06: POST /api/players (JSON create) still works after upload route added
+// ---------------------------------------------------------------------------
+test('PHOTO-06: POST /api/players (JSON body) still returns 201 after upload route is added', async () => {
+  const { port } = server.address();
+  const cookie = await loginAndGetCookie(port);
+  const res = await fetch(`${baseUrl}/api/players`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ name: 'PhotoRouteCompat', emoji: '📸' })
+  });
+  assert.equal(res.status, 201, `Expected 201 for JSON create, got ${res.status}`);
+  const body = await res.json();
+  assert.ok(Number.isInteger(body.id) && body.id > 0, `Expected id, got ${JSON.stringify(body)}`);
+  assert.equal(body.name, 'PhotoRouteCompat');
+});
