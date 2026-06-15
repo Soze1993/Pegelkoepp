@@ -631,9 +631,11 @@ function renderBilderkegelTV(state) {
   // Row heights: header + N player rows share available height
   var hdrH    = 40;  // game name header
   var bannerH = state.done ? 68 : 0;  // loser banner at bottom when game over
-  var availH     = vh - 2 * pad - hdrH - 8 - bannerH;
-  // Header row gets a fixed fraction (bigger for SVGs); player rows share the rest
-  var headerRowH = Math.max(90, Math.min(170, Math.round(availH * 0.22)));
+  // 16 = 8px container gap + 8px margin-bottom on makeGameNameHeader (both apply in flex)
+  var availH     = vh - 2 * pad - hdrH - 16 - bannerH;
+  // Column-header row shrinks for large player counts so player rows stay visible
+  var headerFrac = n >= 12 ? 0.12 : n >= 10 ? 0.14 : n >= 8 ? 0.18 : 0.22;
+  var headerRowH = Math.max(n >= 10 ? 68 : 90, Math.min(170, Math.round(availH * headerFrac)));
   var playerRowH = Math.max(32, Math.floor((availH - headerRowH - 3 * n) / n));
 
   // SVG / label sizes from headerRowH
@@ -643,7 +645,7 @@ function renderBilderkegelTV(state) {
 
   // Font / avatar sizes from playerRowH
   var scorePx = Math.max(14, Math.min(52, Math.round(playerRowH * 0.58)));
-  var namePx  = Math.max(12, Math.min(36, Math.round(playerRowH * 0.40)));
+  var namePx  = Math.max(14, Math.min(36, Math.round(playerRowH * 0.52)));
   var avSz    = Math.max(20, Math.min(56, Math.round(playerRowH * 0.62)));
 
   // Active bild / player
@@ -663,9 +665,9 @@ function renderBilderkegelTV(state) {
     });
   }
 
-  // Container
+  // Container — position:fixed so #game { padding:2vw } doesn't push it down
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--bg);padding:' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
   container.appendChild(makeGameNameHeader());
 
   // Table area
@@ -725,7 +727,7 @@ function renderBilderkegelTV(state) {
     var bildPts  = player.bildPts || [];
 
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:3px;height:' + playerRowH + 'px;flex-shrink:0;border-radius:6px;box-sizing:border-box;padding-left:2px'
+    row.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:3px;flex:1;min-height:32px;border-radius:6px;box-sizing:border-box;padding-left:2px'
       + (isActive ? ';border-left:4px solid var(--ac);background:rgba(232,184,75,0.06)'
         : isLoser  ? ';border-left:4px solid var(--red);background:rgba(224,82,82,0.05)'
         : ';border-left:4px solid transparent');
