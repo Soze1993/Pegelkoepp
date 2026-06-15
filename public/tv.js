@@ -466,6 +466,9 @@ function buildTVSlotEl(slot, w, h) {
 
   // --- Normal slot: two player rows ---
   var players = [slot.p1, slot.p2];
+  // Max height per row: half of content area minus 1px breathing room.
+  // Prevents scoreSpan's line-height strut from overflowing the slot.
+  var rowBudget = Math.floor((elH - 16) / 2) - 1;
 
   players.forEach(function(p) {
     var row = document.createElement('div');
@@ -474,7 +477,7 @@ function buildTVSlotEl(slot, w, h) {
     // Avatar overlay (emoji underneath, photo on top) — shown when slot is wide/tall enough
     var showAvatar = !!(p && p.id && w >= 120 && elH >= 50);
     if (showAvatar) {
-      var avSz = Math.min(28, Math.round((elH - 16) / 2));
+      var avSz = Math.min(26, rowBudget);
       var avWrap = document.createElement('div');
       avWrap.style.cssText = 'position:relative;width:' + avSz + 'px;height:' + avSz + 'px;flex-shrink:0;margin-right:6px;border-radius:50%;overflow:hidden';
       var avEmoji = document.createElement('span');
@@ -501,9 +504,9 @@ function buildTVSlotEl(slot, w, h) {
       nameSpan.style.cssText = 'font-size:14px;font-weight:400;color:var(--mut);flex:1;min-width:0;letter-spacing:4px';
     }
 
-    var scoreFontSize = w >= 160 ? 26 : w >= 120 ? 20 : 16;
+    var scoreFontSize = Math.min(w >= 160 ? 26 : w >= 120 ? 20 : 16, rowBudget);
     var scoreSpan = document.createElement('span');
-    scoreSpan.style.cssText = 'font-size:' + scoreFontSize + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
+    scoreSpan.style.cssText = 'font-size:' + scoreFontSize + 'px;line-height:1;font-family:var(--fh,"Bebas Neue",sans-serif);flex-shrink:0;margin-left:6px';
 
     if (p && slot.throws) {
       var playerThrows = slot.throws.filter(function(t) { return t.playerId === p.id; });
