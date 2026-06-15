@@ -630,8 +630,10 @@ function renderBilderkegelTV(state) {
 
   // Row heights: header + N player rows share available height
   var bannerH = state.done ? 68 : 0;  // loser banner at bottom when game over
-  // Full container content area; subtract banner slot (68px + 8px gap) when game is over
-  var availH     = vh - 2 * pad - (state.done ? bannerH + 8 : 0);
+  // Top padding must clear the highlights ticker (#tv-highlights-hdr: top:0.6rem, font~1.8vw, ~40px total)
+  var topPad  = Math.max(pad, Math.round(vh * 0.065));  // ~47px @720p, ~70px @1080p
+  // Full container content area (asymmetric: topPad top, pad bottom)
+  var availH  = vh - topPad - pad - (state.done ? bannerH + 8 : 0);
   // Column-header row shrinks for large player counts so player rows stay visible
   var headerFrac = n >= 12 ? 0.13 : n >= 10 ? 0.16 : n >= 8 ? 0.20 : 0.24;
   var headerRowH = Math.max(n >= 10 ? 72 : 90, Math.min(170, Math.round(availH * headerFrac)));
@@ -667,7 +669,7 @@ function renderBilderkegelTV(state) {
   // Container — position:fixed so #game { padding:2vw } doesn't push it down
   // No makeGameNameHeader: saves ~56px and avoids ticker overlap
   var container = document.createElement('div');
-  container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--bg);padding:' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--bg);padding:' + topPad + 'px ' + pad + 'px ' + pad + 'px ' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
 
   // Table area
   var tbl = document.createElement('div');
