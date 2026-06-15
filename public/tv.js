@@ -1419,9 +1419,13 @@ function renderDreiVollenTV(state) {
     return bScore - aScore;
   });
 
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var dvPadV   = Math.round(vw * 0.015);
+  var dvPadH   = Math.round(vw * 0.02);
+  var dvTopPad = Math.max(dvPadV, Math.round(vh * 0.065));
+
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:1.5vw 2vw;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
-  container.appendChild(makeGameNameHeader());
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:' + dvTopPad + 'px ' + dvPadH + 'px ' + dvPadV + 'px ' + dvPadH + 'px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden';
 
   var statusEl = document.createElement('div');
   statusEl.style.cssText = 'text-align:center;margin-bottom:0.6vw;flex-shrink:0';
@@ -1438,7 +1442,7 @@ function renderDreiVollenTV(state) {
   container.appendChild(statusEl);
 
   var grid = document.createElement('div');
-  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:start;overflow:hidden';
+  grid.style.cssText = 'flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:stretch;overflow:hidden';
 
   sorted.forEach(function(p, i) {
     var wuerfe = p.wuerfe || [];
@@ -1451,7 +1455,7 @@ function renderDreiVollenTV(state) {
 
     var row = document.createElement('div');
     row.style.cssText = [
-      'display:flex;align-items:center;gap:0.5vw;padding:0.8vw 0.9vw',
+      'display:flex;align-items:center;gap:0.5vw;padding:0.8vw 0.9vw;overflow:hidden',
       'border-radius:10px;border:2px solid ' + (highlight ? 'var(--ac)' : 'var(--brd)'),
       'background:' + (highlight ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
       'box-shadow:' + (highlight ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
