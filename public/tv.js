@@ -1147,7 +1147,7 @@ function renderAnkerTV(state) {
   ].forEach(function(chip) {
     var s = document.createElement('span');
     s.textContent = chip.label;  // textContent — safe
-    s.style.cssText = 'border:1px solid ' + chip.col + ';border-radius:5px;padding:0.3vw 0.8vw;font-size:1.4vw;font-weight:600;color:' + chip.col;
+    s.style.cssText = 'border:1px solid ' + chip.col + ';border-radius:5px;padding:0.3vw 0.8vw;font-size:1.7vw;font-weight:600;color:' + chip.col;
     chips.appendChild(s);
   });
   legendRow.appendChild(chips);
@@ -1157,8 +1157,8 @@ function renderAnkerTV(state) {
     var svgNS = 'http://www.w3.org/2000/svg';
     var svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('viewBox', '-14 -5 108 130');
-    svg.setAttribute('width', '8vw');
-    svg.setAttribute('height', '9.3vw');
+    svg.setAttribute('width', '9vw');
+    svg.setAttribute('height', '10.5vw');
     var pinColors = { 4:'var(--ac)', 6:'var(--ac)', 7:'#5b8dee', 8:'#5b8dee', 1:'#4caf7d', 5:'#4caf7d', 9:'#4caf7d' };
     var pins = [
       {n:9,x:40,y:10},{n:7,x:22,y:35},{n:8,x:58,y:35},
@@ -1224,7 +1224,7 @@ function renderAnkerTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:1.35vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:2vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(anAvEl);
     row.appendChild(name);
 
@@ -1233,13 +1233,13 @@ function renderAnkerTV(state) {
       var r = p.runden[ri];
       var rPts = r ? r.reduce(function(a, b) { return a + b; }, 0) : null;
       var cell = document.createElement('div');
-      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.2vw;flex-shrink:0';
+      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:3vw;flex-shrink:0';
       var lbl = document.createElement('div');
       lbl.textContent = 'R' + (ri + 1);
-      lbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+      lbl.style.cssText = 'font-size:1.2vw;color:var(--mut);line-height:1';
       var val = document.createElement('div');
       val.textContent = rPts !== null ? String(rPts) : '—';
-      val.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.7vw;color:' + (rPts !== null ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
+      val.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:' + (rPts !== null ? 'var(--txt)' : 'var(--brd)') + ';line-height:1.1';
       cell.appendChild(lbl);
       cell.appendChild(val);
       row.appendChild(cell);
@@ -1247,13 +1247,13 @@ function renderAnkerTV(state) {
 
     // Total
     var totCell = document.createElement('div');
-    totCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:2.8vw;flex-shrink:0';
+    totCell.style.cssText = 'display:flex;flex-direction:column;align-items:center;min-width:3.5vw;flex-shrink:0';
     var totLbl = document.createElement('div');
     totLbl.textContent = 'Ges.';
-    totLbl.style.cssText = 'font-size:0.75vw;color:var(--mut);line-height:1';
+    totLbl.style.cssText = 'font-size:1.2vw;color:var(--mut);line-height:1';
     var totVal = document.createElement('div');
     totVal.textContent = String(total);  // textContent — safe (numeric)
-    totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.7vw;color:' + (isLeader ? 'var(--ac)' : 'var(--txt)') + ';line-height:1.1';
+    totVal.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2.2vw;color:' + (isLeader ? 'var(--ac)' : 'var(--txt)') + ';line-height:1.1';
     totCell.appendChild(totLbl);
     totCell.appendChild(totVal);
     row.appendChild(totCell);
