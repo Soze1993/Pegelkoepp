@@ -49,6 +49,12 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 5. Gastkegler erscheint nicht im Leaderboard oder in Streak-Statistiken
 6. Gastkegler wird beim Beenden des Kegelabends automatisch archiviert
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Stats-Fix: isDraw-Semantik + Guest-Ausschluss in /api/stats & /api/stats/year
+- [ ] 10-02-PLAN.md — Gastkegler: DB-Migration + Players-API + Auto-Archivierung + Frontend (Checkbox/Label)
+
 ---
 
 ### Phase 11: Profilbilder
@@ -94,6 +100,6 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 | 7. Highlights & TV-Layouts | v2.0 | 10/10 | Complete | 2026-05-27 |
 | 8. Statistiken & Rückblick | v2.0 | 4/4 | Complete | 2026-05-27 |
 | 9. Polish | v2.0 | 2/2 | Complete | 2026-05-27 |
-| 10. Team-Gewinner & Gastkegler | v3.0 | 0/? | Pending | — |
+| 10. Team-Gewinner & Gastkegler | v3.0 | 2/2 | Complete | 2026-06-15 |
 | 11. Profilbilder | v3.0 | 0/? | Pending | — |
 | 12. TV Layout Polish | v3.0 | 0/? | Pending | — |
