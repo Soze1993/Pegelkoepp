@@ -432,7 +432,7 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
   // Unknown game type: skip overlay, go idle after short delay
   if (typeKey !== 'kda' && typeKey !== 'bilderkegel') {
-    overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 3000);
+    overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 90000);
     return;
   }
 
@@ -474,7 +474,7 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   gameEl.classList.add('active');
   gameEl.replaceChildren(overlayEl);
 
-  overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 30000);
+  overlayTimeoutId = setTimeout(function() { overlayTimeoutId = null; renderIdle(lastWinner || null); }, 90000);
 }
 
 // Bilderkegeln TV layout — scales for 4–12 players; bild section + row fonts shrink with player count

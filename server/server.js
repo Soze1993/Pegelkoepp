@@ -56,16 +56,21 @@ io.on('connection', (socket) => {
         const finishedGame = db.prepare('SELECT * FROM games WHERE id = ?').get(lastGame.id);
         const finalState = reconstructState(finishedGame);
         const gameModule = gameTypes[finishedGame.type_key];
-        let winnerId = null;
         if (gameModule && typeof gameModule.getFinalResults === 'function') {
           const results = gameModule.getFinalResults(finalState);
-          // results is an array of { playerId, winner, ... }; find first winner
-          const winnerEntry = results.find(r => r.winner);
-          winnerId = winnerEntry ? winnerEntry.playerId : null;
-        }
-        if (winnerId != null) {
-          const winnerRow = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerId);
-          lastWinner = winnerRow ? winnerRow.name : null;
+          const winners = results.filter(r => r.winner);
+          if (winners.length > 1) {
+            const names = winners.map(r => {
+              const p = db.prepare('SELECT name FROM players WHERE id = ?').get(r.playerId);
+              return p ? p.name : null;
+            }).filter(Boolean);
+            lastWinner = names.length > 1
+              ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1]
+              : names[0] || null;
+          } else if (winners.length === 1) {
+            const winnerRow = db.prepare('SELECT name FROM players WHERE id = ?').get(winners[0].playerId);
+            lastWinner = winnerRow ? winnerRow.name : null;
+          }
         }
       }
     } catch (e) {
