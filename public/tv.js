@@ -325,7 +325,7 @@ function renderKDABracket(state) {
   // Outer container
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
@@ -441,11 +441,11 @@ function buildTVSlotEl(slot, w, h) {
   var padH = w >= 160 ? 12 : 8;
 
   if (isActive) {
-    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px ' + padH + 'px;box-sizing:border-box;border:2px solid var(--ac);box-shadow:0 0 16px #e8b84b33';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px ' + padH + 'px;box-sizing:border-box;border:2px solid var(--ac);box-shadow:0 0 16px #e8b84b33;overflow:hidden';
   } else if (slot.isBye) {
-    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:6px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:4px ' + padH + 'px;box-sizing:border-box;border:1px dashed var(--brd);opacity:0.5';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:6px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:4px ' + padH + 'px;box-sizing:border-box;border:1px dashed var(--brd);opacity:0.5;overflow:hidden';
   } else {
-    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px ' + padH + 'px;box-sizing:border-box;border:1px solid var(--brd)';
+    el.style.cssText = 'width:' + w + 'px;height:' + elH + 'px;background:var(--card);border-radius:8px;display:flex;flex-direction:column;justify-content:space-around;padding:6px ' + padH + 'px;box-sizing:border-box;border:1px solid var(--brd);overflow:hidden';
   }
 
   // --- Bye slot: single row with name + BYE badge ---
