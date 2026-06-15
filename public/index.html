@@ -796,10 +796,20 @@ async function showGameDetail(gameId) {
       if (!a.winner && b.winner) return 1;
       return (b.score || 0) - (a.score || 0);
     });
+    // Build fallback map from API response (includes archived guests — no archived=0 filter)
+    var gpMap = {};
+    (data.players || []).forEach(function(p) { gpMap[p.id] = p; });
+    function resolvePlayer(id) {
+      return S.spieler.find(function(p){return p.id===id;}) || gpMap[id] || null;
+    }
+    function playerLabel(p, id) {
+      if (!p) return 'Spieler ' + id;
+      var suffix = p.is_guest ? ' (Gast)' : '';
+      return (p.emoji || '') + ' ' + p.name + suffix;
+    }
     html += '<table class="stbl"><thead><tr><th>Spieler</th><th style="text-align:right">Score</th><th style="text-align:right">Ergebnis</th></tr></thead><tbody>';
     sorted.forEach(function(entry) {
-      var sp = S.spieler.find(function(p){return p.id===entry.playerId;});
-      var name = sp ? (sp.emoji + ' ' + sp.name) : ('Spieler ' + entry.playerId);
+      var name = playerLabel(resolvePlayer(entry.playerId), entry.playerId);
       var score = entry.score != null ? entry.score : '—';
       var result = entry.winner ? '<span class="badge bgrn">Sieg</span>' : '';
       html += '<tr' + (entry.winner ? ' style="font-weight:600"' : '') + '><td>' + name + '</td><td style="text-align:right;font-family:var(--fh);font-size:18px">' + score + '</td><td style="text-align:right">' + result + '</td></tr>';
@@ -810,9 +820,9 @@ async function showGameDetail(gameId) {
     if (dateStr) shareLines.push('📅 ' + dateStr);
     shareLines.push('');
     sorted.forEach(function(entry, i) {
-      var sp2 = S.spieler.find(function(p) { return p.id === entry.playerId; });
-      var pName = sp2 ? sp2.name : ('Spieler ' + entry.playerId);
-      var pEmoji = sp2 ? sp2.emoji : '🎳';
+      var rp = resolvePlayer(entry.playerId);
+      var pName = rp ? (rp.name + (rp.is_guest ? ' (Gast)' : '')) : ('Spieler ' + entry.playerId);
+      var pEmoji = rp ? (rp.emoji || '🎳') : '🎳';
       var line = (i + 1) + '. ' + pEmoji + ' ' + pName;
       if (entry.score != null) line += ' – ' + entry.score;
       if (entry.winner) line += ' 🏆';

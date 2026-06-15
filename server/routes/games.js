@@ -131,11 +131,15 @@ router.get('/:id', (req, res) => {
   }
 
   const finished = gameModule.isFinished(state);
+  const gamePlayers = db.prepare(
+    'SELECT p.id, p.name, p.emoji, p.is_guest FROM game_players gp JOIN players p ON p.id = gp.player_id WHERE gp.game_id = ? ORDER BY gp.seat'
+  ).all(game.id);
   res.json({
     game,
     state,
     finished,
-    results: finished ? gameModule.getFinalResults(state) : null
+    results: finished ? gameModule.getFinalResults(state) : null,
+    players: gamePlayers
   });
 });
 
