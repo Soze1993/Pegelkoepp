@@ -16,7 +16,7 @@ const router = Router();
 router.get('/', (req, res) => {
   // Step 1: Get all non-archived players
   const players = db.prepare(
-    'SELECT id, name, emoji FROM players WHERE archived = 0 ORDER BY id ASC'
+    'SELECT id, name, emoji FROM players WHERE archived = 0 AND is_guest = 0 ORDER BY id ASC'
   ).all();
 
   // Build stats map keyed by player id
@@ -53,10 +53,10 @@ router.get('/', (req, res) => {
       continue;
     }
 
-    // isDraw = winners.length !== 1
-    // Handles: VG draw (0 winners) AND multi-winner ties (2+ winners) — ST12, ST13
+    // isDraw = winners.length === 0 (genuine draws only: VG full-grid with no 4-in-a-row)
+    // Multi-winner games (VG team win, FJ hunter win) are wins for all winners — ST12, ST13
     const winners = results.filter(r => r.winner);
-    const isDraw = winners.length !== 1;
+    const isDraw = winners.length === 0;
 
     for (const r of results) {
       const entry = statsMap[r.playerId];
@@ -203,15 +203,16 @@ router.get('/year', (req, res) => {
     }
 
     const winners = results.filter(r => r.winner);
-    const isDraw = winners.length !== 1;
+    const isDraw = winners.length === 0;
     if (isDraw) continue;
 
-    const winnerId = winners[0].playerId;
-    winsMap[winnerId] = (winsMap[winnerId] || 0) + 1;
+    for (const w of winners) {
+      winsMap[w.playerId] = (winsMap[w.playerId] || 0) + 1;
+    }
   }
 
   const players = db.prepare(
-    'SELECT id, name, emoji FROM players WHERE archived = 0'
+    'SELECT id, name, emoji FROM players WHERE archived = 0 AND is_guest = 0'
   ).all();
 
   // Participation = distinct Kegelabende a player played at least one finished game in
@@ -263,7 +264,7 @@ router.get('/streaks', (req, res) => {
     }
 
     const winners = results.filter(r => r.winner);
-    const isDraw = winners.length !== 1;
+    const isDraw = winners.length === 0;
 
     for (const r of results) {
       if (!streaks[r.playerId]) streaks[r.playerId] = { current: 0, longest: 0 };
@@ -318,14 +319,13 @@ router.get('/h2h', (req, res) => {
     }
 
     const winners = results.filter(r => r.winner);
-    const isDraw = winners.length !== 1;
+    const isDraw = winners.length === 0;
 
     if (isDraw) {
       draws++;
-    } else if (winners[0].playerId === a) {
-      winsA++;
-    } else if (winners[0].playerId === b) {
-      winsB++;
+    } else {
+      if (winners.some(w => w.playerId === a)) winsA++;
+      if (winners.some(w => w.playerId === b)) winsB++;
     }
   }
 
