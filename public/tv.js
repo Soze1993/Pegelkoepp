@@ -1055,7 +1055,7 @@ function renderHausnummerTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    name.style.cssText = 'flex:1;font-size:3vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
     row.appendChild(hnAvEl);
     row.appendChild(name);
 
@@ -1210,7 +1210,7 @@ function renderAnkerTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:1.35vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:3vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(anAvEl);
     row.appendChild(name);
 
@@ -1337,7 +1337,7 @@ function renderPlusMinusTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:3vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(pmAvEl);
     row.appendChild(name);
 
@@ -1472,7 +1472,7 @@ function renderDreiVollenTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:3vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(dvAvEl);
     row.appendChild(name);
 
