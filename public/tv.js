@@ -289,12 +289,14 @@ function renderKDABracket(state) {
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
   var availH = vh - 40 - 12 - bracketGfH; // container padding(20×2) + section gap + GF
-  var wH = Math.floor(availH * 0.55);
-  var lH = availH - wH - 12;
-  // Overhead: section label (28px) + gap (6px) + col round-label (~18px) = 52px
-  // Plus inter-slot gaps: (N-1)*6px — subtract both before dividing
-  var wSlotHeight = Math.max(36, Math.min(90, Math.floor((wH - 52 - Math.max(0, wR1Count - 1) * 6) / Math.max(1, wR1Count))));
-  var lSlotHeight = Math.max(36, Math.min(90, Math.floor((lH - 52 - Math.max(0, maxLColRows - 1) * 6) / Math.max(1, maxLColRows))));
+  // W ratio scales with R1 match count so all slots fit without overflow
+  var wRatio = wR1Count >= 8 ? 0.62 : wR1Count >= 6 ? 0.55 : 0.45;
+  var wH = Math.floor(availH * wRatio);
+  // lSection has border-top(1px)+padding-top(4px) → subtract 5 so total stays within availH
+  var lH = availH - wH - 17;
+  // Overhead per section: label(28)+gap(6)+col-label(20)=54px; N gaps inside col: N*6px
+  var wSlotHeight = Math.max(36, Math.min(80, Math.floor((wH - 54 - wR1Count * 6) / Math.max(1, wR1Count))));
+  var lSlotHeight = Math.max(36, Math.min(80, Math.floor((lH - 54 - maxLColRows * 6) / Math.max(1, maxLColRows))));
 
   // Outer container
   var container = document.createElement('div');
