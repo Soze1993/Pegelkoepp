@@ -835,9 +835,13 @@ function renderFuchsjagdTV(state) {
   // Fuchs jagd progress (e.g. "2/6")
   var fuchsJagdDone = Math.max(0, (state.fuchs.w.length || 0) - 2);
 
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var fjPad    = Math.round(vw * 0.02);
+  var fjTopPad = Math.max(fjPad, Math.round(vh * 0.065));
+
   var container = document.createElement('div');
   container.className = 'fj-tv-layout';
-  container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;padding:2vw;box-sizing:border-box;gap:12px';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;padding:' + fjTopPad + 'px ' + fjPad + 'px ' + fjPad + 'px ' + fjPad + 'px;box-sizing:border-box;gap:12px;overflow:hidden';
 
   // Panels row
   var panelsRow = document.createElement('div');
@@ -915,21 +919,21 @@ function renderFuchsjagdTV(state) {
   var jaegerActive = activeJIdx >= 0;
   var jaegerPanel = document.createElement('div');
   jaegerPanel.className = 'fj-jaeger-panel';
-  jaegerPanel.style.cssText = 'flex:1;border-radius:12px;padding:' + fjPanelPad + 'px;display:flex;flex-direction:column;align-items:center;gap:' + fjPanelGap + 'px;'
+  jaegerPanel.style.cssText = 'flex:1;min-height:0;overflow:hidden;border-radius:12px;padding:' + fjPanelPad + 'px;display:flex;flex-direction:column;align-items:center;gap:' + fjPanelGap + 'px;'
     + (jaegerActive
       ? 'background:rgba(232,184,75,0.08);border:2px solid var(--brd)'
       : 'background:var(--card);border:2px solid transparent');
 
   var jaegerLabel = document.createElement('div');
   jaegerLabel.textContent = 'JÄGER';
-  jaegerLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);letter-spacing:2px';
+  jaegerLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);letter-spacing:2px;flex-shrink:0';
   jaegerPanel.appendChild(jaegerLabel);
 
   jaeger.forEach(function(j, idx) {
     var isActive = idx === activeJIdx;
     var row = document.createElement('div');
     row.className = 'fj-jaeger-row';
-    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;width:100%;padding:' + fjRowPadV + 'px ' + fjRowPadH + 'px;border-radius:8px;'
+    row.style.cssText = 'flex:1;min-height:0;display:flex;justify-content:space-between;align-items:center;width:100%;padding:' + fjRowPadV + 'px ' + fjRowPadH + 'px;border-radius:8px;'
       + (isActive
         ? 'background:rgba(232,184,75,0.2);border:1px solid var(--ac)'
         : 'background:transparent;border:1px solid transparent');
@@ -967,7 +971,6 @@ function renderFuchsjagdTV(state) {
   panelsRow.appendChild(divider);
   panelsRow.appendChild(jaegerPanel);
 
-  container.insertBefore(makeGameNameHeader(), container.firstChild);
   container.appendChild(panelsRow);
 
   // --- FOOTER: remaining throws countdown ---
