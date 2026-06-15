@@ -1351,7 +1351,7 @@ function renderPlusMinusTV(state) {
 
     var name = document.createElement('div');
     name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
-    name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    name.style.cssText = 'flex:1;font-size:2.2vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
     row.appendChild(pmAvEl);
     row.appendChild(name);
 
@@ -1361,7 +1361,7 @@ function renderPlusMinusTV(state) {
 
       var opEl = document.createElement('div');
       opEl.textContent = op.label;
-      opEl.style.cssText = 'font-size:1.4vw;font-weight:700;color:' + op.color + ';line-height:1';
+      opEl.style.cssText = 'font-size:2vw;font-weight:700;color:' + op.color + ';line-height:1';
 
       var valEl = document.createElement('div');
       valEl.textContent = w.length > idx ? String(w[idx]) : '—';  // em dash for empty
@@ -1377,7 +1377,7 @@ function renderPlusMinusTV(state) {
 
     var eqOp = document.createElement('div');
     eqOp.textContent = '=';
-    eqOp.style.cssText = 'font-size:1.4vw;font-weight:700;color:var(--mut);line-height:1';
+    eqOp.style.cssText = 'font-size:2vw;font-weight:700;color:var(--mut);line-height:1';
 
     var eqVal = document.createElement('div');
     var resultStr = result !== null ? String(result) : '·';  // middle dot for no result yet
