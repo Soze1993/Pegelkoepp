@@ -59,7 +59,9 @@ io.on('connection', (socket) => {
         if (gameModule && typeof gameModule.getFinalResults === 'function') {
           const results = gameModule.getFinalResults(finalState);
           const winners = results.filter(r => r.winner);
-          if (winners.length > 1) {
+          if (winners.length > 0 && winners.every(r => r.role === 'jaeger')) {
+            lastWinner = 'Jäger';
+          } else if (winners.length > 1) {
             const names = winners.map(r => {
               const p = db.prepare('SELECT name FROM players WHERE id = ?').get(r.playerId);
               return p ? p.name : null;

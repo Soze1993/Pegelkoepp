@@ -223,6 +223,8 @@ router.post('/:id/throws', requireSession, (req, res) => {
             const winners = results.filter(r => r.winner);
             const names = winners.map(r => { const p = db.prepare('SELECT name FROM players WHERE id = ?').get(r.playerId); return p ? p.name : null; }).filter(Boolean);
             lastWinner = names.length > 1 ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] : names[0] || null;
+          } else if (winnerEntry.role === 'jaeger') {
+            lastWinner = 'Jäger';
           } else {
             const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
             lastWinner = row ? row.name : null;
@@ -305,6 +307,8 @@ router.post('/:id/skip-stechen', requireSession, (req, res) => {
           const winners = results.filter(r => r.winner);
           const names = winners.map(r => { const p = db.prepare('SELECT name FROM players WHERE id = ?').get(r.playerId); return p ? p.name : null; }).filter(Boolean);
           lastWinner = names.length > 1 ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] : names[0] || null;
+        } else if (winnerEntry.role === 'jaeger') {
+          lastWinner = 'Jäger';
         } else {
           const row = db.prepare('SELECT name FROM players WHERE id = ?').get(winnerEntry.playerId);
           lastWinner = row ? row.name : null;
