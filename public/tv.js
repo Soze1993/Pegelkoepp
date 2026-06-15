@@ -629,13 +629,12 @@ function renderBilderkegelTV(state) {
   var bildColW = Math.floor((availW - nameColW - totColW) / 5);
 
   // Row heights: header + N player rows share available height
-  var hdrH    = 40;  // game name header
   var bannerH = state.done ? 68 : 0;  // loser banner at bottom when game over
-  // 16 = 8px container gap + 8px margin-bottom on makeGameNameHeader (both apply in flex)
-  var availH     = vh - 2 * pad - hdrH - 16 - bannerH;
+  // Full container content area; subtract banner slot (68px + 8px gap) when game is over
+  var availH     = vh - 2 * pad - (state.done ? bannerH + 8 : 0);
   // Column-header row shrinks for large player counts so player rows stay visible
-  var headerFrac = n >= 12 ? 0.12 : n >= 10 ? 0.14 : n >= 8 ? 0.18 : 0.22;
-  var headerRowH = Math.max(n >= 10 ? 68 : 90, Math.min(170, Math.round(availH * headerFrac)));
+  var headerFrac = n >= 12 ? 0.13 : n >= 10 ? 0.16 : n >= 8 ? 0.20 : 0.24;
+  var headerRowH = Math.max(n >= 10 ? 72 : 90, Math.min(170, Math.round(availH * headerFrac)));
   var playerRowH = Math.max(32, Math.floor((availH - headerRowH - 3 * n) / n));
 
   // SVG / label sizes from headerRowH
@@ -666,9 +665,9 @@ function renderBilderkegelTV(state) {
   }
 
   // Container — position:fixed so #game { padding:2vw } doesn't push it down
+  // No makeGameNameHeader: saves ~56px and avoids ticker overlap
   var container = document.createElement('div');
   container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--bg);padding:' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
-  container.appendChild(makeGameNameHeader());
 
   // Table area
   var tbl = document.createElement('div');
@@ -687,7 +686,7 @@ function renderBilderkegelTV(state) {
   BK_BILDER.forEach(function(bild, bidx) {
     var isAkt = bidx === aktBildIdx;
     var hc = document.createElement('div');
-    hc.style.cssText = 'width:' + bildColW + 'px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:8px;box-sizing:border-box'
+    hc.style.cssText = 'width:' + bildColW + 'px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:8px;box-sizing:border-box;overflow:hidden'
       + (isAkt
         ? ';background:rgba(232,184,75,0.12);border:2px solid var(--ac)'
         : ';background:var(--card);border:1px solid var(--brd)');
