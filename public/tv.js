@@ -645,14 +645,29 @@ function renderBilderkegelTV(state) {
     li.style.cssText = 'flex:1;min-height:0;display:flex;align-items:center;padding:' + rowPad
       + ';border-radius:8px;border-left:4px solid ' + borderColor + ';padding-left:calc(2vw - 4px)' + bgExtra;
 
+    // 40px avatar — emoji underneath, photo on top (T-02-02)
+    var bkAvEl = document.createElement('div');
+    bkAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:10px';
+    var bkAvEmoji = document.createElement('span');
+    bkAvEmoji.textContent = player.emoji != null ? player.emoji : '';  // textContent — T-02-02
+    bkAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    var bkAvImg = document.createElement('img');
+    bkAvImg.src = '/uploads/profiles/' + player.id + '.jpg';  // numeric id — safe
+    bkAvImg.alt = '';
+    bkAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    bkAvImg.onerror = function() { this.style.display = 'none'; };
+    bkAvEl.appendChild(bkAvEmoji);
+    bkAvEl.appendChild(bkAvImg);
+
     var nameEl = document.createElement('span');
     nameEl.style.cssText = 'flex:1;font-size:' + namePx + 'px;font-family:var(--fh,"Bebas Neue",sans-serif);letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
-    nameEl.textContent = (player.emoji != null ? player.emoji : '') + ' ' + player.name;  // textContent — XSS safe (T-07-03-04)
+    nameEl.textContent = player.name;  // textContent — XSS safe (T-07-03-04); emoji in avatar
 
     var scoreEl = document.createElement('span');
     scoreEl.style.cssText = 'width:12vw;text-align:right;font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + scorePx + 'px;color:var(--ac);flex-shrink:0';
     scoreEl.textContent = bkTotal(player);  // textContent — safe
 
+    li.appendChild(bkAvEl);
     li.appendChild(nameEl);
     li.appendChild(scoreEl);
     ul.appendChild(li);
@@ -707,8 +722,23 @@ function renderFuchsjagdTV(state) {
   fuchsLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;letter-spacing:2px;color:'
     + (isFuchsTurn ? 'var(--ac)' : 'var(--mut)');
 
+  // Fuchs avatar
+  var fjFuchsAvEl = document.createElement('div');
+  fjFuchsAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0';
+  var fjFuchsAvEmoji = document.createElement('span');
+  fjFuchsAvEmoji.textContent = state.fuchs.emoji != null ? state.fuchs.emoji : '';  // textContent — T-02-02
+  fjFuchsAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+  var fjFuchsAvImg = document.createElement('img');
+  fjFuchsAvImg.src = '/uploads/profiles/' + state.fuchs.id + '.jpg';  // numeric id — safe
+  fjFuchsAvImg.alt = '';
+  fjFuchsAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+  fjFuchsAvImg.onerror = function() { this.style.display = 'none'; };
+  fjFuchsAvEl.appendChild(fjFuchsAvEmoji);
+  fjFuchsAvEl.appendChild(fjFuchsAvImg);
+  fuchsPanel.appendChild(fjFuchsAvEl);
+
   var fuchsName = document.createElement('div');
-  fuchsName.textContent = (isFuchsTurn ? '▶ ' : '') + (state.fuchs.emoji != null ? state.fuchs.emoji : '') + ' ' + state.fuchs.name;  // textContent — XSS safe
+  fuchsName.textContent = (isFuchsTurn ? '▶ ' : '') + state.fuchs.name;  // textContent — XSS safe; emoji in avatar
   fuchsName.style.cssText = 'font-size:36px;font-family:var(--fh,"Bebas Neue",sans-serif);line-height:1;color:'
     + (isFuchsTurn ? 'var(--ac)' : 'var(--txt)');
 
@@ -761,8 +791,22 @@ function renderFuchsjagdTV(state) {
         ? 'background:rgba(232,184,75,0.2);border:1px solid var(--ac)'
         : 'background:transparent;border:1px solid transparent');
 
+    // Jäger avatar
+    var fjJAvEl = document.createElement('div');
+    fjJAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:8px';
+    var fjJAvEmoji = document.createElement('span');
+    fjJAvEmoji.textContent = j.emoji != null ? j.emoji : '';  // textContent — T-02-02
+    fjJAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    var fjJAvImg = document.createElement('img');
+    fjJAvImg.src = '/uploads/profiles/' + j.id + '.jpg';  // numeric id — safe
+    fjJAvImg.alt = '';
+    fjJAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    fjJAvImg.onerror = function() { this.style.display = 'none'; };
+    fjJAvEl.appendChild(fjJAvEmoji);
+    fjJAvEl.appendChild(fjJAvImg);
+
     var nameSpan = document.createElement('span');
-    nameSpan.textContent = (isActive ? '▶ ' : '') + (j.emoji != null ? j.emoji : '') + ' ' + j.name;  // textContent — XSS safe
+    nameSpan.textContent = (isActive ? '▶ ' : '') + j.name;  // textContent — XSS safe; emoji in avatar
     nameSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:'
       + (isActive ? 'var(--ac)' : 'var(--txt)');
 
@@ -770,6 +814,7 @@ function renderFuchsjagdTV(state) {
     contribSpan.textContent = String((j.w || []).reduce(function(a, b) { return a + b; }, 0));  // textContent — safe
     contribSpan.style.cssText = 'font-size:28px;font-family:var(--fh,"Bebas Neue",sans-serif);color:var(--mut)';
 
+    row.appendChild(fjJAvEl);
     row.appendChild(nameSpan);
     row.appendChild(contribSpan);
     jaegerPanel.appendChild(row);
@@ -854,9 +899,24 @@ function renderHausnummerTV(state) {
     rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (isLeader && state.done ? 'gold' : 'var(--mut)') + ';min-width:1.8vw;text-align:center';
     row.appendChild(rank);
 
+    // 40px avatar
+    var hnAvEl = document.createElement('div');
+    hnAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    var hnAvEmoji = document.createElement('span');
+    hnAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
+    hnAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    var hnAvImg = document.createElement('img');
+    hnAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
+    hnAvImg.alt = '';
+    hnAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    hnAvImg.onerror = function() { this.style.display = 'none'; };
+    hnAvEl.appendChild(hnAvEmoji);
+    hnAvEl.appendChild(hnAvImg);
+
     var name = document.createElement('div');
-    name.textContent = (p.emoji || '') + ' ' + p.name;
+    name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
     name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    row.appendChild(hnAvEl);
     row.appendChild(name);
 
     [['h','H'],['z','Z'],['e','E']].forEach(function(pair) {
@@ -994,9 +1054,24 @@ function renderAnkerTV(state) {
     rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.5vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.4vw;text-align:center;flex-shrink:0';
     row.appendChild(rank);
 
+    // 40px avatar
+    var anAvEl = document.createElement('div');
+    anAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    var anAvEmoji = document.createElement('span');
+    anAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
+    anAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    var anAvImg = document.createElement('img');
+    anAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
+    anAvImg.alt = '';
+    anAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    anAvImg.onerror = function() { this.style.display = 'none'; };
+    anAvEl.appendChild(anAvEmoji);
+    anAvEl.appendChild(anAvImg);
+
     var name = document.createElement('div');
-    name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+    name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
     name.style.cssText = 'flex:1;font-size:1.35vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    row.appendChild(anAvEl);
     row.appendChild(name);
 
     // Round score columns
@@ -1106,9 +1181,24 @@ function renderPlusMinusTV(state) {
     rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:1.5vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.5vw;text-align:center;flex-shrink:0';
     row.appendChild(rank);
 
+    // 40px avatar
+    var pmAvEl = document.createElement('div');
+    pmAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    var pmAvEmoji = document.createElement('span');
+    pmAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
+    pmAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    var pmAvImg = document.createElement('img');
+    pmAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
+    pmAvImg.alt = '';
+    pmAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    pmAvImg.onerror = function() { this.style.display = 'none'; };
+    pmAvEl.appendChild(pmAvEmoji);
+    pmAvEl.appendChild(pmAvImg);
+
     var name = document.createElement('div');
-    name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+    name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
     name.style.cssText = 'flex:1;font-size:1.4vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    row.appendChild(pmAvEl);
     row.appendChild(name);
 
     OP_COLS.forEach(function(op, idx) {
@@ -1226,9 +1316,24 @@ function renderDreiVollenTV(state) {
     rank.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:2vw;color:' + (isLeader ? 'gold' : 'var(--mut)') + ';min-width:1.8vw;text-align:center;flex-shrink:0';
     row.appendChild(rank);
 
+    // 40px avatar
+    var dvAvEl = document.createElement('div');
+    dvAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0;margin-right:6px';
+    var dvAvEmoji = document.createElement('span');
+    dvAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
+    dvAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+    var dvAvImg = document.createElement('img');
+    dvAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
+    dvAvImg.alt = '';
+    dvAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+    dvAvImg.onerror = function() { this.style.display = 'none'; };
+    dvAvEl.appendChild(dvAvEmoji);
+    dvAvEl.appendChild(dvAvImg);
+
     var name = document.createElement('div');
-    name.textContent = (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+    name.textContent = p.name;  // textContent — XSS safe; emoji in avatar
     name.style.cssText = 'flex:1;font-size:2.5vw;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+    row.appendChild(dvAvEl);
     row.appendChild(name);
 
     // Stechen badge — sword icon when pending, green score when thrown
@@ -1337,10 +1442,31 @@ function renderViergewinntTV(state) {
 
     players.forEach(function(p, idx) {
       var isAkt = isActiveTeam && idx === (aktIdx % players.length);
+
+      // Player row: avatar + name
+      var pRow = document.createElement('div');
+      pRow.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px';
+
+      var vgAvEl = document.createElement('div');
+      vgAvEl.style.cssText = 'position:relative;width:40px;height:40px;flex-shrink:0';
+      var vgAvEmoji = document.createElement('span');
+      vgAvEmoji.textContent = p.emoji != null ? p.emoji : '';  // textContent — T-02-02
+      vgAvEmoji.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:20px';
+      var vgAvImg = document.createElement('img');
+      vgAvImg.src = '/uploads/profiles/' + p.id + '.jpg';
+      vgAvImg.alt = '';
+      vgAvImg.style.cssText = 'position:absolute;inset:0;width:40px;height:40px;border-radius:50%;object-fit:cover';
+      vgAvImg.onerror = function() { this.style.display = 'none'; };
+      vgAvEl.appendChild(vgAvEmoji);
+      vgAvEl.appendChild(vgAvImg);
+
       var n = document.createElement('div');
-      n.textContent = (isAkt ? '▶ ' : '') + (p.emoji != null ? p.emoji : '') + ' ' + p.name;  // textContent — XSS safe
+      n.textContent = (isAkt ? '▶ ' : '') + p.name;  // textContent — XSS safe; emoji in avatar
       n.style.cssText = 'font-size:2.5vw;font-family:' + (isAkt ? 'var(--fh,"Bebas Neue",sans-serif)' : 'inherit') + ';color:' + (isAkt ? 'var(--ac)' : 'var(--txt)') + ';text-align:center;line-height:1.5';
-      panel.appendChild(n);
+
+      pRow.appendChild(vgAvEl);
+      pRow.appendChild(n);
+      panel.appendChild(pRow);
     });
     return panel;
   }
