@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Spielerprofile, Gastkegler & Realabend-Fixes
-status: planning
-last_updated: "2026-06-14T20:06:15.690Z"
-last_activity: 2026-06-14
+status: Defining requirements
+last_updated: "2026-06-15T06:49:00.264Z"
+last_activity: 2026-06-14 — Milestone v3.0 started
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -62,6 +62,6 @@ All other v2.0 deferred items have been delivered.
 
 ## Session Continuity
 
-Last session: 2026-06-14T15:14:42.096Z
+Last session: 2026-06-15T06:49:00.236Z
 v2.0 milestone complete. All 4 phases (6–9) shipped.
 Next: /gsd-complete-milestone or /gsd-new-milestone for v3.0
