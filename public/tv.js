@@ -1112,9 +1112,13 @@ function renderAnkerTV(state) {
 
   var sorted = players.slice().sort(function(a, b) { return rundTotal(b) - rundTotal(a); });
 
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var akPadV   = Math.round(vw * 0.015);
+  var akPadH   = Math.round(vw * 0.02);
+  var akTopPad = Math.max(akPadV, Math.round(vh * 0.065));
+
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
-  container.appendChild(makeGameNameHeader());
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:' + akTopPad + 'px ' + akPadH + 'px ' + akPadV + 'px ' + akPadH + 'px';
 
   // Round + active player indicator
   var rndEl = document.createElement('div');
@@ -1143,7 +1147,7 @@ function renderAnkerTV(state) {
   ].forEach(function(chip) {
     var s = document.createElement('span');
     s.textContent = chip.label;  // textContent — safe
-    s.style.cssText = 'border:1px solid ' + chip.col + ';border-radius:5px;padding:0.15vw 0.5vw;font-size:0.9vw;font-weight:600;color:' + chip.col;
+    s.style.cssText = 'border:1px solid ' + chip.col + ';border-radius:5px;padding:0.3vw 0.8vw;font-size:1.4vw;font-weight:600;color:' + chip.col;
     chips.appendChild(s);
   });
   legendRow.appendChild(chips);
@@ -1153,8 +1157,8 @@ function renderAnkerTV(state) {
     var svgNS = 'http://www.w3.org/2000/svg';
     var svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('viewBox', '-14 -5 108 130');
-    svg.setAttribute('width', '6vw');
-    svg.setAttribute('height', '7vw');
+    svg.setAttribute('width', '8vw');
+    svg.setAttribute('height', '9.3vw');
     var pinColors = { 4:'var(--ac)', 6:'var(--ac)', 7:'#5b8dee', 8:'#5b8dee', 1:'#4caf7d', 5:'#4caf7d', 9:'#4caf7d' };
     var pins = [
       {n:9,x:40,y:10},{n:7,x:22,y:35},{n:8,x:58,y:35},
@@ -1184,7 +1188,7 @@ function renderAnkerTV(state) {
 
   // Player grid
   var grid = document.createElement('div');
-  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:start;overflow:hidden';
+  grid.style.cssText = 'flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:0.5vw;align-content:stretch;overflow:hidden';
 
   sorted.forEach(function(p, i) {
     var isActive = p.id === aktId;
@@ -1193,7 +1197,7 @@ function renderAnkerTV(state) {
 
     var row = document.createElement('div');
     row.style.cssText = [
-      'display:flex;align-items:center;gap:0.5vw;padding:0.55vw 0.8vw',
+      'display:flex;align-items:center;gap:0.5vw;padding:0.55vw 0.8vw;overflow:hidden',
       'border-radius:10px;border:2px solid ' + (isActive ? 'var(--ac)' : 'var(--brd)'),
       'background:' + (isActive ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
       'box-shadow:' + (isActive ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
