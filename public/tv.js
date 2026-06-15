@@ -1014,17 +1014,21 @@ function renderHausnummerTV(state) {
     return isKleine ? va - vb : vb - va;
   });
 
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var hnPadV   = Math.round(vw * 0.015);
+  var hnPadH   = Math.round(vw * 0.02);
+  var hnTopPad = Math.max(hnPadV, Math.round(vh * 0.065));
+
   var container = document.createElement('div');
-  container.style.cssText = 'width:100vw;height:100vh;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:1vw 2vw';
-  container.appendChild(makeGameNameHeader());
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg);box-sizing:border-box;overflow:hidden;padding:' + hnTopPad + 'px ' + hnPadH + 'px ' + hnPadV + 'px ' + hnPadH + 'px';
 
   var sub = document.createElement('div');
-  sub.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.8vw';
+  sub.style.cssText = 'text-align:center;font-size:1.2vw;color:var(--mut);margin-bottom:0.8vw;flex-shrink:0';
   sub.textContent = isKleine ? 'Niedrigste Zahl gewinnt · Pudel = 9' : 'Höchste Zahl gewinnt · Pudel = 0';
   container.appendChild(sub);
 
   var grid = document.createElement('div');
-  grid.style.cssText = 'flex:1;display:grid;grid-template-columns:1fr 1fr;gap:0.6vw;align-content:start;overflow:hidden';
+  grid.style.cssText = 'flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:0.6vw;align-content:stretch;overflow:hidden';
 
   sorted.forEach(function(p, i) {
     var isActive = p.id === aktId && !state.done;
@@ -1034,7 +1038,7 @@ function renderHausnummerTV(state) {
 
     var row = document.createElement('div');
     row.style.cssText = [
-      'display:flex;align-items:center;gap:0.8vw;padding:0.7vw 1vw',
+      'display:flex;align-items:center;gap:0.8vw;padding:0.7vw 1vw;overflow:hidden',
       'border-radius:10px;border:2px solid ' + (isActive ? 'var(--ac)' : 'var(--brd)'),
       'background:' + (isActive ? 'color-mix(in srgb, var(--ac) 10%, var(--card))' : 'var(--card)'),
       'box-shadow:' + (isActive ? '0 0 14px color-mix(in srgb, var(--ac) 30%, transparent)' : 'none')
