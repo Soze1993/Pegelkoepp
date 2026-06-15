@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-15T20:59:18.395Z",
+  "timestamp": "2026-06-15T22:12:52.577Z",
   "phase": "12",
   "phase_name": "tv-layout-polish",
   "phase_dir": ".planning/phases/12-tv-layout-polish",
@@ -9,34 +9,139 @@
   "total_tasks": null,
   "status": "uat_in_progress",
   "completed_tasks": [
-    {"id": "idle", "name": "Idle: max-height 40vh→55vh", "status": "done", "commit": "354c73f"},
-    {"id": "viergewinnt", "name": "Viergewinnt: adaptive Avatargröße bei großen Teams", "status": "done", "commit": "343fe02"},
-    {"id": "bk-gap", "name": "BK: gap-Korrektur in playerRowH", "status": "done", "commit": "9565156"},
-    {"id": "bk-fixed", "name": "BK: position:fixed + flex:1 rows + kein gameNameHeader + topPad für Ticker", "status": "done", "commit": "dadd303"}
+    {
+      "id": "idle",
+      "name": "Idle: max-height 40vh→55vh",
+      "status": "done",
+      "commit": "354c73f"
+    },
+    {
+      "id": "viergewinnt",
+      "name": "Viergewinnt: adaptive Avatargröße",
+      "status": "done",
+      "commit": "343fe02"
+    },
+    {
+      "id": "bk-fixed",
+      "name": "BK: position:fixed + flex:1 rows + topPad",
+      "status": "done",
+      "commit": "dadd303"
+    },
+    {
+      "id": "bk-verify",
+      "name": "BK TV verifiziert — OK",
+      "status": "done",
+      "commit": "dadd303"
+    },
+    {
+      "id": "fj-fixed",
+      "name": "FJ: position:fixed + flex:1 rows — 11 Jäger sichtbar",
+      "status": "done",
+      "commit": "9690578"
+    },
+    {
+      "id": "fj-verify",
+      "name": "FJ TV verifiziert — OK",
+      "status": "done",
+      "commit": "9690578"
+    },
+    {
+      "id": "drei-fixed",
+      "name": "Drei: position:fixed + align-content:stretch — 12 Spieler",
+      "status": "done",
+      "commit": "7910456"
+    },
+    {
+      "id": "drei-verify",
+      "name": "Drei TV verifiziert — OK",
+      "status": "done",
+      "commit": "7910456"
+    },
+    {
+      "id": "hn-fixed",
+      "name": "Grosse/Kleine Hausnummer: position:fixed + align-content:stretch",
+      "status": "done",
+      "commit": "baa5a97"
+    },
+    {
+      "id": "pm-fixed",
+      "name": "Plus Minus: position:fixed + größere Zeichen/Namen",
+      "status": "done",
+      "commit": "8aba6c0"
+    },
+    {
+      "id": "anker-fixed",
+      "name": "Anker: position:fixed + größere Legende/Namen",
+      "status": "done",
+      "commit": "c8c34ed"
+    },
+    {
+      "id": "kda-fixed",
+      "name": "KDA: position:fixed + overflow:hidden auf Slots",
+      "status": "done",
+      "commit": "9961ed7"
+    }
   ],
   "remaining_tasks": [
-    {"id": "bk-verify", "name": "BK TV mit 12 Spielern final verifizieren (alle sichtbar, kein Ticker-Overlap)", "status": "in_progress"},
-    {"id": "fuchsjagd", "name": "Fuchsjagd Screenshot prüfen", "status": "not_started"},
-    {"id": "drei", "name": "Drei in die Vollen Screenshot prüfen", "status": "not_started"},
-    {"id": "anker", "name": "Anker Screenshot prüfen", "status": "not_started"},
-    {"id": "kleinehaus", "name": "Kleine Hausnummer Screenshot prüfen", "status": "not_started"},
-    {"id": "plusminus", "name": "Plus Minus Mal Screenshot prüfen", "status": "not_started"},
-    {"id": "kda", "name": "KDA Screenshot + UAT-Tests 4–7 abschließen", "status": "not_started"},
-    {"id": "close", "name": "12-UAT.md abschließen + Phase 12 complete + /gsd-complete-milestone", "status": "not_started"}
+    {
+      "id": "hn-verify",
+      "name": "Hausnummer auf TV prüfen",
+      "status": "not_started"
+    },
+    {
+      "id": "pm-verify",
+      "name": "Plus Minus auf TV prüfen",
+      "status": "not_started"
+    },
+    {
+      "id": "anker-verify",
+      "name": "Anker auf TV prüfen",
+      "status": "not_started"
+    },
+    {
+      "id": "kda-verify",
+      "name": "KDA auf TV prüfen — Namen in Brackets, Tim/Hüpp sichtbar",
+      "status": "not_started"
+    },
+    {
+      "id": "uat-4-7",
+      "name": "UAT Tests 4-7 (KDA) in 12-UAT.md eintragen",
+      "status": "not_started"
+    },
+    {
+      "id": "close",
+      "name": "12-UAT.md fertig + /gsd-complete-milestone",
+      "status": "not_started"
+    }
   ],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "BK TV mit 12 Spielern testen nach Push dadd303", "context": "topPad-Fix deployed — Bestätigung steht aus", "blocking": true},
-    {"action": "VPS deployen: git pull && pm2 restart kegelclub", "context": "Nach jedem Fix nötig", "blocking": false}
+    {
+      "action": "VPS deployen: git pull && pm2 restart kegelclub",
+      "context": "Commits 9690578..9961ed7 noch nicht deployed",
+      "blocking": true
+    },
+    {
+      "action": "Hausnummer/PM/Anker/KDA auf TV prüfen nach Deploy",
+      "context": "UAT-Abschluss Phase 12",
+      "blocking": true
+    }
   ],
   "decisions": [
-    {"decision": "BK container auf position:fixed;top:0;left:0 gesetzt", "rationale": "#game { padding:2vw } verschob den Container und fraß vertikalen Platz"},
-    {"decision": "makeGameNameHeader aus BK entfernt", "rationale": "Sparte ~56px, eliminierte Ticker-Overlap und 'Bild 1/5'-Überlauf in colHdr"},
-    {"decision": "topPad = max(pad, vh*0.065) ~47px @720p", "rationale": "#tv-highlights-hdr (top:0.6rem, ~40px hoch) überlapte colHdr — topPad schiebt Content darunter"},
-    {"decision": "flex:1;min-height:32px auf Player-Rows", "rationale": "Browser verteilt Höhe selbst — robust gegen TV-spezifische Viewport-Abweichungen"},
-    {"decision": "Samsung TV effektive Höhe < window.innerHeight", "rationale": "SmartHub-Leisten o.ä. fressen px; mehrfache Fixes nötig — position:fixed + flex:1 als finale Lösung"}
+    {
+      "decision": "Fix-Pattern für alle TV-Renderer: position:fixed;top:0;left:0 + topPad=max(pad,vh*0.065)",
+      "rationale": "#game{padding:2vw} verschiebt Container — position:fixed umgeht das"
+    },
+    {
+      "decision": "Grid-Renderer: align-content:stretch statt align-content:start",
+      "rationale": "Rows verteilen sich gleichmäßig auf Höhe ohne Overflow"
+    },
+    {
+      "decision": "KDA: overflow:hidden auf Slot-Elemente",
+      "rationale": "Namen liefen aus Bracket-Boxen raus"
+    }
   ],
   "uncommitted_files": [],
-  "next_action": "BK TV mit 12 Spielern auf echtem TV prüfen (dadd303). Falls OK: weiter mit Fuchsjagd. Falls nicht: topPad erhöhen oder Samsung-Viewport debuggen.",
-  "context_notes": "BK hat 4 Fix-Runden gebraucht. Kernproblem: Samsung TV hat effektiv weniger Viewport-Höhe als JS meldet. Robuste Lösung: position:fixed (keine #game-Padding-Verschiebung) + flex:1 rows (Browser übernimmt Höhenverteilung) + topPad (Ticker-Clearance). Screenshots in Screnshots/ (Tippfehler im Ordnernamen). UAT 12-UAT.md: Tests 1-3 pass, Tests 4-7 pending."
+  "next_action": "VPS deployen, dann HN/PM/Anker/KDA auf TV prüfen. Falls alle OK: UAT Tests 4-7 eintragen, /gsd-complete-milestone.",
+  "context_notes": "Fix-Pattern etabliert: position:fixed+topPad für alle TV-Renderer. Grid-Renderer zusätzlich align-content:stretch. Commits: FJ(9690578) Drei(7910456) HN(baa5a97) PM(c562ab0,8aba6c0) Anker(75b7d88,c8c34ed) KDA(9961ed7)."
 }
