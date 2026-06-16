@@ -384,7 +384,7 @@ function renderKDABracket(state) {
       col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:6px';
       var roundLabel = document.createElement('div');
       roundLabel.textContent = kdaTVRoundLabel('L', round, lTotalRounds);
-      roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap';
+      roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap;height:16px;overflow:hidden;line-height:16px';
       col.appendChild(roundLabel);
       lMatches.filter(function(m) { return m.round === round; }).forEach(function(slot) {
         col.appendChild(buildTVSlotEl(slot, lSlotWidth, lSlotHeight));
