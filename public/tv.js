@@ -279,66 +279,82 @@ function renderKDABracket(state) {
   var gfH = gfVisible ? 200 : 0;
   var bracketGfH = gfActive ? 0 : gfH; // no GF reserved in bracket when spotlight handles it
 
-  // Slot widths: each section spans full viewport width independently
   var availW = vw - 48;
-  var wSlotWidth = Math.max(80, Math.min(220, Math.floor((availW - colGap * Math.max(0, wColCount - 1)) / Math.max(1, wColCount))));
-  var lSlotWidth = Math.max(80, Math.min(220, Math.floor((availW - colGap * Math.max(0, lColCount - 1)) / Math.max(1, lColCount))));
+  var isCompact = vh < 600; // Samsung TV DPR=2 → ~480px CSS height
+  var slotGap = isCompact ? 4 : 6;
+  var labelFontSize = isCompact ? 20 : 28;
+  if (isCompact) colGap = 8;
 
-  // Slot heights: content-driven — size each section to fit its content exactly, then expand
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
-  var availH = vh - 40 - 12 - bracketGfH;
-  // Count bye vs normal matches in W-R1; bye slots render at 55% height (buildTVSlotEl byeH)
   var wR1Matches = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; });
   var wR1Byes = wR1Matches.filter(function(m) { return m.isBye; }).length;
   var wR1Normals = wR1Count - wR1Byes;
-  // Overhead: section-label(28)+section-gap(6)+col-label(~16)+col-label-margin(2)+col-first-gap(6)=58
-  // lSection adds border-top(1)+padding-top(4)=+4 to content area → L_OH=62 (padding inside content-box)
-  // Total layout space: wH + lH + 17 (12px gap + 5px border+padding on lSection outside content-box)
-  function kdaBracketH(wSH, lSH) {
-    var wBH = Math.round(wSH * 0.55);
-    return {
-      wH: 70 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
-      lH: 62 + maxLColRows * lSH + Math.max(0, maxLColRows - 1) * 6
-    };
-  }
-  var wSlotHeight = 64, lSlotHeight = 56;
-  var _bh = kdaBracketH(wSlotHeight, lSlotHeight);
-  var _avail = availH - 17; // 17 = 12px container-gap + 5px lSection border+padding outside content
-  if (_bh.wH + _bh.lH > _avail) {
-    var _s = _avail / (_bh.wH + _bh.lH);
-    wSlotHeight = Math.max(32, Math.round(wSlotHeight * _s));
-    lSlotHeight = Math.max(32, Math.round(lSlotHeight * _s));
-    _bh = kdaBracketH(wSlotHeight, lSlotHeight);
-    if (_bh.wH + _bh.lH > _avail) {
-      var _lHmax = _avail - _bh.wH;
-      lSlotHeight = Math.max(32, Math.floor((_lHmax - 62 - Math.max(0, maxLColRows - 1) * 6) / Math.max(1, maxLColRows)));
-      _bh = kdaBracketH(wSlotHeight, lSlotHeight);
-      if (_bh.wH + _bh.lH > _avail) _bh.lH = _avail - _bh.wH;
-    }
+
+  var wSlotWidth, lSlotWidth, wSlotHeight, lSlotHeight, wH, lH;
+
+  if (isCompact) {
+    // Compact: W|L side-by-side, each section uses full height — fits in 480px CSS viewport
+    var halfW = Math.floor((availW - 12) / 2);
+    wSlotWidth = Math.max(55, Math.min(150, Math.floor((halfW - colGap * Math.max(0, wColCount - 1)) / Math.max(1, wColCount))));
+    lSlotWidth = Math.max(50, Math.min(130, Math.floor((halfW - colGap * Math.max(0, lColCount - 1)) / Math.max(1, lColCount))));
+    var cInnerH = vh - 40;
+    var cRoundsH = cInnerH - labelFontSize - 4;
+    var rlOH = 14 + 1 + 4; // roundLabel(14px) + margin(1) + first-gap(4)
+    wSlotHeight = Math.max(24, Math.min(80, Math.floor((cRoundsH - rlOH - Math.max(0, wR1Count - 1) * slotGap) / Math.max(1, wR1Normals + wR1Byes * 0.55))));
+    lSlotHeight = Math.max(24, Math.min(80, Math.floor((cRoundsH - rlOH - Math.max(0, maxLColRows - 1) * slotGap) / Math.max(1, maxLColRows))));
+    wH = 0; lH = 0;
   } else {
-    var _bonus = Math.min(24, Math.floor((_avail - _bh.wH - _bh.lH) / Math.max(1, wR1Count + maxLColRows)));
-    if (_bonus >= 4) {
-      wSlotHeight = Math.min(80, wSlotHeight + _bonus);
-      lSlotHeight = Math.min(80, lSlotHeight + _bonus);
+    wSlotWidth = Math.max(80, Math.min(220, Math.floor((availW - colGap * Math.max(0, wColCount - 1)) / Math.max(1, wColCount))));
+    lSlotWidth = Math.max(80, Math.min(220, Math.floor((availW - colGap * Math.max(0, lColCount - 1)) / Math.max(1, lColCount))));
+    var availH = vh - 40 - 12 - bracketGfH;
+    var kdaBracketH = function(wSH, lSH) {
+      var wBH = Math.round(wSH * 0.55);
+      return {
+        wH: 70 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
+        lH: 62 + maxLColRows * lSH + Math.max(0, maxLColRows - 1) * 6
+      };
+    };
+    wSlotHeight = 64; lSlotHeight = 56;
+    var _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+    var _avail = availH - 17;
+    if (_bh.wH + _bh.lH > _avail) {
+      var _s = _avail / (_bh.wH + _bh.lH);
+      wSlotHeight = Math.max(32, Math.round(wSlotHeight * _s));
+      lSlotHeight = Math.max(32, Math.round(lSlotHeight * _s));
       _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+      if (_bh.wH + _bh.lH > _avail) {
+        var _lHmax = _avail - _bh.wH;
+        lSlotHeight = Math.max(32, Math.floor((_lHmax - 62 - Math.max(0, maxLColRows - 1) * 6) / Math.max(1, maxLColRows)));
+        _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+        if (_bh.wH + _bh.lH > _avail) _bh.lH = _avail - _bh.wH;
+      }
+    } else {
+      var _bonus = Math.min(24, Math.floor((_avail - _bh.wH - _bh.lH) / Math.max(1, wR1Count + maxLColRows)));
+      if (_bonus >= 4) {
+        wSlotHeight = Math.min(80, wSlotHeight + _bonus);
+        lSlotHeight = Math.min(80, lSlotHeight + _bonus);
+        _bh = kdaBracketH(wSlotHeight, lSlotHeight);
+      }
     }
+    wH = _bh.wH; lH = _bh.lH;
   }
-  var wH = _bh.wH, lH = _bh.lH;
 
   // Outer container
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:' + (isCompact ? 'row' : 'column') + ';gap:12px;overflow:hidden';
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + wH + 'px;overflow:hidden';
+  wSection.style.cssText = isCompact
+    ? 'display:flex;flex-direction:column;gap:4px;flex:1;overflow:hidden'
+    : 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + wH + 'px;overflow:hidden';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
-  wLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--ac);line-height:1';
+  wLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + labelFontSize + 'px;color:var(--ac);line-height:1';
   wSection.appendChild(wLabel);
 
   var wRoundsRow = document.createElement('div');
@@ -351,10 +367,11 @@ function renderKDABracket(state) {
   wRounds.forEach(function(round) {
     var col = document.createElement('div');
     col.className = 'tv-bracket-col';
-    col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:6px';
+    col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:' + slotGap + 'px';
     var roundLabel = document.createElement('div');
     roundLabel.textContent = kdaTVRoundLabel('W', round, wTotalRounds);
-    roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap;height:16px;overflow:hidden;line-height:16px';
+    var rlH = isCompact ? 14 : 16;
+    roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:' + (isCompact ? 1 : 2) + 'px;white-space:nowrap;height:' + rlH + 'px;overflow:hidden;line-height:' + rlH + 'px';
     col.appendChild(roundLabel);
     wMatches.filter(function(m) { return m.round === round; }).forEach(function(slot) {
       col.appendChild(buildTVSlotEl(slot, wSlotWidth, wSlotHeight));
@@ -367,11 +384,13 @@ function renderKDABracket(state) {
   // --- Loser Bracket (below Winner) ---
   if (lMatches.length > 0) {
     var lSection = document.createElement('div');
-    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:1 1 0;min-height:0;overflow:hidden;border-top:1px solid var(--brd);padding-top:4px;box-sizing:border-box';
+    lSection.style.cssText = isCompact
+      ? 'display:flex;flex-direction:column;gap:4px;flex:1;overflow:hidden;border-left:1px solid var(--brd);padding-left:8px;box-sizing:border-box'
+      : 'display:flex;flex-direction:column;gap:6px;flex:1 1 0;min-height:0;overflow:hidden;border-top:1px solid var(--brd);padding-top:4px;box-sizing:border-box';
 
     var lLabel = document.createElement('div');
     lLabel.textContent = 'Loser Bracket';
-    lLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:28px;color:var(--red);line-height:1';
+    lLabel.style.cssText = 'font-family:var(--fh,"Bebas Neue",sans-serif);font-size:' + labelFontSize + 'px;color:var(--red);line-height:1';
     lSection.appendChild(lLabel);
 
     var lRoundsRow = document.createElement('div');
@@ -381,10 +400,11 @@ function renderKDABracket(state) {
     lRoundsArr.forEach(function(round) {
       var col = document.createElement('div');
       col.className = 'tv-bracket-col';
-      col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:6px';
+      col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:' + slotGap + 'px';
       var roundLabel = document.createElement('div');
       roundLabel.textContent = kdaTVRoundLabel('L', round, lTotalRounds);
-      roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap;height:16px;overflow:hidden;line-height:16px';
+      var rlHL = isCompact ? 14 : 16;
+      roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:' + (isCompact ? 1 : 2) + 'px;white-space:nowrap;height:' + rlHL + 'px;overflow:hidden;line-height:' + rlHL + 'px';
       col.appendChild(roundLabel);
       lMatches.filter(function(m) { return m.round === round; }).forEach(function(slot) {
         col.appendChild(buildTVSlotEl(slot, lSlotWidth, lSlotHeight));
