@@ -299,7 +299,7 @@ function renderKDABracket(state) {
   function kdaBracketH(wSH, lSH) {
     var wBH = Math.round(wSH * 0.55);
     return {
-      wH: 80 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
+      wH: 62 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
       lH: 62 + maxLColRows * lSH + Math.max(0, maxLColRows - 1) * 6
     };
   }
@@ -354,7 +354,7 @@ function renderKDABracket(state) {
     col.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;gap:6px';
     var roundLabel = document.createElement('div');
     roundLabel.textContent = kdaTVRoundLabel('W', round, wTotalRounds);
-    roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap';
+    roundLabel.style.cssText = 'font-size:13px;font-family:var(--fb,"DM Sans",sans-serif);font-weight:600;color:var(--mut);text-transform:uppercase;margin-bottom:2px;white-space:nowrap;height:16px;overflow:hidden;line-height:16px';
     col.appendChild(roundLabel);
     wMatches.filter(function(m) { return m.round === round; }).forEach(function(slot) {
       col.appendChild(buildTVSlotEl(slot, wSlotWidth, wSlotHeight));
