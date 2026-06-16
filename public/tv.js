@@ -288,7 +288,7 @@ function renderKDABracket(state) {
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
-  var availH = vh - 40 - 12 - bracketGfH;
+  var availH = vh - 80 - 12 - bracketGfH; // 20px top + 60px bottom padding
   // Count bye vs normal matches in W-R1; bye slots render at 55% height (buildTVSlotEl byeH)
   var wR1Matches = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; });
   var wR1Byes = wR1Matches.filter(function(m) { return m.isBye; }).length;
@@ -330,7 +330,7 @@ function renderKDABracket(state) {
   // Outer container
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px 60px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
