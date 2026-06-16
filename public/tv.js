@@ -334,7 +334,7 @@ function renderKDABracket(state) {
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + wH + 'px;overflow:hidden';
+  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + wH + 'px';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
