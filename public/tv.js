@@ -265,13 +265,6 @@ function renderKDABracket(state) {
 
   var vw = (typeof window !== 'undefined' && window.innerWidth)  ? window.innerWidth  : 1920;
   var vh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 1080;
-  // DEBUG OVERLAY — entfernen nach Diagnose
-  (function() {
-    var dbg = document.getElementById('kda-dbg');
-    if (!dbg) { dbg = document.createElement('div'); dbg.id = 'kda-dbg'; document.body.appendChild(dbg); }
-    dbg.style.cssText = 'position:fixed;top:8px;right:8px;background:#000a;color:#ff0;font-size:18px;padding:6px 10px;z-index:9999;font-family:monospace;pointer-events:none';
-    dbg.textContent = 'vw=' + vw + ' vh=' + vh + ' ratio=' + (window.devicePixelRatio||1);
-  })();
 
   var wR1Count = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; }).length;
   var wColCount = (new Set(state.bracket.filter(function(m){return m.bracket==='W';}).map(function(m){return m.round;}))).size;
@@ -295,7 +288,7 @@ function renderKDABracket(state) {
   var lMatches = state.bracket.filter(function(m) { return m.bracket === 'L'; });
   var lRoundsArr = Array.from(new Set(lMatches.map(function(m) { return m.round; }))).sort(function(a, b) { return a - b; });
   var maxLColRows = lRoundsArr.length > 0 ? Math.max.apply(null, lRoundsArr.map(function(r) { return lMatches.filter(function(m) { return m.round === r; }).length; })) : 1;
-  var availH = vh - 80 - 12 - bracketGfH; // 20px top + 60px bottom padding
+  var availH = vh - 40 - 12 - bracketGfH;
   // Count bye vs normal matches in W-R1; bye slots render at 55% height (buildTVSlotEl byeH)
   var wR1Matches = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; });
   var wR1Byes = wR1Matches.filter(function(m) { return m.isBye; }).length;
@@ -337,7 +330,7 @@ function renderKDABracket(state) {
   // Outer container
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px 60px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
