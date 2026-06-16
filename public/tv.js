@@ -367,7 +367,7 @@ function renderKDABracket(state) {
   // --- Loser Bracket (below Winner) ---
   if (lMatches.length > 0) {
     var lSection = document.createElement('div');
-    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + lH + 'px;overflow:hidden;border-top:1px solid var(--brd);padding-top:4px';
+    lSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:1 1 0;min-height:0;overflow:hidden;border-top:1px solid var(--brd);padding-top:4px;box-sizing:border-box';
 
     var lLabel = document.createElement('div');
     lLabel.textContent = 'Loser Bracket';
