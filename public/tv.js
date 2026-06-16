@@ -299,7 +299,7 @@ function renderKDABracket(state) {
   function kdaBracketH(wSH, lSH) {
     var wBH = Math.round(wSH * 0.55);
     return {
-      wH: 62 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
+      wH: 70 + wR1Byes * wBH + wR1Normals * wSH + Math.max(0, wR1Count - 1) * 6,
       lH: 62 + maxLColRows * lSH + Math.max(0, maxLColRows - 1) * 6
     };
   }
@@ -334,7 +334,7 @@ function renderKDABracket(state) {
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
-  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + wH + 'px';
+  wSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;flex:0 0 ' + wH + 'px;overflow:hidden';
 
   var wLabel = document.createElement('div');
   wLabel.textContent = 'Winner Bracket';
