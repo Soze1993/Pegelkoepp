@@ -265,6 +265,13 @@ function renderKDABracket(state) {
 
   var vw = (typeof window !== 'undefined' && window.innerWidth)  ? window.innerWidth  : 1920;
   var vh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 1080;
+  // DEBUG OVERLAY — entfernen nach Diagnose
+  (function() {
+    var dbg = document.getElementById('kda-dbg');
+    if (!dbg) { dbg = document.createElement('div'); dbg.id = 'kda-dbg'; document.body.appendChild(dbg); }
+    dbg.style.cssText = 'position:fixed;top:8px;right:8px;background:#000a;color:#ff0;font-size:18px;padding:6px 10px;z-index:9999;font-family:monospace;pointer-events:none';
+    dbg.textContent = 'vw=' + vw + ' vh=' + vh + ' ratio=' + (window.devicePixelRatio||1);
+  })();
 
   var wR1Count = state.bracket.filter(function(m) { return m.bracket === 'W' && m.round === 1; }).length;
   var wColCount = (new Set(state.bracket.filter(function(m){return m.bracket==='W';}).map(function(m){return m.round;}))).size;
