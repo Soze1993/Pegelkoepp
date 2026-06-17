@@ -8,6 +8,8 @@
 
 **Shipped v2.0:** Tournament engine (KDA Double-Elimination), highlights & TV layouts for all game types, deep statistics (streaks, H2H, leaderboard, historical award counts), last-evening recap, WhatsApp share, self-hosted fonts.
 
+**Shipped v3.0:** Profilbilder (Tablet + TV), Gastkegler (temporäre Spieler), korrekte Team-Statistiken (VG/FJ-Siege), TV-Layout-Polish für alle 9 Spieltypen auf Samsung TV.
+
 ## Core Value
 
 **Ein Tablet tippt, der Fernseher zeigt es sofort — live, ohne Reload.**
@@ -17,7 +19,7 @@
 ## Context
 
 - **Stack:** Node.js 22 + Express 4 + Socket.io 4 + SQLite (better-sqlite3) + PM2 + Nginx + Certbot
-- **Codebase:** ~13,000 lines across ~60 files; 433 tests passing
+- **Codebase:** ~15,000 lines across ~65 files; 433 tests passing
 - **Production:** https://kegel.pegelkoepp.de, Netcup VPS (Debian 12, IP 94.16.108.174)
 - **Process manager:** PM2 via pm2-root.service (systemd), auto-starts on reboot
 - **Backup:** Daily SQLite backup cron to /root/pegelkoepp/backups/
@@ -64,13 +66,17 @@ Mitglieder des Kegelclubs "Pegelköpp":
 - ✓ WhatsApp-Share-Link für abgeschlossene Spielergebnisse — v2.0
 - ✓ Self-hosted Fonts für Offline-Venue-Betrieb — v2.0
 
-### Active (v3.0)
+### Validated (v3.0)
 
-- [ ] Profilbilder pro Spieler (hochladen, speichern, anzeigen) — v3.0
-- [ ] Gastkegler: temporäre Spieler ohne festen Account — v3.0
-- [ ] Team-Gewinner + Statistik (Viergewinnt, Fuchsjagd, Anker, BK): 2 Gewinner, Siege notieren — v3.0
-- [ ] Fuchsjagd TV-Layout: skaliert für bis zu 11 Jäger, kein Würfe-Überlappen — v3.0
-- [ ] KDA TV Bracket: Großes Finale erst einblenden wenn soweit, Winner oben / Loser unten — v3.0
+- ✓ Profilbilder pro Spieler (hochladen, speichern, anzeigen, TV-Idle + TV-Game) — v3.0
+- ✓ Gastkegler: temporäre Spieler ohne festen Account, auto-archiviert nach Abend — v3.0
+- ✓ Team-Gewinner-Statistik (VG/FJ): alle Teammitglieder erhalten Sieg, historisch korrekt — v3.0
+- ✓ Fuchsjagd TV: skaliert für bis zu 11 Jäger, 3-stufiges Scaling, kein Abschneiden — v3.0
+- ✓ KDA TV Bracket: Großes Finale erst bei Finalisten, W oben / L unten gestapelt — v3.0
+
+### Active (v4.0)
+
+(Keine aktiven Requirements — /gsd-new-milestone starten)
 
 ### Deferred (post-v3.0)
 
@@ -107,17 +113,27 @@ Mitglieder des Kegelclubs "Pegelköpp":
 | getBKLoserId in highlights.js | Shared by stats + abende routes — single source of truth | ✓ No duplication; consistent BK loser logic |
 | ORDER BY id ASC for game iteration | BK exemption chain requires chronological order | ✓ Correct exemption logic across restarts |
 | Self-host fonts (6 woff2 committed) | Venue may have no internet — must work offline | ✓ No CDN dependency; ~129 KB committed |
+| winners.length === 0 als isDraw | !== 1 war falsch: 2-Winner-Teams galten als Unentschieden | ✓ VG/FJ-Siege korrekt in allen 4 Stats-Endpoints |
+| Guest-Ausschluss auf player-SELECT-Ebene | winsMap akkumuliert Guests, gibt sie aber nie aus | ✓ Gastkegler nie im Leaderboard (v3.0) |
+| express.raw() route-scoped (nicht global) | Globales raw() bricht JSON-Parsing auf anderen Routes | ✓ Upload-Route isoliert, alle anderen Routes unberührt |
+| img+emoji Overlay-Pattern | onerror versteckt img → Emoji als Fallback sichtbar | ✓ Kein broken-image-icon, kein leeres Feld (v3.0) |
+| position:fixed auf TV-Renderer-Containern | #game{padding:2vw} verschiebt Content ohne fixed | ✓ Alle 9 TV-Layouts zeigen volle Spieleranzahl (v3.0) |
+| viewport width=1920 statt device-width | Samsung TV DPR=2 → device-width gibt 960px CSS | ✓ TV-Layouts bei 1920px Breite auf Samsung TV (v3.0) |
+| KDA: immer gestapelt, kein side-by-side | side-by-side nach Realabend-Test revertiert | ✓ W oben / L unten auf Samsung TV verifiziert (v3.0) |
 
-## Current Milestone: v3.0 Spielerprofile, Gastkegler & Realabend-Fixes
+## Shipped: v3.0 Spielerprofile, Gastkegler & Realabend-Fixes ✅
 
-**Goal:** Echte Kegelabend-Erfahrung verbessern — Profilbilder, Gastkegler, Team-Siege in der Statistik, und TV-Layouts die bei voller Spieleranzahl nicht mehr abschneiden.
+**Shipped:** 2026-06-17 | 3 Phasen, 6 Plans, 12 Requirements
 
-**Target features:**
-- Profilbilder pro Spieler (hochladen + anzeigen)
-- Gastkegler: temporäre Spieler ohne festen Account
-- Team-Gewinner + Statistik (Viergewinnt, Fuchsjagd, Anker, BK)
-- Fuchsjagd TV: skaliert für bis zu 11 Jäger, kein Überlappen
-- KDA TV Bracket: Großes Finale erst wenn soweit, Winner/Loser Layout
+**Delivered:**
+- Profilbilder: Upload (5MB JPEG/PNG), Tablet-Anzeige, TV Idle-Grid + alle Spieltyp-Renderer
+- Gastkegler: Checkbox-Dialog, (Gast)-Label, Leaderboard-Ausschluss, Auto-Archiv
+- Team-Statistiken: isDraw-Fix in 4 Endpoints, historisch korrekt ohne Migration
+- TV Polish: position:fixed + topPad Pattern für alle 9 Renderer, Samsung DPR=2 Fix
+
+## Next Milestone
+
+(Noch nicht geplant — /gsd-new-milestone starten)
 
 ## What Done Looks Like
 
@@ -148,4 +164,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-14 — v3.0 milestone started (Spielerprofile, Gastkegler & Realabend-Fixes)*
+*Last updated: 2026-06-17 — after v3.0 milestone (Spielerprofile, Gastkegler & Realabend-Fixes)*

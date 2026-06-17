@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1–5 (shipped 2026-05-22) — [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v2.0 Statistiken, Highlights & Turnierbaum** — Phases 6–9 (shipped 2026-05-27) — [Archive](milestones/v2.0-ROADMAP.md)
-- 🚧 **v3.0 Spielerprofile, Gastkegler & Realabend-Fixes** — Phases 10–12 (in progress)
+- ✅ **v3.0 Spielerprofile, Gastkegler & Realabend-Fixes** — Phases 10–12 (shipped 2026-06-17) — [Archive](milestones/v3.0-ROADMAP.md)
 
 ## Phases
 
@@ -33,59 +33,16 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 
 </details>
 
-## v3.0 Spielerprofile, Gastkegler & Realabend-Fixes (Phases 10–12)
+<details>
+<summary>✅ v3.0 Spielerprofile, Gastkegler & Realabend-Fixes (Phases 10–12) — SHIPPED 2026-06-17</summary>
 
-### Phase 10: Team-Gewinner & Gastkegler
+- [x] Phase 10: Team-Gewinner & Gastkegler (2/2 plans) — completed 2026-06-15
+- [x] Phase 11: Profilbilder (3/3 plans) — completed 2026-06-15
+- [x] Phase 12: TV Layout Polish (1/1 plan) — completed 2026-06-17
 
-**Goal:** Statistiken korrekt machen und Gastkegler ermöglichen — beides reines Backend/DB, kein neues Package, höchste Priorität für den nächsten Abend.
+Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 
-**Requirements:** STATS-01, STATS-02, GUEST-01, GUEST-02, GUEST-03, GUEST-04
-
-**Success Criteria:**
-1. Viergewinnt-Sieg zählt als Sieg für beide Team-Mitglieder im Leaderboard (nicht mehr als Unentschieden)
-2. Fuchsjagd-Sieg zählt als Sieg für alle Jäger im Leaderboard
-3. Historische VG/FJ-Spiele zeigen korrekte Siege nach Server-Neustart (Stats recomputed)
-4. Gastkegler kann erstellt und in ein Spiel aufgenommen werden; erscheint mit "(Gast)"-Label
-5. Gastkegler erscheint nicht im Leaderboard oder in Streak-Statistiken
-6. Gastkegler wird beim Beenden des Kegelabends automatisch archiviert
-
-**Plans:** 2 plans
-
-Plans:
-- [ ] 10-01-PLAN.md — Stats-Fix: isDraw-Semantik + Guest-Ausschluss in /api/stats & /api/stats/year
-- [ ] 10-02-PLAN.md — Gastkegler: DB-Migration + Players-API + Auto-Archivierung + Frontend (Checkbox/Label)
-
----
-
-### Phase 11: Profilbilder
-
-**Goal:** Spieler können ein Foto hochladen, das in der App und auf dem TV angezeigt wird.
-
-**Requirements:** PROFILE-01, PROFILE-02, PROFILE-03, PROFILE-04
-
-**Success Criteria:**
-1. Spieler kann JPEG/PNG bis 5 MB hochladen; Foto wird unter `/uploads/profiles/` gespeichert
-2. Profilbild erscheint in der Spielerliste und im Spielerprofil auf dem Tablet
-3. TV Idle-Screen zeigt Profilbilder der Spieler
-4. TV zeigt Profilbild neben dem aktiven Spieler während des Spiels
-5. Spieler ohne Foto zeigt Emoji-Fallback (kein broken image)
-6. Upload-Endpunkt ist hinter requireSession gesichert; Dateiname wird server-seitig zu `{id}.jpg` umbenannt (kein XSS/Path-Traversal)
-
----
-
-### Phase 12: TV Layout Polish
-
-**Goal:** TV-Layouts funktionieren bei voller Spieleranzahl — Fuchsjagd mit 11 Jägern, KDA-Bracket ohne leeren Finale-Slot.
-
-**Requirements:** TVFIX-01, TVFIX-02
-
-**Success Criteria:**
-1. Fuchsjagd TV zeigt alle 11 Jäger gleichzeitig ohne Abschneiden
-2. Wurf-Werte der Jäger überlagern keine Spielernamen
-3. KDA TV: Großes-Finale-Slot erscheint nicht wenn noch kein Finalist feststeht
-4. Beide Layouts auf echtem TV-Hardware getestet (UAT-Pflicht)
-
----
+</details>
 
 ## Progress
 
@@ -101,5 +58,5 @@ Plans:
 | 8. Statistiken & Rückblick | v2.0 | 4/4 | Complete | 2026-05-27 |
 | 9. Polish | v2.0 | 2/2 | Complete | 2026-05-27 |
 | 10. Team-Gewinner & Gastkegler | v3.0 | 2/2 | Complete | 2026-06-15 |
-| 11. Profilbilder | v3.0 | 0/? | Pending | — |
-| 12. TV Layout Polish | v3.0 | 0/? | Pending | — |
+| 11. Profilbilder | v3.0 | 3/3 | Complete | 2026-06-15 |
+| 12. TV Layout Polish | v3.0 | 1/1 | Complete | 2026-06-17 |

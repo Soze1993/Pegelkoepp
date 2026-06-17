@@ -53,3 +53,32 @@
 
 - [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md) — Full phase details
 - [milestones/v2.0-REQUIREMENTS.md](milestones/v2.0-REQUIREMENTS.md) — All requirements with outcomes
+
+---
+
+## v3.0 Spielerprofile, Gastkegler & Realabend-Fixes — Shipped 2026-06-17
+
+**Phases:** 10–12 | **Plans:** 6 | **Duration:** 2 days (2026-06-15 → 2026-06-17)
+**Production:** https://kegel.pegelkoepp.de
+
+**Delivered:** Profilbilder (Upload, Tablet, TV Idle + alle Spieltyp-Renderer), Gastkegler (temporäre Spieler, auto-archiviert), korrekte Team-Statistiken (VG/FJ-Siege), TV-Layout-Polish für alle 9 Spieltypen auf Samsung TV (position:fixed Pattern + DPR=2 Fix).
+
+### Key Accomplishments
+
+1. isDraw-Fix in 4 Stats-Endpoints: VG/FJ-Siege zählen für alle Teammitglieder — rückwirkend ohne Migration (Phase 10)
+2. Gastkegler: is_guest DB-Column, (Gast)-Label in 5 Render-Punkten, Leaderboard-Ausschluss, Auto-Archiv beim Abend-Ende (Phase 10)
+3. Profilbild-Upload (5 MB JPEG/PNG, magic-byte-Validierung, express.raw route-scoped) mit img+emoji Overlay-Pattern (Phase 11)
+4. TV Idle Player-Grid (80px Avatare) + 40px Avatar in Generic Renderer + alle 7 Spieltyp-Renderer (Phase 11)
+5. position:fixed + topPad Fix-Pattern für alle 9 TV-Renderer — kein Abschneiden mehr bei voller Spieleranzahl (Phase 12)
+6. Samsung TV DPR=2 Fix: viewport width=1920 + isCompact-Sizing; KDA immer gestapelt (W oben / L unten) nach Realabend-UAT (Phase 12)
+
+### Requirements Coverage
+
+12/12 v3.0 requirements complete. See [milestones/v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md).
+
+Known deferred items at close: 7 (see STATE.md Deferred Items)
+
+### Archive
+
+- [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) — Full phase details
+- [milestones/v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) — All requirements with outcomes
