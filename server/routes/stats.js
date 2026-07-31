@@ -16,7 +16,7 @@ const router = Router();
 router.get('/', (req, res) => {
   // Step 1: Get all non-archived players
   const players = db.prepare(
-    'SELECT id, name, emoji FROM players WHERE archived = 0 AND is_guest = 0 ORDER BY id ASC'
+    'SELECT id, name, emoji, pudel_paid FROM players WHERE archived = 0 AND is_guest = 0 ORDER BY id ASC'
   ).all();
 
   // Build stats map keyed by player id
@@ -142,6 +142,8 @@ router.get('/', (req, res) => {
       losses: entry.losses,
       draws: entry.draws,
       pudel_count,
+      pudel_paid: p.pudel_paid || 0,
+      pudel_offen: Math.max(0, pudel_count - (p.pudel_paid || 0)),
       total_throws,
       pudel_pct,
       neun_count,

@@ -104,6 +104,19 @@ router.get('/last-summary', (req, res) => {
 
   const players = Object.values(playerStatsMap).sort((a, b) => b.wins - a.wins || b.games_played - a.games_played);
 
+  const pudelAbendRows = db.prepare(`
+    SELECT t.player_id, COUNT(*) as pudel_count
+    FROM throws t
+    JOIN games g ON t.game_id = g.id
+    WHERE g.abend_id = ? AND g.status = 'finished'
+      AND t.value = 0
+      AND (t.meta IS NULL OR json_extract(t.meta, '$.keinPudel') IS NULL)
+    GROUP BY t.player_id
+  `).all(lastAbend.id);
+  const pudelAbendMap = {};
+  for (const row of pudelAbendRows) pudelAbendMap[row.player_id] = row.pudel_count;
+  for (const p of players) p.pudel_count = pudelAbendMap[p.id] || 0;
+
   res.json({
     abend: { id: lastAbend.id, name: lastAbend.name, started_at: lastAbend.started_at, ended_at: lastAbend.ended_at },
     kda_champion,

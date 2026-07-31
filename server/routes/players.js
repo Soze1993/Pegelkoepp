@@ -96,4 +96,18 @@ router.post('/:id/photo', requireSession, rawUpload, (req, res) => {
   res.json({ ok: true, url: '/uploads/profiles/' + id + '.jpg' });
 });
 
+// POST /api/players/:id/pudel-bezahlt — mark all outstanding pudels as paid
+router.post('/:id/pudel-bezahlt', requireSession, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid id' });
+  const player = db.prepare('SELECT id FROM players WHERE id = ? AND archived = 0').get(id);
+  if (!player) return res.status(404).json({ error: 'player not found' });
+  const row = db.prepare(
+    "SELECT COUNT(*) as cnt FROM throws WHERE player_id = ? AND value = 0 AND (meta IS NULL OR json_extract(meta, '$.keinPudel') IS NULL)"
+  ).get(id);
+  const total = row ? row.cnt : 0;
+  db.prepare('UPDATE players SET pudel_paid = ? WHERE id = ?').run(total, id);
+  res.json({ ok: true, pudel_paid: total });
+});
+
 module.exports = router;
