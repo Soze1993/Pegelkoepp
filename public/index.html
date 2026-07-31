@@ -1400,7 +1400,6 @@ async function doNWurf() {
     if (!hausSlot) { notify('Stelle waehlen', 'var(--red)'); return; }
     var throwIndex2 = akt.wuerfe ? akt.wuerfe.length : 0;
     var val2 = hausWurf;
-    if (stid === 'kleineHaus' && hausWurf === 0 && !selKeinPudel) val2 = 9;
     var meta2 = selKeinPudel ? {slot:hausSlot,keinPudel:true} : {slot:hausSlot};
     hausWurf = null; hausSlot = null; selKeinPudel = false;
     var data2 = await submitThrow(akt.id, throwIndex2, val2, meta2);
