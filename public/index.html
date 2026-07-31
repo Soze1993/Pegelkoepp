@@ -871,8 +871,34 @@ function showSpDetail(id){var s=S.spieler.find(function(x){return x.id===id;});i
   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="chip"><div class="v" style="color:var(--ac)">'+(S.kdaCounts && S.kdaCounts[id] || 0)+'</div><div class="l">KdA-Titel</div></div><div class="chip"><div class="v" style="color:var(--red)">'+(S.bkCounts && S.bkCounts[id] || 0)+'</div><div class="l">BK Verlierer</div></div></div>'
   +'<div style="margin-top:14px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">&#128184; Pudel-Abrechnung</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px"><div class="chip"><div class="v">'+(s.pudel||0)+'</div><div class="l">Gesamt</div></div><div class="chip"><div class="v" style="color:var(--grn)">'+(s.pudel_paid||0)+'</div><div class="l">Bezahlt</div></div><div class="chip"><div class="v" style="color:'+(s.pudel_offen>0?'var(--red)':'var(--mut)')+'">'+(s.pudel_offen||0)+'</div><div class="l">Offen</div></div></div>'
   +((s.pudel_offen>0)?'<div style="background:#e0525218;border:1px solid var(--red);border-radius:8px;padding:12px;text-align:center"><div style="font-size:13px;color:var(--mut);margin-bottom:6px">'+(s.pudel_offen)+' Pudel &times; 0,50&thinsp;&euro; = <strong style="color:var(--red)">'+(s.pudel_offen*0.5).toFixed(2)+'&thinsp;&euro;</strong></div><button class="btn bp" style="width:100%" onclick="pudelBezahlt('+id+')">&#10003; Als bezahlt markieren</button></div>':'<div style="font-size:12px;color:var(--grn);text-align:center;padding:6px">Alle Pudel bezahlt &#10003;</div>')
-  +'</div>';
+  +'</div>'
+  +'<div style="margin-top:14px;border-top:1px solid var(--brd);padding-top:14px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">&#9881; Verwaltung</div><div style="display:flex;gap:6px;margin-bottom:6px"><input id="sp-edit-name" type="text" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--brd);background:var(--bg3);color:var(--txt);font-size:14px" placeholder="Name"><button class="btn bg sm" onclick="spUmbenennen('+id+')">Speichern</button></div><button class="btn" style="width:100%;color:var(--red);border-color:#e0525266;margin-top:2px" onclick="spArchivieren('+id+')">Spieler entfernen</button></div>';
+document.getElementById('sp-edit-name').value = s.name;
 openM('m-sp-detail');}
+
+async function spUmbenennen(id) {
+  var inp = document.getElementById('sp-edit-name');
+  var name = inp ? inp.value.trim() : '';
+  if (!name) { notify('Name erforderlich', 'var(--red)'); return; }
+  var s = S.spieler.find(function(x){return x.id===id;});
+  var res = await fetch('/api/players/' + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name: name, emoji: s ? s.emoji : '🎳'})});
+  if (!res.ok) { notify('Fehler beim Umbenennen', 'var(--red)'); return; }
+  closeM('m-sp-detail');
+  S.spieler.forEach(function(p){if(p.id===id)p.name=name;});
+  renderSpielerListe();
+  notify('Gespeichert!', 'var(--grn)');
+}
+
+async function spArchivieren(id) {
+  var s = S.spieler.find(function(x){return x.id===id;});
+  if (!confirm((s ? s.name : 'Spieler') + ' entfernen?\n\nDer Spieler wird aus der Liste ausgeblendet. Die Spielhistorie bleibt erhalten.')) return;
+  var res = await fetch('/api/players/' + id + '/archive', {method:'PUT'});
+  if (!res.ok) { notify('Fehler', 'var(--red)'); return; }
+  closeM('m-sp-detail');
+  S.spieler = S.spieler.filter(function(x){return x.id!==id;});
+  renderSpielerListe();
+  notify('Spieler entfernt', 'var(--grn)');
+}
 
 async function pudelBezahlt(id) {
   var s = S.spieler.find(function(x){return x.id===id;});
