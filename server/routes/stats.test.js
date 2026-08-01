@@ -786,3 +786,31 @@ test('ST36: GET /api/stats/bk-counts returns count 1 for loser after one finishe
   const body = await res.json();
   assert.equal(body[String(loserId)], 1, `Loser (id=${loserId}) should have bk-count=1, got ${JSON.stringify(body)}`);
 });
+
+// ---------------------------------------------------------------------------
+// ST37: kleineHaus personal_best recorded for ALL players, not just winner
+// Regression test for bug where if (r.winner) guard excluded non-winners.
+// ---------------------------------------------------------------------------
+test('ST37: kleineHaus personal_best recorded for loser, not only winner', async () => {
+  const p1 = insertPlayer('ST37-Winner', 'W');
+  const p2 = insertPlayer('ST37-Loser', 'L');
+
+  // p1: 123 (winner, lower is better), p2: 456 (loser)
+  insertFinishedGame('kleineHaus', [
+    { id: p1, throws: [1, 2, 3], meta: [{ slot: 'h' }, { slot: 'z' }, { slot: 'e' }] },
+    { id: p2, throws: [4, 5, 6], meta: [{ slot: 'h' }, { slot: 'z' }, { slot: 'e' }] }
+  ]);
+
+  const res = await fetch(`${baseUrl}/api/stats`);
+  const body = await res.json();
+  const winner = body.players.find(e => e.player_id === p1);
+  const loser  = body.players.find(e => e.player_id === p2);
+
+  const winnerPb = winner.personal_bests.find(b => b.type_key === 'kleineHaus');
+  assert.ok(winnerPb, 'Winner should have kleineHaus personal best');
+  assert.equal(winnerPb.score, 123, `Winner pb should be 123, got ${winnerPb.score}`);
+
+  const loserPb = loser.personal_bests.find(b => b.type_key === 'kleineHaus');
+  assert.ok(loserPb, 'Loser should also have kleineHaus personal best');
+  assert.equal(loserPb.score, 456, `Loser pb should be 456, got ${loserPb.score}`);
+});

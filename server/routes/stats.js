@@ -78,12 +78,9 @@ router.get('/', (req, res) => {
 
       const prev = entry.bests[game.type_key];
       if (game.type_key === 'kleineHaus') {
-        // kleineHaus: best = winner's minimum score (lower is better for kleineHaus winner)
-        // Only record for the winner (canonical "best" is the winner's score)
-        if (r.winner) {
-          if (prev === undefined || r.score < prev) {
-            entry.bests[game.type_key] = r.score;
-          }
+        // kleineHaus: lower is better — personal best = lowest number achieved, all players
+        if (prev === undefined || r.score < prev) {
+          entry.bests[game.type_key] = r.score;
         }
       } else {
         // All other types: personal best = maximum score achieved by any player
