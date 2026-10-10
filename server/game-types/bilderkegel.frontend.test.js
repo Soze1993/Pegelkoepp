@@ -149,3 +149,53 @@ test('FE-TV6: renderBilderkegelTV uses bkRowMarks and getBKLoserName', () => {
   assert.ok(/bkRowMarks\(state\)/.test(fn), 'renderBilderkegelTV must call bkRowMarks(state)');
   assert.ok(/getBKLoserName\(state\)/.test(fn), 'renderBilderkegelTV must call getBKLoserName(state)');
 });
+
+// ---------------------------------------------------------------------------
+// Tablet (public/index.html)
+// ---------------------------------------------------------------------------
+test('FE-TAB1: tablet bkLoserId equals the server getLoserId for decided games, null otherwise', () => {
+  const bkLoserId = loadTabletLoserId();
+  for (const state of decidedFixtures()) {
+    assert.equal(bkLoserId(state), bilderkegel.getLoserId(state));
+    assert.notEqual(bkLoserId(state), null);
+  }
+  assert.equal(bkLoserId(stechenWinnerSeatedFirst()), 2, 'Stechen winner seated first is not the loser');
+  assert.equal(bkLoserId(bilderkegel.initState(P2)), null, 'running game');
+  assert.equal(bkLoserId(runningStechen3()), null, 'running Stechen');
+});
+
+function inlineScripts(html) {
+  const out = [];
+  const re = /<script(?![^>]*\bsrc\s*=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) out.push(m[1]);
+  return out;
+}
+
+test('FE-TAB2: every inline script of public/index.html compiles', () => {
+  const scripts = inlineScripts(readSrc(INDEX_FILE));
+  assert.ok(scripts.length >= 1, 'at least one inline script expected');
+  scripts.forEach((code, i) => {
+    assert.doesNotThrow(() => new vm.Script(code, { filename: 'index.html#script' + i }));
+  });
+});
+
+test('FE-TAB3: renderBKSpiel uses bkLoserId and no longer picks the payer by minimum total', () => {
+  const line = readSrc(INDEX_FILE).split(/\r?\n/).find(l => l.startsWith('function renderBKSpiel'));
+  assert.ok(line, 'renderBKSpiel line not found');
+  assert.ok(/bkLoserId\(sp\)/.test(line), 'renderBKSpiel must call bkLoserId(sp)');
+  assert.ok(!/minP/.test(line), 'renderBKSpiel must not tag payers by the overall minimum total');
+});
+
+test('FE-TAB4: game:finished handler refreshes the title holders before the _finishing guard', () => {
+  const src = readSrc(INDEX_FILE);
+  const start = src.indexOf("socket.on('game:finished'");
+  const end = src.indexOf('function joinGameRoom');
+  assert.ok(start !== -1 && end > start, 'game:finished handler not found');
+  const body = src.slice(start, end);
+  const fetchAt = body.indexOf("/api/highlights/current");
+  const guardAt = body.indexOf('_finishing) return');
+  assert.ok(fetchAt !== -1, 'highlights fetch missing');
+  assert.ok(guardAt !== -1, '_finishing guard missing');
+  assert.ok(fetchAt < guardAt, 'highlights fetch must come before the _finishing guard');
+});
