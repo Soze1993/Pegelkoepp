@@ -26,7 +26,12 @@ var GAME_NAMES = {
   'anker': 'Anker',
   'grosseHaus': 'Große Hausnummer',
   'kleineHaus': 'Kleine Hausnummer',
-  'plusMinus': 'Plus Minus Mal'
+  'plusMinus': 'Plus Minus Mal',
+  'geradeUngerade': 'Gerade & Ungerade',
+  'henneferTreppe': 'Hennefer Treppe',
+  'fussball': 'Fußball',
+  'seifenkistenrennen': 'Seifenkistenrennen',
+  'mixedPartie': 'Mixed Partie'
 };
 
 function kegelSVGtv(activePins, w, h) {
@@ -170,6 +175,9 @@ function renderGame(state) {
   if (currentTypeKey === 'plusMinus') { renderPlusMinusTV(state); return; }
   if (currentTypeKey === 'anker')     { renderAnkerTV(state); return; }
   if (currentTypeKey === 'dreiVollen') { renderDreiVollenTV(state); return; }
+  if (currentTypeKey === 'geradeUngerade' || currentTypeKey === 'henneferTreppe' ||
+      currentTypeKey === 'fussball' || currentTypeKey === 'seifenkistenrennen') { renderTeamTV(state); return; }
+  if (currentTypeKey === 'mixedPartie') { renderGenericScoreTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -1784,4 +1792,84 @@ function kdaTVRoundLabel(bracket, round, totalRounds) {
     return 'L · Runde ' + round;
   }
   return bracket + ' · Runde ' + round;
+}
+
+// ── Generic team scoreboard (Gerade/Ungerade, Hennefer, Fußball, Seifenkisten) ──
+function renderTeamTV(state) {
+  if (!state) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var s = state;
+  var scoreA = s.scoreA !== undefined ? s.scoreA : s.toreA !== undefined ? s.toreA : s.posA;
+  var scoreB = s.scoreB !== undefined ? s.scoreB : s.toreB !== undefined ? s.toreB : s.posB;
+  var label = currentTypeKey === 'fussball' ? 'Tore' : currentTypeKey === 'seifenkistenrennen' ? 'Felder' : 'Punkte';
+
+  function makeTeamCard(team, players, score, winnerTeam, aktTeam) {
+    var isWin = winnerTeam === team;
+    var isAkt = !s.done && aktTeam === team;
+    var div = document.createElement('div');
+    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? 'var(--ac)22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? 'var(--ac)' : isWin ? '#4caf7d' : 'var(--brd)') + ';gap:10px';
+    var nameLine = document.createElement('div');
+    nameLine.style.cssText = 'font-size:22px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em';
+    nameLine.textContent = 'Team ' + team + (isAkt ? ' 🎳' : '');
+    var scoreLine = document.createElement('div');
+    scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + (isWin ? '#4caf7d' : 'var(--ac)') + ';line-height:1';
+    scoreLine.textContent = String(score);
+    var lblLine = document.createElement('div');
+    lblLine.style.cssText = 'font-size:16px;color:var(--mut)';
+    lblLine.textContent = label;
+    var roster = document.createElement('div');
+    roster.style.cssText = 'font-size:18px;margin-top:10px';
+    var aktIdx = team === 'A' ? s.iA : s.iB;
+    players.forEach(function(p, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'padding:2px 0;' + (isAkt && i === aktIdx ? 'color:var(--ac);font-weight:700' : '');
+      row.textContent = (isAkt && i === aktIdx ? '▶ ' : '') + p.emoji + ' ' + p.name;
+      roster.appendChild(row);
+    });
+    div.appendChild(nameLine); div.appendChild(scoreLine); div.appendChild(lblLine); div.appendChild(roster);
+    if (isWin) { var wl = document.createElement('div'); wl.style.cssText = 'font-size:40px;margin-top:8px'; wl.textContent = '🏆'; div.appendChild(wl); }
+    return div;
+  }
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;gap:40px;padding:40px;height:100%;box-sizing:border-box;align-items:center;justify-content:center';
+  wrap.appendChild(makeTeamCard('A', s.tA, scoreA, s.winner, s.aktTeam));
+
+  var vsEl = document.createElement('div');
+  vsEl.style.cssText = 'font-family:var(--fh);font-size:48px;color:var(--mut);align-self:center';
+  vsEl.textContent = s.done ? (s.winner === 'draw' ? '=' : s.winner === 'A' ? '>' : '<') : ':';
+  wrap.appendChild(vsEl);
+
+  wrap.appendChild(makeTeamCard('B', s.tB, scoreB, s.winner, s.aktTeam));
+  gameEl.replaceChildren(wrap);
+}
+
+// ── Generic ranked score table (Mixed Partie, fallback) ─────────────────
+function renderGenericScoreTV(state) {
+  if (!state || !state.players) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var players = state.players;
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:32px;width:100%;box-sizing:border-box';
+
+  players.forEach(function(p, i) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:20px;padding:14px 20px;border-radius:10px;margin-bottom:8px;background:' + (i === state.aktSpIdx && !state.done ? 'var(--ac)22' : 'var(--bg2)');
+    var emo = document.createElement('div');
+    emo.style.cssText = 'font-size:40px;width:56px;text-align:center';
+    emo.textContent = p.emoji;
+    var name = document.createElement('div');
+    name.style.cssText = 'flex:1;font-size:28px;font-family:var(--fh)';
+    name.textContent = p.name;
+    var rLine = document.createElement('div');
+    rLine.style.cssText = 'font-size:18px;color:var(--mut)';
+    rLine.textContent = 'R1:'+(p.r1!==null?p.r1:'–')+' R2:'+(p.r2!==null?p.r2:'–');
+    row.appendChild(emo); row.appendChild(name); row.appendChild(rLine);
+    wrap.appendChild(row);
+  });
+  gameEl.replaceChildren(wrap);
 }
