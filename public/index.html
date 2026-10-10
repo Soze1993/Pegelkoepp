@@ -527,7 +527,8 @@ async function submitUndo() {
 }
 
 // ---- Naturkranz (quick 261010-j10) ----
-var nkPlayers = [], nkSel = null, nkBusy = false;
+var nkPlayers = [], nkSel = null, nkBusy = false, nkEvents = [];
+var spNkPlayerId = null, spNkDefaultDate = '';
 
 function appendNaturkranzButton(el) {
   var wrap = document.createElement('div');
@@ -549,8 +550,17 @@ async function openNaturkranzModal() {
   nkPlayers = data.players || [];
   nkSel = null;
   nkBusy = false;
+  await nkLoadEvents();
   renderNaturkranzModal();
   openM('m-nk');
+}
+
+async function nkLoadEvents() {
+  if (!S.aktSpiel) { nkEvents = []; return; }
+  try {
+    var res = await fetch('/api/naturkranz?game_id=' + S.aktSpiel.gameId);
+    nkEvents = res.ok ? await res.json() : [];
+  } catch (e) { nkEvents = []; }
 }
 
 function renderNaturkranzModal() {
@@ -588,6 +598,30 @@ function renderNaturkranzModal() {
   if (off) ok.style.opacity = '.4';
   ok.onclick = nkSubmit;
   c.appendChild(ok);
+
+  var evH = document.createElement('div');
+  evH.style.cssText = 'font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px';
+  evH.textContent = 'In diesem Spiel erfasst';
+  c.appendChild(evH);
+  if (!nkEvents.length) {
+    var none = document.createElement('div');
+    none.style.cssText = 'color:var(--mut);font-size:13px';
+    none.textContent = 'Noch kein Naturkranz in diesem Spiel';
+    c.appendChild(none);
+  }
+  nkEvents.forEach(function(ev) {
+    var r = document.createElement('div');
+    r.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd)';
+    var t = document.createElement('span');
+    t.textContent = (ev.player_emoji || '') + ' ' + ev.player_name + ' · ' + String(ev.created_at || '').slice(11, 16);
+    var rm = document.createElement('button');
+    rm.className = 'btn bg sm';
+    rm.textContent = 'Entfernen';
+    rm.onclick = function() { nkRemove(ev.id); };
+    r.appendChild(t);
+    r.appendChild(rm);
+    c.appendChild(r);
+  });
 }
 
 async function nkSubmit() {
@@ -610,10 +644,115 @@ async function nkSubmit() {
   notify('👑 Naturkranz für ' + name + ' eingetragen');
 }
 
+async function nkRemove(eventId) {
+  if (!confirm('Naturkranz-Eintrag entfernen?')) return;
+  var res = await fetch('/api/naturkranz/' + eventId, { method: 'DELETE' });
+  if (!res.ok) {
+    notify(res.status === 401 ? 'Bitte neu anmelden' : 'Fehler beim Entfernen', 'var(--red)');
+    return;
+  }
+  notify('Naturkranz entfernt');
+  nkRefreshVisible();
+}
+
+function nkRefreshVisible(playerId) {
+  var nkEl = document.getElementById('m-nk');
+  if (nkEl && nkEl.classList.contains('open') && S.aktSpiel) {
+    nkLoadEvents().then(renderNaturkranzModal);
+  }
+  var spEl = document.getElementById('m-sp-detail');
+  if (spEl && spEl.classList.contains('open') && spNkPlayerId !== null && (playerId === undefined || playerId === spNkPlayerId)) {
+    renderSpNaturkranz(spNkPlayerId);
+  }
+}
+
+function nkFmtDate(createdAt) {
+  var d = String(createdAt || '').slice(0, 10).split('-');
+  return d.length === 3 ? d[2] + '.' + d[1] + '.' + d[0] : '';
+}
+
+async function renderSpNaturkranz(playerId) {
+  spNkPlayerId = playerId;
+  var c = document.getElementById('sp-nk');
+  if (!c) return;
+  var events = [];
+  try {
+    var res = await fetch('/api/naturkranz?player_id=' + playerId);
+    if (res.ok) events = await res.json();
+  } catch (e) { events = []; }
+  if (spNkPlayerId !== playerId) return;
+  c.innerHTML = '';
+  var lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px';
+  lbl.textContent = '👑 Naturkranz (' + events.length + ')';
+  c.appendChild(lbl);
+
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+  var inp = document.createElement('input');
+  inp.type = 'date';
+  inp.id = 'sp-nk-date';
+  spNkDefaultDate = today();
+  inp.value = spNkDefaultDate;
+  inp.max = spNkDefaultDate;
+  inp.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid var(--brd);background:var(--bg3);color:var(--txt);font-size:14px';
+  var add = document.createElement('button');
+  add.className = 'btn bg sm';
+  add.textContent = '+ Nachtragen';
+  add.onclick = function() { spNkAdd(playerId); };
+  row.appendChild(inp);
+  row.appendChild(add);
+  c.appendChild(row);
+
+  if (!events.length) {
+    var none = document.createElement('div');
+    none.style.cssText = 'color:var(--mut);font-size:13px';
+    none.textContent = 'Noch kein Naturkranz';
+    c.appendChild(none);
+  }
+  events.forEach(function(ev) {
+    var typ = ev.type_key && S.typen ? S.typen.find(function(t) { return t.id === ev.type_key; }) : null;
+    var ctx = typ ? typ.name : (ev.abend_name || 'ohne Spiel');
+    var r = document.createElement('div');
+    r.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--brd);font-size:13px';
+    var t = document.createElement('span');
+    t.textContent = nkFmtDate(ev.created_at) + ' · ' + ctx;
+    var rm = document.createElement('button');
+    rm.className = 'btn bg sm';
+    rm.textContent = 'Entfernen';
+    rm.onclick = function() { nkRemove(ev.id); };
+    r.appendChild(t);
+    r.appendChild(rm);
+    c.appendChild(r);
+  });
+}
+
+async function spNkAdd(playerId) {
+  var inp = document.getElementById('sp-nk-date');
+  var val = inp ? inp.value : '';
+  if (!val) { notify('Datum wählen', 'var(--red)'); return; }
+  var sp = S.spieler.find(function(x) { return x.id === playerId; });
+  var name = sp ? sp.name : '';
+  if (!confirm('Naturkranz für ' + name + ' am ' + nkFmtDate(val) + ' eintragen?')) return;
+  var body = { player_id: playerId };
+  if (val !== spNkDefaultDate) body.date = val;
+  var res = await fetch('/api/naturkranz', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    notify(res.status === 401 ? 'Bitte neu anmelden' : 'Fehler beim Speichern', 'var(--red)');
+    return;
+  }
+  notify('👑 Naturkranz eingetragen');
+  renderSpNaturkranz(playerId);
+}
+
 function onNaturkranzChanged(data) {
   if (data && data.action === 'added') {
     notify('👑 Naturkranz: ' + (data.player_name || ''));
   }
+  nkRefreshVisible(data ? data.player_id : undefined);
 }
 
 async function startAbend() {
@@ -1013,9 +1152,10 @@ function showSpDetail(id){var s=S.spieler.find(function(x){return x.id===id;});i
   +'<div style="margin-top:14px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">&#128184; Pudel-Abrechnung</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px"><div class="chip"><div class="v">'+(s.pudel||0)+'</div><div class="l">Gesamt</div></div><div class="chip"><div class="v" style="color:var(--grn)">'+(s.pudel_paid||0)+'</div><div class="l">Bezahlt</div></div><div class="chip"><div class="v" style="color:'+(pOffen>0?'var(--red)':'var(--mut)')+'">'+pOffen+'</div><div class="l">Offen</div></div></div>'
   +(pOffen>0?'<div style="background:#e0525218;border:1px solid var(--red);border-radius:8px;padding:12px;text-align:center"><div style="font-size:13px;color:var(--mut);margin-bottom:6px">'+pOffen+' Pudel &times; 0,50&thinsp;&euro; = <strong style="color:var(--red)">'+(pOffen*0.5).toFixed(2)+'&thinsp;&euro;</strong></div><button class="btn bp" style="width:100%" onclick="pudelBezahlt('+id+')">&#10003; Als bezahlt markieren</button></div>':'<div style="font-size:12px;color:var(--grn);text-align:center;padding:6px">Alle Pudel bezahlt &#10003;</div>')
   +'</div>'
+  +'<div id="sp-nk" style="margin-top:14px"></div>'
   +'<div style="margin-top:14px;border-top:1px solid var(--brd);padding-top:14px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">&#9881; Verwaltung</div><div style="display:flex;gap:6px;margin-bottom:6px"><input id="sp-edit-name" type="text" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--brd);background:var(--bg3);color:var(--txt);font-size:14px" placeholder="Name"><button class="btn bg sm" onclick="spUmbenennen('+id+')">Speichern</button></div><button class="btn" style="width:100%;color:var(--red);border-color:#e0525266;margin-top:2px" onclick="spArchivieren('+id+')">Spieler entfernen</button></div>';
 document.getElementById('sp-edit-name').value = s.name;
-openM('m-sp-detail');}
+openM('m-sp-detail');renderSpNaturkranz(id);}
 
 async function spUmbenennen(id) {
   var inp = document.getElementById('sp-edit-name');

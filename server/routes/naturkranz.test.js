@@ -246,3 +246,108 @@ test('NK06: abend linking from game, open abend and none', async () => {
   assert.equal(none.game_id, null);
   assert.equal(none.abend_id, null);
 });
+
+// ---------------------------------------------------------------------------
+// NK10
+// ---------------------------------------------------------------------------
+test('NK10: DELETE without session answers 401 and keeps the row', async () => {
+  const created = await (await api('POST', '/api/naturkranz', { player_id: 5 })).json();
+  const r = await api('DELETE', `/api/naturkranz/${created.id}`, undefined, false);
+  assert.equal(r.status, 401);
+  assert.ok(nkRow(created.id));
+});
+
+// ---------------------------------------------------------------------------
+// NK11
+// ---------------------------------------------------------------------------
+test('NK11: DELETE removes the row, 404 on repeat, 400 on bad ids, broadcasts removed', async () => {
+  const created = await (await api('POST', '/api/naturkranz', { player_id: 5 })).json();
+  const evPromise = waitForEvent(socket, 'naturkranz:changed');
+  const r = await api('DELETE', `/api/naturkranz/${created.id}`);
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { ok: true });
+  assert.equal(nkRow(created.id), undefined);
+  const ev = await evPromise;
+  assert.equal(ev.action, 'removed');
+  assert.equal(ev.id, created.id);
+  assert.equal(ev.player_id, 5);
+
+  assert.equal((await api('DELETE', `/api/naturkranz/${created.id}`)).status, 404);
+  assert.equal((await api('DELETE', '/api/naturkranz/abc')).status, 400);
+  assert.equal((await api('DELETE', '/api/naturkranz/0')).status, 400);
+});
+
+// ---------------------------------------------------------------------------
+// NK12
+// ---------------------------------------------------------------------------
+test('NK12: GET requires a session and filters by game_id / player_id', async () => {
+  assert.equal((await api('GET', '/api/naturkranz', undefined, false)).status, 401);
+
+  const gameId = await startGame([6, 7]);
+  const a = await (await api('POST', '/api/naturkranz', { player_id: 6, game_id: gameId })).json();
+  const b = await (await api('POST', '/api/naturkranz', { player_id: 7, game_id: gameId })).json();
+  const free = await (await api('POST', '/api/naturkranz', { player_id: 6 })).json();
+
+  const byGame = await (await api('GET', `/api/naturkranz?game_id=${gameId}`)).json();
+  assert.deepEqual(byGame.map(e => e.id), [b.id, a.id]);
+  for (const e of byGame) {
+    assert.equal(typeof e.player_name, 'string');
+    assert.equal(typeof e.player_emoji, 'string');
+    assert.equal(e.type_key, 'dreiVollen');
+  }
+
+  const byPlayer = await (await api('GET', '/api/naturkranz?player_id=6')).json();
+  assert.ok(byPlayer.every(e => e.player_id === 6));
+  assert.deepEqual(byPlayer.slice(0, 2).map(e => e.id), [free.id, a.id]);
+  assert.equal(byPlayer[0].game_id, null);
+  assert.equal(byPlayer[0].type_key, null);
+
+  assert.equal((await api('GET', '/api/naturkranz?game_id=abc')).status, 400);
+  assert.equal((await api('GET', '/api/naturkranz?player_id=0')).status, 400);
+});
+
+// ---------------------------------------------------------------------------
+// NK13
+// ---------------------------------------------------------------------------
+test('NK13: Nachtragen with a date links the abend of that day', async () => {
+  await endAnyOpenAbend();
+  const ab = db.prepare(
+    "INSERT INTO abende (name, started_at, ended_at) VALUES ('Frueher', '2026-04-01 19:00:00', '2026-04-01 23:00:00')"
+  ).run();
+  const abendId = Number(ab.lastInsertRowid);
+
+  const r = await api('POST', '/api/naturkranz', { player_id: 4, date: '2026-04-01' });
+  assert.equal(r.status, 201);
+  const body = await r.json();
+  assert.ok(body.created_at.startsWith('2026-04-01'));
+  assert.equal(body.abend_id, abendId);
+  assert.equal(body.game_id, null);
+
+  const open = await (await api('POST', '/api/abende', { name: 'NK13 offen' })).json();
+  try {
+    const r2 = await api('POST', '/api/naturkranz', { player_id: 4, date: '2026-03-15' });
+    assert.equal(r2.status, 201);
+    assert.equal((await r2.json()).abend_id, null);
+  } finally {
+    await api('POST', `/api/abende/${open.id}/end`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// NK14
+// ---------------------------------------------------------------------------
+test('NK14: invalid dates answer 400 and write nothing', async () => {
+  const before = nkCount();
+  const bad = ['2026-13-45', '2026-02-30', '01.04.2026', 20260401, "2026-04-01'; DROP TABLE naturkranz;--"];
+  for (const d of bad) {
+    const r = await api('POST', '/api/naturkranz', { player_id: 4, date: d });
+    assert.equal(r.status, 400, String(d));
+    assert.equal((await r.json()).error, 'invalid date');
+  }
+  const gameId = await startGame([4, 5]);
+  const both = await api('POST', '/api/naturkranz', { player_id: 4, game_id: gameId, date: '2026-04-01' });
+  assert.equal(both.status, 400);
+  assert.equal((await both.json()).error, 'game_id and date are mutually exclusive');
+  assert.equal(nkCount(), before);
+  assert.doesNotThrow(() => db.prepare('SELECT COUNT(*) FROM naturkranz').get());
+});
