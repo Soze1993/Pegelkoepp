@@ -1,16 +1,16 @@
 ---
-gsd_state_version: 1.0
+gsd_state_version: "1.0"
 milestone: v3.0
-milestone_name: Spielerprofile, Gastkegler & Realabend-Fixes
 status: complete
-last_updated: "2026-06-17T00:00:00.000Z"
-last_activity: 2026-06-17 -- v3.0 milestone archived
+last_updated: "2026-10-10"
+state_head: e807145
 progress:
-  total_phases: 3
+  total_phases: 7
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 25
+  completed_plans: 25
+milestone_name: Spielerprofile, Gastkegler & Realabend-Fixes
+last_activity: 2026-06-17 -- v3.0 milestone archived
 ---
 
 # Project State
@@ -56,8 +56,19 @@ Items acknowledged and deferred at milestone close on 2026-06-17:
 
 All v3.0 work executed directly in phases 10–12 (no standalone quick tasks in this milestone).
 
+### Quick Tasks Completed (feedback-14-18 batch 261010-j0v)
+
+| Quick ID | Description | Commit | Date |
+|---|---|---|---|
+| 261010-j0w | (ID 16) PMM Pudel auf W5 (geteilt) zählt korrekt als 9 | 6b39e7c | 2026-10-10 |
+| 261010-j0x | (ID 17) BK Stechen-Verlierer korrekt ermittelt und angezeigt | 70db674 | 2026-10-10 |
+| 261010-j0y | (ID 18) TV-Modus: Spielname oben links in der Kopfzeile | 8289e6f | 2026-10-10 |
+| 261010-j0z | (ID 15) KDA-Gewinner-Profilbild in TV-Overlay, Tablet-Popup und Spieldetail | e269a2e | 2026-10-10 |
+| 261010-j10 | (ID 14) Naturkranz erfassen, nachtragen und in Statistik anzeigen | 4ff9a28 | 2026-10-10 |
+
 ## Session Continuity
 
-Last session: 2026-06-17
-v3.0 milestone complete. All 3 phases (10–12) shipped.
-Next: /gsd-new-milestone for v4.0
+Last session: 2026-10-10
+Quick-batch 261010-j0v complete — 5 items (feedback IDs 14–18) shipped on branch feedback-14-18.
+VPS tasks pending (separate session): Tino W5 data correction + Mad Naturkranz nachtragen.
+Next: /gsd-new-milestone for v4.0 (or continue with feedback backlog).
