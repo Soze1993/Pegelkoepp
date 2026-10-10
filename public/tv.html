@@ -125,21 +125,45 @@
     .conn-dot.red   { background: #e05252; }
 
     /* Persistent highlights header (07) */
-    #tv-highlights-hdr {
+    #tv-top-bar {
       position: fixed;
       top: 0.6rem;
+      left: 2vw;
       right: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2vw;
+      z-index: 100;
+    }
+    #tv-game-name {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--fh);
+      font-size: 2.6vw;
+      line-height: 1;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--txt);
+    }
+    #tv-highlights-hdr {
+      flex: 0 0 auto;
       font-size: 1.8vw;
       color: var(--mut);
       text-align: right;
       white-space: nowrap;
-      z-index: 100;
     }
   </style>
 </head>
 <body>
   <div class="conn-dot" id="connDot"></div>
-  <div id="tv-highlights-hdr"></div>
+  <div id="tv-top-bar">
+    <div id="tv-game-name"></div>
+    <div id="tv-highlights-hdr"></div>
+  </div>
 
   <div id="idle">
     <div class="club-name">Pegelköpp</div>

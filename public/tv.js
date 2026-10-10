@@ -60,6 +60,14 @@ function renderHighlightsHdr() {
   hdr.textContent = parts.join('  |  ');
 }
 
+// Top-left game name in #tv-top-bar. textContent from the constant GAME_NAMES map only —
+// the raw type_key is never written to the DOM (T-261010-j0y-01).
+function renderGameNameHdr(visible) {
+  var el = document.getElementById('tv-game-name');
+  if (!el) return;
+  el.textContent = (visible && currentTypeKey && GAME_NAMES[currentTypeKey]) ? GAME_NAMES[currentTypeKey] : '';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   fetch('/api/highlights/current')
     .then(function(r){ return r.json(); })
@@ -108,6 +116,7 @@ function renderIdle(lastWinner) {
     ? 'Letzter Sieger: ' + lastWinner
     : 'Noch kein Spiel gespielt';
   renderHighlightsHdr();
+  renderGameNameHdr(false);
   renderPlayerGrid();
 }
 
@@ -160,6 +169,7 @@ function renderPlayerGrid() {
 
 function renderGame(state) {
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
+  if (state) renderGameNameHdr(true);
   // Remove any stale game name headers from previous renders
   gameEl.querySelectorAll('.tv-game-name-hdr').forEach(function(e) { e.remove(); });
   if (state && state.bracket) { renderKDABracket(state); return; }  // KDA: before state.players guard
