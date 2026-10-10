@@ -306,3 +306,61 @@ test('TAB-6: helper is wired into winner popup and bracket banner', () => {
   assert.ok(between(src, 'function showWinnerBanner(', 'function playKDATone(').indexOf('kdaWinnerAvatarEl(') >= 0);
   assert.ok(between(src, 'function renderKDABracket(el, state)', 'var kdaWurfSlotId').indexOf('kdaWinnerAvatarEl(') >= 0);
 });
+
+// ---------------------------------------------------------------------------
+// Detail modal champion block (public/index.html)
+// ---------------------------------------------------------------------------
+
+function makeContainer(ctx, withMounts) {
+  const av = ctx.sandbox.document.createElement('div');
+  const nm = ctx.sandbox.document.createElement('div');
+  return {
+    av, nm,
+    el: {
+      querySelector(sel) {
+        if (!withMounts) return null;
+        if (sel === '#kda-det-av') return av;
+        if (sel === '#kda-det-name') return nm;
+        return null;
+      }
+    }
+  };
+}
+
+test('DET-1: champion block gets avatar with photo and the name', () => {
+  const ctx = loadHelper();
+  const c = makeContainer(ctx, true);
+  ctx.sandbox.kdaFillChampionBlock(c.el, { id: 7, name: 'Tino', emoji: '🦊' });
+  assert.equal(c.av.children.length, 1);
+  const images = imgs(c.av.children[0]);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].src, '/uploads/profiles/7.jpg');
+  assert.equal(c.nm.textContent, 'Tino');
+});
+
+test('DET-2: markup in the champion name is verbatim text', () => {
+  const ctx = loadHelper();
+  const c = makeContainer(ctx, true);
+  const evil = '<img src=x onerror=alert(1)>';
+  ctx.sandbox.kdaFillChampionBlock(c.el, { id: 7, name: evil, emoji: '🦊' });
+  assert.equal(c.nm.textContent, evil);
+  assert.equal(ctx.counters.innerHTMLWrites, 0);
+});
+
+test('DET-3: null champion and missing mounts are tolerated', () => {
+  const ctx = loadHelper();
+  const c = makeContainer(ctx, true);
+  ctx.sandbox.kdaFillChampionBlock(c.el, null);
+  assert.equal(c.nm.textContent, '—');
+  assert.equal(c.av.children.length, 0);
+  const none = makeContainer(ctx, false);
+  assert.doesNotThrow(function () { ctx.sandbox.kdaFillChampionBlock(none.el, { id: 7, name: 'T', emoji: 'x' }); });
+  assert.doesNotThrow(function () { ctx.sandbox.kdaFillChampionBlock(null, null); });
+});
+
+test('DET-4: showGameDetail uses static mounts and calls the fill helper', () => {
+  const region = between(inlineScript(), 'async function showGameDetail(', 'async function uploadPhoto(');
+  assert.ok(region.indexOf('kdaFillChampionBlock(') >= 0);
+  assert.ok(region.indexOf('kda-det-av') >= 0);
+  assert.ok(region.indexOf('kda-det-name') >= 0);
+});

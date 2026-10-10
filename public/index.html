@@ -614,6 +614,17 @@ function kdaWinnerAvatarEl(player, sizePx) {
   }
   return wrap;
 }
+// Fills the static mounts of the detail-modal champion block through DOM APIs only.
+function kdaFillChampionBlock(containerEl, player) {
+  if (!containerEl) return;
+  var nameMount = containerEl.querySelector('#kda-det-name');
+  if (nameMount) nameMount.textContent = player ? player.name : '—';
+  var avMount = containerEl.querySelector('#kda-det-av');
+  if (avMount) {
+    var av = kdaWinnerAvatarEl(player, 72);
+    if (av) avMount.appendChild(av);
+  }
+}
 // KDA-AVATAR-HELPER:END
 
 function showWinnerBanner(state) {
@@ -678,6 +689,7 @@ async function showGameDetail(gameId) {
   var typIcon = typ ? typ.icon : '🎲';
   var _mDate = data.game.finished_at ? new Date(data.game.finished_at.replace(' ','T')) : null;
   var dateStr = _mDate ? _mDate.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) + ', ' + _mDate.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr' : '';
+  var kdaDetChamp;
   var html = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div style="font-size:32px">' + typIcon + '</div><div><div style="font-family:var(--fh);font-size:22px">' + typName + '</div><div style="color:var(--mut);font-size:12px">' + dateStr + '</div></div></div>';
   if (data.game.type_key === 'viergewinnt' && data.state && data.state.grid) {
     var vgSt = data.state;
@@ -788,9 +800,11 @@ async function showGameDetail(gameId) {
     var cSp = champ && S.spieler.find(function(p){return p.id===champ.id;});
     var cName = cSp ? cSp.name : (champ ? champ.name : '—');
     var cEmoji = cSp ? cSp.emoji : (champ ? champ.emoji : '');
+    kdaDetChamp = champ ? { id: champ.id, name: cName, emoji: cEmoji } : null;
     html += '<div style="text-align:center;padding:16px;border-radius:10px;background:#e8b84b18;border:1px solid var(--ac);margin-bottom:12px">'
       + '<div style="font-size:10px;color:var(--ac);font-family:var(--fh);letter-spacing:.12em;margin-bottom:6px">🏆 KEGLER DES ABENDS</div>'
-      + '<div style="font-family:var(--fh);font-size:26px">' + cEmoji + ' ' + cName + '</div>'
+      + '<div id="kda-det-av" style="display:flex;justify-content:center;margin-bottom:8px"></div>'
+      + '<div id="kda-det-name" style="font-family:var(--fh);font-size:26px"></div>'
       + '</div>';
     if (finalist) {
       var fSp2 = S.spieler.find(function(p){return p.id===finalist.id;});
@@ -867,6 +881,7 @@ async function showGameDetail(gameId) {
     html += '<div style="color:var(--mut);font-size:13px;text-align:center;padding:16px">Keine Ergebnisse verfügbar.</div>';
   }
   c.innerHTML = html;
+  if (kdaDetChamp !== undefined) kdaFillChampionBlock(c, kdaDetChamp);
 }
 
 // Spieler
