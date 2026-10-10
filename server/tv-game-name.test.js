@@ -147,3 +147,106 @@ test('B5: top bar layout contract in tv.html', () => {
   assert.match(hdr, /flex:0 0 auto|flex:00auto/);
   assert.doesNotMatch(hdr, /position:/);
 });
+
+// ---- Task 2: B6-B14 ------------------------------------------------------
+
+const ALL_KEYS = Object.keys(gameTypes);
+
+function nameOf(registry) { return registry['tv-game-name'].textContent; }
+
+test('B6: every game type has a non-empty TV display name', () => {
+  const { sandbox } = boot();
+  for (const key of ALL_KEYS) {
+    const n = sandbox.GAME_NAMES[key];
+    assert.equal(typeof n, 'string', key);
+    assert.ok(n.length > 0, key);
+  }
+});
+
+test('B7: game:started shows the name for each of the nine types', () => {
+  for (const key of ALL_KEYS) {
+    const { sandbox, handlers, registry } = boot();
+    handlers['game:started']({ state: stateFor(key), gameId: 1, type_key: key });
+    assert.equal(nameOf(registry), sandbox.GAME_NAMES[key], key);
+  }
+});
+
+test('B8: live switch without idle; throw:applied keeps the name', () => {
+  const { sandbox, handlers, registry } = boot();
+  handlers['game:started']({ state: stateFor('fuchsjagd'), gameId: 1, type_key: 'fuchsjagd' });
+  assert.equal(nameOf(registry), sandbox.GAME_NAMES.fuchsjagd);
+  const kdaState = stateFor('kda');
+  handlers['game:started']({ state: kdaState, gameId: 2, type_key: 'kda' });
+  assert.equal(nameOf(registry), sandbox.GAME_NAMES.kda);
+  handlers['throw:applied']({ state: kdaState });
+  assert.equal(nameOf(registry), sandbox.GAME_NAMES.kda);
+});
+
+test('B9: reconnect via game:state shows the name', () => {
+  const { sandbox, handlers, registry } = boot();
+  handlers['game:state']({ idle: false, state: stateFor('anker'), gameId: 1, type_key: 'anker' });
+  assert.equal(nameOf(registry), sandbox.GAME_NAMES.anker);
+});
+
+test('B10: name stays during end screen, cleared on idle', () => {
+  const { sandbox, handlers, registry } = boot();
+  const st = stateFor('kda');
+  handlers['game:started']({ state: st, gameId: 1, type_key: 'kda' });
+  handlers['game:finished']({ state: st, lastWinner: 'A', typeKey: 'kda' });
+  assert.equal(nameOf(registry), sandbox.GAME_NAMES.kda);
+  handlers['game:state']({ idle: true, state: null, gameId: null, lastWinner: 'A' });
+  assert.equal(nameOf(registry), '');
+});
+
+test('B11: unknown type_key never shows the raw key', () => {
+  const { handlers, registry } = boot();
+  handlers['game:started']({ state: { players: players().map((p) => ({ ...p, score: 0 })) }, gameId: 1, type_key: 'does-not-exist' });
+  assert.equal(nameOf(registry), '');
+});
+
+function walk(node, fn) {
+  fn(node);
+  for (const c of node.children || []) walk(c, fn);
+}
+
+test('B12: no legacy centered header anywhere, no factory global', () => {
+  const LEGACY = 'tv-game-name-hdr';
+  const cases = ALL_KEYS.map((k) => [k, stateFor(k)]);
+  cases.push(['does-not-exist', { players: players().map((p) => ({ ...p, score: 0 })) }]);
+  for (const [key, st] of cases) {
+    const { sandbox, handlers, registry } = boot();
+    handlers['game:started']({ state: st, gameId: 1, type_key: key });
+    walk(registry.game, (n) => assert.notEqual(n.className, LEGACY, key));
+    assert.equal(sandbox.makeGameNameHeader, undefined);
+  }
+});
+
+function firstPadding(css) {
+  const mm = /(?:^|;)padding:([^;]+)/.exec(css);
+  return mm ? mm[1].trim().split(/\s+/) : null;
+}
+
+test('B13: fixed root containers reserve the 6.5% top band', () => {
+  for (const [w, h] of [[1920, 1080], [960, 540]]) {
+    for (const key of ALL_KEYS) {
+      const { handlers, registry } = boot(w, h);
+      handlers['game:started']({ state: stateFor(key), gameId: 1, type_key: key });
+      const root = registry.game.children[0];
+      assert.ok(root, key);
+      if (!/position:fixed/.test(root.style.cssText)) continue;
+      const pad = firstPadding(root.style.cssText);
+      assert.ok(pad, key + ' has no padding');
+      assert.ok(parseInt(pad[0], 10) >= Math.round(h * 0.065), key + ' @' + w + 'x' + h + ' top padding ' + pad[0]);
+    }
+  }
+});
+
+test('B14: KDA side/bottom padding unchanged', () => {
+  for (const [w, h, p] of [[1920, 1080, 20], [960, 540, 12]]) {
+    const { handlers, registry } = boot(w, h);
+    handlers['game:started']({ state: stateFor('kda'), gameId: 1, type_key: 'kda' });
+    const pad = firstPadding(registry.game.children[0].style.cssText);
+    assert.equal(pad.length, 4);
+    assert.deepEqual(pad.slice(1), [p + 'px', p + 'px', p + 'px']);
+  }
+});

@@ -29,14 +29,6 @@ var GAME_NAMES = {
   'plusMinus': 'Plus Minus Mal'
 };
 
-function makeGameNameHeader() {
-  var el = document.createElement('div');
-  el.className = 'tv-game-name-hdr';
-  el.textContent = (currentTypeKey && GAME_NAMES[currentTypeKey]) || '';
-  el.style.cssText = 'font-family:var(--fb,"DM Sans",sans-serif);font-size:2.5vw;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;text-align:center';
-  return el;
-}
-
 function kegelSVGtv(activePins, w, h) {
   var px = {1:[40,88],2:[24,68],3:[56,68],4:[8,48],5:[40,48],6:[72,48],7:[24,28],8:[56,28],9:[40,8]};
   var circles = '';
@@ -170,8 +162,6 @@ function renderPlayerGrid() {
 function renderGame(state) {
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
   if (state) renderGameNameHdr(true);
-  // Remove any stale game name headers from previous renders
-  gameEl.querySelectorAll('.tv-game-name-hdr').forEach(function(e) { e.remove(); });
   if (state && state.bracket) { renderKDABracket(state); return; }  // KDA: before state.players guard
   if (currentTypeKey === 'bilderkegel') { renderBilderkegelTV(state); return; }
   if (currentTypeKey === 'fuchsjagd')   { renderFuchsjagdTV(state); return; }
@@ -183,10 +173,6 @@ function renderGame(state) {
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
-
-  // Add game name header for generic renderer
-  var gnEl = makeGameNameHeader();
-  gameEl.insertBefore(gnEl, gameEl.firstChild);
 
   // Re-render player list (D-01 full-width rows)
   playerListEl.replaceChildren();  // clear safely without innerHTML
@@ -291,6 +277,7 @@ function renderKDABracket(state) {
 
   var isCompact = vh < 600; // Samsung TV DPR=2 → ~480px CSS height
   var pad = isCompact ? 12 : 20;
+  var kdaTopPad = Math.max(pad, Math.round(vh * 0.065));  // same top band as renderBilderkegelTV (clears #tv-top-bar)
   var availW = vw - pad * 2;
   var slotGap = isCompact ? 4 : 6;
   var labelFontSize = isCompact ? 20 : 28;
@@ -310,7 +297,7 @@ function renderKDABracket(state) {
   var lOH = isCompact ? 38 : 62;
   wSlotWidth = Math.max(isCompact ? 60 : 80, Math.min(220, Math.floor((availW - colGap * Math.max(0, wColCount - 1)) / Math.max(1, wColCount))));
   lSlotWidth = Math.max(isCompact ? 60 : 80, Math.min(220, Math.floor((availW - colGap * Math.max(0, lColCount - 1)) / Math.max(1, lColCount))));
-  var availH = vh - pad * 2 - 12 - bracketGfH;
+  var availH = vh - kdaTopPad - pad - 12 - bracketGfH;
   var kdaBracketH = function(wSH, lSH) {
     var wBH = Math.round(wSH * 0.55);
     return {
@@ -346,7 +333,7 @@ function renderKDABracket(state) {
   // Outer container
   var container = document.createElement('div');
   container.className = 'kda-tv-bracket';
-  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:' + pad + 'px ' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);padding:' + kdaTopPad + 'px ' + pad + 'px ' + pad + 'px ' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;overflow:hidden';
 
   // --- Winner Bracket (top) ---
   var wSection = document.createElement('div');
@@ -653,7 +640,7 @@ function renderBilderkegelTV(state) {
 
   // Row heights: header + N player rows share available height
   var bannerH = state.done ? 68 : 0;  // loser banner at bottom when game over
-  // Top padding must clear the highlights ticker (#tv-highlights-hdr: top:0.6rem, font~1.8vw, ~40px total)
+  // Top padding must clear the top bar (#tv-top-bar: game name + highlights, top:0.6rem, ~6.5% of viewport height)
   var topPad  = Math.max(pad, Math.round(vh * 0.065));  // ~47px @720p, ~70px @1080p
   // Full container content area (asymmetric: topPad top, pad bottom)
   var availH  = vh - topPad - pad - (state.done ? bannerH + 8 : 0);
@@ -690,7 +677,7 @@ function renderBilderkegelTV(state) {
   }
 
   // Container — position:fixed so #game { padding:2vw } doesn't push it down
-  // No makeGameNameHeader: saves ~56px and avoids ticker overlap
+  // Game name lives in #tv-top-bar (no per-screen header): saves ~56px and avoids top-bar overlap
   var container = document.createElement('div');
   container.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:var(--bg);padding:' + topPad + 'px ' + pad + 'px ' + pad + 'px ' + pad + 'px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;overflow:hidden';
 
@@ -1610,8 +1597,6 @@ function renderViergewinntTV(state) {
 
   var container = document.createElement('div');
   container.style.cssText = 'width:100vw;height:100vh;background:var(--bg);display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden;padding:1.5vw 2vw';
-
-  container.appendChild(makeGameNameHeader());
 
   // Main row: Team X | Board | Team O
   var mainRow = document.createElement('div');
