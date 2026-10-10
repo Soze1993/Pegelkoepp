@@ -1805,31 +1805,64 @@ function renderTeamTV(state) {
   var scoreB = s.scoreB !== undefined ? s.scoreB : s.toreB !== undefined ? s.toreB : s.posB;
   var label = currentTypeKey === 'fussball' ? 'Tore' : currentTypeKey === 'seifenkistenrennen' ? 'Felder' : 'Punkte';
 
+  // Gerade & Ungerade: show rule badge per team
+  function guRule(team) {
+    if (currentTypeKey !== 'geradeUngerade') return null;
+    // Round 1: A=Gerade, B=Ungerade; Round 2: swapped
+    return (team === 'A') === (s.runde === 1) ? 'GERADE' : 'UNGERADE';
+  }
+
   function makeTeamCard(team, players, score, winnerTeam, aktTeam) {
     var isWin = winnerTeam === team;
     var isAkt = !s.done && aktTeam === team;
+    var rule = guRule(team);
     var div = document.createElement('div');
-    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? 'var(--ac)22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? 'var(--ac)' : isWin ? '#4caf7d' : 'var(--brd)') + ';gap:10px';
+    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? 'var(--ac)22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? 'var(--ac)' : isWin ? '#4caf7d' : 'var(--brd)') + ';gap:8px';
+
+    // Team label
     var nameLine = document.createElement('div');
-    nameLine.style.cssText = 'font-size:22px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em';
+    nameLine.style.cssText = 'font-size:28px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;font-weight:700';
     nameLine.textContent = 'Team ' + team + (isAkt ? ' 🎳' : '');
+    div.appendChild(nameLine);
+
+    // GU rule badge
+    if (rule) {
+      var ruleBadge = document.createElement('div');
+      ruleBadge.style.cssText = 'font-size:26px;font-weight:800;padding:4px 18px;border-radius:10px;background:' + (isAkt ? 'var(--ac)' : 'var(--bg3)') + ';color:' + (isAkt ? '#fff' : 'var(--mut)');
+      ruleBadge.textContent = rule;
+      div.appendChild(ruleBadge);
+    }
+
+    // Big score
     var scoreLine = document.createElement('div');
     scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + (isWin ? '#4caf7d' : 'var(--ac)') + ';line-height:1';
     scoreLine.textContent = String(score);
+    div.appendChild(scoreLine);
+
     var lblLine = document.createElement('div');
-    lblLine.style.cssText = 'font-size:16px;color:var(--mut)';
+    lblLine.style.cssText = 'font-size:18px;color:var(--mut)';
     lblLine.textContent = label;
+    div.appendChild(lblLine);
+
+    // Player roster — bigger names
     var roster = document.createElement('div');
-    roster.style.cssText = 'font-size:18px;margin-top:10px';
+    roster.style.cssText = 'width:100%;margin-top:12px';
     var aktIdx = team === 'A' ? s.iA : s.iB;
     players.forEach(function(p, i) {
       var row = document.createElement('div');
-      row.style.cssText = 'padding:2px 0;' + (isAkt && i === aktIdx ? 'color:var(--ac);font-weight:700' : '');
-      row.textContent = (isAkt && i === aktIdx ? '▶ ' : '') + p.emoji + ' ' + p.name;
+      var isActive = isAkt && i === aktIdx;
+      row.style.cssText = 'padding:4px 8px;border-radius:8px;font-size:28px;' + (isActive ? 'color:var(--ac);font-weight:800;background:var(--ac)11' : 'color:var(--txt)');
+      row.textContent = (isActive ? '▶ ' : '   ') + p.emoji + ' ' + p.name;
       roster.appendChild(row);
     });
-    div.appendChild(nameLine); div.appendChild(scoreLine); div.appendChild(lblLine); div.appendChild(roster);
-    if (isWin) { var wl = document.createElement('div'); wl.style.cssText = 'font-size:40px;margin-top:8px'; wl.textContent = '🏆'; div.appendChild(wl); }
+    div.appendChild(roster);
+
+    if (isWin) {
+      var wl = document.createElement('div');
+      wl.style.cssText = 'font-size:48px;margin-top:8px';
+      wl.textContent = '🏆';
+      div.appendChild(wl);
+    }
     return div;
   }
 
@@ -1838,7 +1871,7 @@ function renderTeamTV(state) {
   wrap.appendChild(makeTeamCard('A', s.tA, scoreA, s.winner, s.aktTeam));
 
   var vsEl = document.createElement('div');
-  vsEl.style.cssText = 'font-family:var(--fh);font-size:48px;color:var(--mut);align-self:center';
+  vsEl.style.cssText = 'font-family:var(--fh);font-size:56px;color:var(--mut);align-self:center';
   vsEl.textContent = s.done ? (s.winner === 'draw' ? '=' : s.winner === 'A' ? '>' : '<') : ':';
   wrap.appendChild(vsEl);
 
