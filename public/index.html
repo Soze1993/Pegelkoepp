@@ -1812,10 +1812,10 @@ async function doTeamWurf(){
   if(teamWurfVal===null){notify('Bitte Zahl wählen','var(--red)');return;}
   var sp=S.aktSpiel.state;var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;
   var pid=aktArr[aktIdx].id;
-  var meta=teamWurfKeinPudel&&teamWurfVal===0?{keinPudel:true}:{};
-  var res=await fetch('/api/games/'+S.aktSpiel.gameId+'/throw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:pid,value:teamWurfVal,meta:meta})});
-  if(!res.ok){notify('Fehler','var(--red)');return;}
-  var data=await res.json();S.aktSpiel.state=data.state;
+  var meta=teamWurfKeinPudel&&teamWurfVal===0?{keinPudel:true}:undefined;
+  var data=await submitThrow(pid,0,teamWurfVal,meta);
+  if(!data)return;
+  S.aktSpiel.state=data.state;
   teamWurfVal=null;teamWurfKeinPudel=false;selKeinPudel=false;renderSpielenTab();
 }
 
@@ -1949,11 +1949,11 @@ async function doSRWurf(){
   var sp=S.aktSpiel.state;var paar=sp.paare[sp.aktPaarIdx];
   var aktSpielerIdx=sp.wuerfe.length%paar.spieler.length;
   var pid=paar.spieler[aktSpielerIdx].id;
-  var value=srKranz?9:srWurfVal; // send raw value; backend handles kranz via meta
-  var meta=srKranz?{kranz:true}:(srKeinPudel&&srWurfVal===0?{keinPudel:true}:{});
-  var res=await fetch('/api/games/'+S.aktSpiel.gameId+'/throw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:pid,value:value,meta:meta})});
-  if(!res.ok){notify('Fehler','var(--red)');return;}
-  var data=await res.json();S.aktSpiel.state=data.state;
+  var value=srKranz?9:srWurfVal;
+  var meta=srKranz?{kranz:true}:(srKeinPudel&&srWurfVal===0?{keinPudel:true}:undefined);
+  var data=await submitThrow(pid,0,value,meta);
+  if(!data)return;
+  S.aktSpiel.state=data.state;
   srWurfVal=null;srKranz=false;srKeinPudel=false;selKeinPudel=false;renderSpielenTab();
 }
 
@@ -1989,10 +1989,11 @@ function mpSetSlot(sl){mpSlot=sl;renderSpielenTab();}
 async function doMPWurf(){
   if(mpWurfVal===null){notify('Bitte Zahl wählen','var(--red)');return;}
   var sp=S.aktSpiel.state;var p=sp.players[sp.aktSpIdx];
-  var meta={};if(sp.runde>=3){if(!mpSlot){notify('Bitte Slot wählen (H/Z/E)','var(--red)');return;}meta.slot=mpSlot;}
-  var res=await fetch('/api/games/'+S.aktSpiel.gameId+'/throw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:p.id,value:mpWurfVal,meta:meta})});
-  if(!res.ok){notify('Fehler','var(--red)');return;}
-  mpWurfVal=null;mpSlot=null;renderSpielenTab();
+  var meta=undefined;if(sp.runde>=3){if(!mpSlot){notify('Bitte Slot wählen (H/Z/E)','var(--red)');return;}meta={slot:mpSlot};}
+  var data=await submitThrow(p.id,0,mpWurfVal,meta);
+  if(!data)return;
+  S.aktSpiel.state=data.state;
+  mpWurfVal=null;mpSlot=null;selKeinPudel=false;renderSpielenTab();
 }
 
 function bkSelK(n){bkK=n;renderSpielenTab();}
