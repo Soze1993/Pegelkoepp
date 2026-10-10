@@ -1779,27 +1779,31 @@ async function startSKR(){var l=parseInt(document.getElementById('m-skr-laenge')
 // ── Gerade & Ungerade renderer ───────────────────────────────────────────
 function renderGUSpiel(el,state){
   var sp=state;if(!sp){el.innerHTML='';return;}
-  // Round 1: A=Gerade, B=Ungerade; Round 2: A=Ungerade, B=Gerade
-  var ruleA=sp.runde===1?'Gerade':'Ungerade';
-  var ruleB=sp.runde===1?'Ungerade':'Gerade';
+  // Stechen always uses R1 rules: A=Gerade, B=Ungerade
+  var ruleA=sp.stechen?'Gerade':(sp.runde===1?'Gerade':'Ungerade');
+  var ruleB=sp.stechen?'Ungerade':(sp.runde===1?'Ungerade':'Gerade');
   function teamBlock(team,arr,score,rule){
     var isAkt=sp.aktTeam===team&&!sp.done;
     var idx=team==='A'?sp.iA:sp.iB;
+    var stechenScore=sp.stechen?(team==='A'?sp.stechenWurfA:sp.stechenWurfB):null;
     return '<div class="card" style="'+(isAkt?'border:2px solid var(--ac)':'')+';flex:1;min-width:140px">'
       +'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:2px">Team '+team+(isAkt?' 🎳':'')+'<span style="float:right;font-size:13px;font-weight:700;color:var(--ac)">'+score+'</span></div>'
-      +'<div style="font-size:12px;color:'+(isAkt?'var(--ac)':'var(--mut)')+';margin-bottom:6px;font-weight:600">'+rule+'</div>'
+      +'<div style="font-size:12px;color:'+(isAkt?'var(--ac)':'var(--mut)')+';margin-bottom:6px;font-weight:600">'+rule+(stechenScore!==null?' → '+stechenScore:'')+'</div>'
       +arr.map(function(p,i){var isC=isAkt&&i===idx;return '<div style="padding:3px 0;'+(isC?'color:var(--ac);font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')
       +'</div>';
   }
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;var aktSp=aktArr[aktIdx];
   var html='<div style="display:flex;gap:10px;margin-bottom:10px">'+teamBlock('A',sp.tA,sp.scoreA,ruleA)+teamBlock('B',sp.tB,sp.scoreB,ruleB)+'</div>';
   if(sp.done){
-    var winLabel=sp.winner==='draw'?'Unentschieden!':(sp.winner==='A'?'Team A gewinnt!':'Team B gewinnt!');
+    var winLabel=sp.winner==='A'?'Team A gewinnt!':'Team B gewinnt!';
     el.innerHTML='<div style="text-align:center;padding:16px 0 8px;font-family:var(--fh);font-size:26px;color:var(--ac)">'+winLabel+'</div>'+html+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';return;
   }
   var aktRegel=sp.aktTeam==='A'?ruleA:ruleB;
+  var infoLine=sp.stechen
+    ?'⚡ Stechen Runde '+sp.stechenRunde+' — Gleichstand '+sp.scoreA+':'+sp.scoreB
+    :'Runde '+sp.runde+'/2';
   el.innerHTML=html
-    +'<div style="text-align:center;font-size:13px;color:var(--mut);margin-bottom:8px">Runde '+sp.runde+'/2</div>'
+    +'<div style="text-align:center;font-size:13px;color:'+(sp.stechen?'var(--ac)':'var(--mut)')+';font-weight:'+(sp.stechen?'700':'400')+';margin-bottom:8px">'+infoLine+'</div>'
     +(aktSp?'<div class="wi"><span>'+aktSp.emoji+' '+aktSp.name+' wirft <strong style="color:var(--ac)">'+aktRegel+'</strong></span></div>':'')+
     kgrid(teamWurfVal,'teamWurfSel')+
     '<button class="btn bp" style="width:100%;margin-top:4px" onclick="doTeamWurf()">Wurf bestätigen</button>';
