@@ -351,11 +351,11 @@ test('HL13: GET /api/highlights/current returns most recent kda_champion when mu
   const b3 = insertPlayer('HL13-B3', 'G');
   const b4 = insertPlayer('HL13-B4', 'H');
 
-  // Insert first game (older) with explicit finished_at in the past
+  // Insert first game (older) — use a past date well before any datetime('now') test fixture
   const { winnerId: winner1 } = insertFinishedKDAGame(a1, a2, a3, a4, '2026-01-01 10:00:00');
 
-  // Insert second game (newer) with a later finished_at
-  const { winnerId: winner2 } = insertFinishedKDAGame(b1, b2, b3, b4, '2026-06-01 10:00:00');
+  // Insert second game (newer) — far future so no other test's datetime('now') ever beats it
+  const { winnerId: winner2 } = insertFinishedKDAGame(b1, b2, b3, b4, '2099-06-01 10:00:00');
 
   const res = await fetch(`${baseUrl}/api/highlights/current`);
   assert.equal(res.status, 200, `Expected 200, got ${res.status}`);
