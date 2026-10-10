@@ -593,6 +593,29 @@ function appendSymbol(nameEl, playerId) {
   }
 }
 
+// KDA-AVATAR-HELPER:START
+// DOM-built winner avatar: emoji layer underneath, photo on top. Photo only for a positive-integer id;
+// onerror hides it so the emoji stays visible. Player values reach the DOM via textContent only.
+function kdaWinnerAvatarEl(player, sizePx) {
+  if (!player) return null;
+  var wrap = document.createElement('div');
+  wrap.className = 'kda-winner-avatar';
+  wrap.style.cssText = 'position:relative;width:' + sizePx + 'px;height:' + sizePx + 'px;border-radius:50%;overflow:hidden;background:var(--card2);border:2px solid var(--ac);box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:' + Math.round(sizePx * 0.5) + 'px;line-height:1;flex-shrink:0';
+  var emo = document.createElement('span');
+  emo.textContent = (player.emoji != null && player.emoji !== '') ? player.emoji : '🎳';
+  wrap.appendChild(emo);
+  if (Number.isInteger(player.id) && player.id > 0) {
+    var img = document.createElement('img');
+    img.src = '/uploads/profiles/' + player.id + '.jpg';
+    img.alt = '';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover';
+    img.onerror = function() { this.style.display = 'none'; };
+    wrap.appendChild(img);
+  }
+  return wrap;
+}
+// KDA-AVATAR-HELPER:END
+
 function showWinnerBanner(state) {
   if (S.aktSpiel) S.aktSpiel._finishing = true;
   var winnerName = getWinnerName(state, S.aktSpiel ? S.aktSpiel.type_key : '');
@@ -606,6 +629,10 @@ function showWinnerBanner(state) {
   var nameEl = document.createElement('div');
   nameEl.style.cssText = 'font-family:var(--fh);font-size:32px;color:var(--ac)';
   nameEl.textContent = winnerName + ' hat gewonnen!';
+  if (S.aktSpiel && S.aktSpiel.type_key === 'kda' && state && state.gewinner) {
+    var avEl = kdaWinnerAvatarEl(state.gewinner, 96);
+    if (avEl) { avEl.style.margin = '0 auto 10px'; card.appendChild(avEl); }
+  }
   card.appendChild(emojiEl);
   card.appendChild(nameEl);
   banner.appendChild(card);
@@ -1753,7 +1780,12 @@ function renderKDABracket(el, state) {
   if (state.done && state.gewinner) {
     var banner = document.createElement('div');
     banner.className = 'kda-winner-banner';
-    banner.textContent = state.gewinner.emoji + ' ' + state.gewinner.name + ' — Kegler des Abends!';
+    banner.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px';
+    var bannerAv = kdaWinnerAvatarEl(state.gewinner, 72);
+    if (bannerAv) banner.appendChild(bannerAv);
+    var bannerTxt = document.createElement('div');
+    bannerTxt.textContent = state.gewinner.name + ' — Kegler des Abends!';
+    banner.appendChild(bannerTxt);
     innerDiv.appendChild(banner);
   }
 

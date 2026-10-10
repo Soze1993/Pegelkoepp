@@ -225,3 +225,84 @@ test('OVL-7: other game types do not replace the game children', () => {
   assert.equal(ctx.game.children.length, 1);
   assert.equal(ctx.game.children[0], sentinel);
 });
+
+// ---------------------------------------------------------------------------
+// Tablet (public/index.html)
+// ---------------------------------------------------------------------------
+
+function inlineScript() {
+  const re = /<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/g;
+  const m = re.exec(INDEX_SRC);
+  assert.ok(m, 'inline script block must exist');
+  return m[1];
+}
+
+function between(src, startAnchor, endAnchor) {
+  const a = src.indexOf(startAnchor);
+  assert.ok(a >= 0, 'anchor missing: ' + startAnchor);
+  const b = src.indexOf(endAnchor, a + startAnchor.length);
+  assert.ok(b >= 0, 'anchor missing after start: ' + endAnchor);
+  return src.slice(a, b);
+}
+
+function loadHelper() {
+  const src = inlineScript();
+  const region = between(src, 'KDA-AVATAR-HELPER:START', 'KDA-AVATAR-HELPER:END');
+  const ctx = makeSandbox();
+  // region starts at the marker text itself, so prefix it to turn the marker line into a comment
+  vm.runInContext('//' + region, ctx.sandbox, { filename: 'index.html#helper' });
+  return ctx;
+}
+
+test('TAB-0: inline script of index.html still compiles', () => {
+  assert.doesNotThrow(function () { new Function(inlineScript()); });
+});
+
+test('TAB-1: helper builds emoji layer then one photo IMG', () => {
+  const ctx = loadHelper();
+  const el = ctx.sandbox.kdaWinnerAvatarEl({ id: 7, name: 'Tino', emoji: '🦊' }, 96);
+  const images = imgs(el);
+  assert.equal(images.length, 1);
+  assert.equal(images[0].src, '/uploads/profiles/7.jpg');
+  const parent = parentOf(el, images[0]);
+  const idx = parent.children.indexOf(images[0]);
+  assert.ok(parent.children.slice(0, idx).some(function (n) { return n.textContent === '🦊'; }));
+});
+
+test('TAB-2: onerror hides the photo', () => {
+  const ctx = loadHelper();
+  const el = ctx.sandbox.kdaWinnerAvatarEl({ id: 7, name: 'Tino', emoji: '🦊' }, 96);
+  const img = imgs(el)[0];
+  img.onerror.call(img);
+  assert.equal(img.style.display, 'none');
+});
+
+test('TAB-3: falsy player yields null', () => {
+  const ctx = loadHelper();
+  assert.equal(ctx.sandbox.kdaWinnerAvatarEl(null, 96), null);
+});
+
+test('TAB-4: malformed ids create no IMG; missing emoji falls back', () => {
+  const ctx = loadHelper();
+  MALFORMED_IDS.forEach(function (pair) {
+    const el = ctx.sandbox.kdaWinnerAvatarEl({ id: pair[1], name: 'T', emoji: '🦊' }, 96);
+    assert.equal(imgs(el).length, 0, 'no IMG for id: ' + pair[0]);
+    assert.ok(walk(el).some(function (n) { return n.textContent === '🦊'; }));
+  });
+  const el = ctx.sandbox.kdaWinnerAvatarEl({ id: 7, name: 'T' }, 96);
+  assert.ok(walk(el).some(function (n) { return n.textContent === '🎳'; }));
+});
+
+test('TAB-5: markup in emoji is verbatim text, no innerHTML writes', () => {
+  const ctx = loadHelper();
+  const evil = '<img src=x onerror=alert(1)>';
+  const el = ctx.sandbox.kdaWinnerAvatarEl({ id: 7, name: 'T', emoji: evil }, 96);
+  assert.ok(walk(el).some(function (n) { return n.textContent === evil; }));
+  assert.equal(ctx.counters.innerHTMLWrites, 0);
+});
+
+test('TAB-6: helper is wired into winner popup and bracket banner', () => {
+  const src = inlineScript();
+  assert.ok(between(src, 'function showWinnerBanner(', 'function playKDATone(').indexOf('kdaWinnerAvatarEl(') >= 0);
+  assert.ok(between(src, 'function renderKDABracket(el, state)', 'var kdaWurfSlotId').indexOf('kdaWinnerAvatarEl(') >= 0);
+});
