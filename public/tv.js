@@ -613,6 +613,38 @@ function bkRowMarks(state) {
   return { activeId: activeId, loserIds: loserIds };
 }
 
+// KDA winner avatar for the end overlay: emoji layer underneath, photo on top.
+// Photo only for a positive-integer id (src built from the number, never from markup);
+// onerror hides the photo so the emoji stays visible (no has-photo flag by design).
+function kdaWinnerAvatarEl(player, sizePx) {
+  if (!player) return null;
+  var wrap = document.createElement('div');
+  wrap.className = 'tv-overlay-avatar';
+  wrap.style.cssText = 'position:relative;width:' + sizePx + 'px;height:' + sizePx + 'px;flex-shrink:0';
+
+  var circle = document.createElement('div');
+  circle.className = 'tv-overlay-avatar-circle';
+  var ring = Math.max(3, Math.round(sizePx * 0.025));
+  circle.style.cssText = 'position:absolute;inset:0;border-radius:50%;overflow:hidden;background:var(--card2);border:' + ring + 'px solid var(--ac);box-sizing:border-box;box-shadow:0 0 64px #e8b84b55';
+
+  var emo = document.createElement('span');
+  emo.textContent = (player.emoji != null && player.emoji !== '') ? player.emoji : '🎳';  // textContent — XSS safe
+  emo.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:' + Math.round(sizePx * 0.5) + 'px;line-height:1';
+  circle.appendChild(emo);
+
+  if (Number.isInteger(player.id) && player.id > 0) {
+    var img = document.createElement('img');
+    img.src = '/uploads/profiles/' + player.id + '.jpg';  // positive integer id — safe
+    img.alt = '';
+    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+    img.onerror = function() { this.style.display = 'none'; };
+    circle.appendChild(img);
+  }
+
+  wrap.appendChild(circle);
+  return wrap;
+}
+
 // End-of-game full-screen overlay (UI-SPEC: tv-end-overlay)
 function renderEndOverlay(typeKey, state, lastWinner) {
   if (overlayTimeoutId) { clearTimeout(overlayTimeoutId); overlayTimeoutId = null; }
@@ -640,13 +672,26 @@ function renderEndOverlay(typeKey, state, lastWinner) {
   subtitleEl.style.cssText = 'font-family:var(--fb,"DM Sans",sans-serif);font-size:4vw;font-weight:600;line-height:1.2;color:var(--txt)';
 
   if (typeKey === 'kda') {
+    var kvw = (typeof window !== 'undefined' && window.innerWidth)  ? window.innerWidth  : 1920;
+    var kvh = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 1080;
+    var winner = (state && state.gewinner) ? state.gewinner : null;
+    var avSize = Math.round(Math.min(kvh * 0.30, kvw * 0.24));
+    var avatarEl = kdaWinnerAvatarEl(winner, avSize);
+
     emojiEl.textContent = '🏆';
-    nameEl.textContent = lastWinner || '—';  // textContent — XSS safe (T-07-03-01)
+    nameEl.textContent = lastWinner || (winner && winner.name) || '—';  // textContent — XSS safe (T-07-03-01)
     nameEl.style.color = 'var(--ac)';
     subtitleEl.textContent = '— Kegler des Abends!';
     playKDAToneTV();
 
-    overlayEl.appendChild(emojiEl);
+    if (avatarEl) {
+      // Trophy becomes a corner badge on the avatar so the stack fits small TV panels
+      emojiEl.style.cssText = 'position:absolute;right:-6%;bottom:-6%;font-size:' + Math.round(avSize * 0.34) + 'px;line-height:1';
+      avatarEl.appendChild(emojiEl);
+      overlayEl.appendChild(avatarEl);
+    } else {
+      overlayEl.appendChild(emojiEl);
+    }
     overlayEl.appendChild(nameEl);
     overlayEl.appendChild(subtitleEl);
 
