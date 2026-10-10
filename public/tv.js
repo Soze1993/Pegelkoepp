@@ -177,7 +177,8 @@ function renderGame(state) {
   if (currentTypeKey === 'anker')     { renderAnkerTV(state); return; }
   if (currentTypeKey === 'dreiVollen') { renderDreiVollenTV(state); return; }
   if (currentTypeKey === 'geradeUngerade' || currentTypeKey === 'henneferTreppe' ||
-      currentTypeKey === 'fussball' || currentTypeKey === 'seifenkistenrennen') { renderTeamTV(state); return; }
+      currentTypeKey === 'fussball') { renderTeamTV(state); return; }
+  if (currentTypeKey === 'seifenkistenrennen') { renderSKRTV(state); return; }
   if (currentTypeKey === 'mixedPartie') { renderGenericScoreTV(state); return; }
   if (currentTypeKey === 'steigrohr') { renderSteigrohrTV(state); return; }
   if (!state || !state.players) return;
@@ -1879,6 +1880,77 @@ function renderTeamTV(state) {
 
   wrap.appendChild(makeTeamCard('B', s.tB, scoreB, s.winner, s.aktTeam));
   gameEl.replaceChildren(wrap);
+}
+
+// ── Seifenkistenrennen TV renderer ───────────────────────────────────────
+const SKR_TRACK_TV = [
+  {v:[2]},{v:[6]},{v:[3]},{v:[3],sc:6},
+  {v:[6]},{v:[1]},{v:[5]},{v:[4]},
+  {v:[7],sc:11},{v:[5]},{v:[2]},{v:[5,8]},
+  {v:[4]},{v:[7]}
+];
+
+function renderSKRTV(state) {
+  idleEl.style.display = 'none';
+  const el = document.getElementById('game-display');
+  const N = SKR_TRACK_TV.length;
+  const posA = state.posA, posB = state.posB;
+
+  const nextA = posA < N ? SKR_TRACK_TV[posA].v.join('/') : null;
+  const nextB = posB < N ? SKR_TRACK_TV[posB].v.join('/') : null;
+
+  function fieldBox(i) {
+    const f = SKR_TRACK_TV[i];
+    const isA = posA === i, isB = posB === i;
+    const pastA = posA > i, pastB = posB > i;
+    const label = f.v.join('/');
+    let border = 'rgba(255,255,255,0.2)';
+    if (isA && isB) border = '#60a5fa';
+    else if (isA)   border = '#60a5fa';
+    else if (isB)   border = '#4ade80';
+    const bg = pastA && pastB ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)';
+    const op = pastA && pastB ? '0.3' : '1';
+    const marker = (isA && isB) ? '<div style="font-size:14px;line-height:1">🔵🔴</div>'
+                 : isA ? '<div style="font-size:14px">🔵</div>'
+                 : isB ? '<div style="font-size:14px">🔴</div>' : '';
+    const sc = f.sc !== undefined ? `<div style="font-size:10px;color:#fbbf24;line-height:1">⚡${f.sc}</div>` : '';
+    return `<div style="min-width:52px;width:52px;border:2px solid ${border};border-radius:8px;padding:5px 2px;text-align:center;background:${bg};opacity:${op};flex-shrink:0">`
+      + sc + `<div style="font-size:22px;font-weight:800;line-height:1.1">${label}</div>` + marker + '</div>';
+  }
+
+  const sep = '<div style="color:rgba(255,255,255,0.4);font-size:14px;flex-shrink:0">›</div>';
+  const trackHtml = '<div style="overflow-x:hidden;margin:20px 0"><div style="display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px">'
+    + '<div style="font-size:14px;color:rgba(255,255,255,0.5);font-weight:700;flex-shrink:0">S</div>' + sep
+    + SKR_TRACK_TV.map((_, i) => fieldBox(i) + (i < N - 1 ? sep : '')).join('')
+    + sep + '<div style="font-size:22px;flex-shrink:0">🏁</div>'
+    + '</div></div>';
+
+  function teamCard(team, pos, next, col) {
+    const arr = team === 'A' ? state.tA : state.tB;
+    const idx = team === 'A' ? state.iA : state.iB;
+    const players = arr.map((p, i) => `<span style="${i===idx&&!state.done?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.7)'}">${p.emoji} ${p.name}</span>`).join('  ');
+    return `<div style="flex:1;background:rgba(255,255,255,0.07);border:2px solid ${col};border-radius:12px;padding:16px 20px">
+      <div style="font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:6px">${team==='A'?'🔵':'🔴'} Team ${team}</div>
+      <div style="font-size:56px;font-weight:900;line-height:1;color:${col}">${pos}<span style="font-size:22px;color:rgba(255,255,255,0.4)">/${N}</span></div>
+      ${next ? `<div style="font-size:20px;margin-top:6px">Braucht: <strong style="color:${col}">${next}</strong></div>` : '<div style="font-size:20px;color:'+col+'">🏁 Ziel!</div>'}
+      <div style="font-size:16px;margin-top:8px;color:rgba(255,255,255,0.6)">${players}</div>
+    </div>`;
+  }
+
+  let html = `<div style="padding:20px 30px;height:100%;display:flex;flex-direction:column">
+    <div style="font-size:28px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:4px">🚗 Seifenkistenrennen</div>
+    ${trackHtml}
+    <div style="display:flex;gap:16px;flex:1">
+      ${teamCard('A', posA, nextA, '#60a5fa')}
+      ${teamCard('B', posB, nextB, '#4ade80')}
+    </div>`;
+
+  if (state.done) {
+    const w = state.winner === 'A' ? '🔵 Team A' : '🔴 Team B';
+    html += `<div style="text-align:center;font-size:52px;font-weight:900;color:#fbbf24;padding:16px 0">🏁 ${w} gewinnt!</div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 // ── Steigrohr TV renderer ────────────────────────────────────────────────
