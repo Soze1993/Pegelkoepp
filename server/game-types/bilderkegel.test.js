@@ -336,3 +336,105 @@ test('BK8: Volle (bildIdx=0) always gets 2 throws even with max pins', () => {
   state = bilderkegel.applyThrow(state, 1, 3);
   assert.equal(state.aktBildIdx, 1, 'moved to Kleeblatt after 2nd throw');
 });
+
+// ---------------------------------------------------------------------------
+// BK-L: loserId — the game module decides the loser (feedback ID 17)
+// ---------------------------------------------------------------------------
+
+// Plays 5 Bilder with a fixed per-player throw pair (always 2 throws: values never
+// reach a Bild max with 1 or 0). perPlayer: { [playerId]: [v1, v2] }
+function playRegular(state, order, perPlayer) {
+  for (let bild = 0; bild < 5; bild++) {
+    for (const pid of order) {
+      state = bilderkegel.applyThrow(state, pid, perPlayer[pid][0], { keinPudel: true });
+      state = bilderkegel.applyThrow(state, pid, perPlayer[pid][1], { keinPudel: true });
+    }
+  }
+  return state;
+}
+
+test('BK-L1: loserId is null until decided; game without tie ends with loserId of the lowest', () => {
+  let state = bilderkegel.initState(players2);
+  assert.equal(state.loserId, null);
+  state = bilderkegel.applyThrow(state, 1, 1);
+  assert.equal(state.loserId, null);
+  state = bilderkegel.applyThrow(state, 1, 1);
+  state = bilderkegel.applyThrow(state, 2, 0, { keinPudel: true });
+  state = bilderkegel.applyThrow(state, 2, 0, { keinPudel: true });
+  for (let bild = 1; bild < 5; bild++) {
+    state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 1, 1);
+    state = bilderkegel.applyThrow(state, 2, 0, { keinPudel: true });
+    state = bilderkegel.applyThrow(state, 2, 0, { keinPudel: true });
+  }
+  assert.equal(bilderkegel.isFinished(state), true);
+  assert.equal(state.loserId, 2);
+  assert.equal(bilderkegel.getLoserId(state), 2);
+});
+
+test('BK-L2: Stechen winner seated first is NOT the loser (reported bug)', () => {
+  let state = playRegular(bilderkegel.initState(players2), [1, 2], { 1: [1, 1], 2: [1, 1] });
+  assert.equal(state.stechen, true);
+  state = bilderkegel.applyThrow(state, 1, 7);
+  state = bilderkegel.applyThrow(state, 2, 2);
+  assert.equal(bilderkegel.isFinished(state), true);
+  assert.equal(state.loserId, 2);
+  assert.equal(bilderkegel.getLoserId(state), 2);
+  const payers = bilderkegel.getFinalResults(state).filter(r => r.payer).map(r => r.playerId);
+  assert.deepEqual(payers, [2]);
+});
+
+test('BK-L3: mirror — seat-first player throws lower in the Stechen and is the loser', () => {
+  let state = playRegular(bilderkegel.initState(players2), [1, 2], { 1: [1, 1], 2: [1, 1] });
+  state = bilderkegel.applyThrow(state, 1, 2);
+  state = bilderkegel.applyThrow(state, 2, 7);
+  assert.equal(bilderkegel.isFinished(state), true);
+  assert.equal(state.loserId, 1);
+  assert.equal(bilderkegel.getLoserId(state), 1);
+  const payers = bilderkegel.getFinalResults(state).filter(r => r.payer).map(r => r.playerId);
+  assert.deepEqual(payers, [1]);
+});
+
+test('BK-L4: three-way Stechen narrows round by round; loserId only when decided', () => {
+  let state = playRegular(bilderkegel.initState(players3), [1, 2, 3], { 1: [1, 1], 2: [1, 1], 3: [1, 1] });
+  assert.equal(state.stechen, true);
+  assert.deepEqual([...state.stechenPlayers].sort(), [1, 2, 3]);
+  state = bilderkegel.applyThrow(state, 1, 8);
+  state = bilderkegel.applyThrow(state, 2, 3);
+  state = bilderkegel.applyThrow(state, 3, 3);
+  assert.equal(state.stechen, true);
+  assert.deepEqual([...state.stechenPlayers].sort(), [2, 3]);
+  assert.equal(state.loserId, null);
+  const before = JSON.parse(JSON.stringify(state));
+  state = bilderkegel.applyThrow(state, 1, 0);
+  assert.deepEqual(state, before, 'player already out of the Stechen cannot throw again');
+  state = bilderkegel.applyThrow(state, 2, 6);
+  state = bilderkegel.applyThrow(state, 3, 1);
+  assert.equal(bilderkegel.isFinished(state), true);
+  assert.equal(state.loserId, 3);
+  const payers = bilderkegel.getFinalResults(state).filter(r => r.payer).map(r => r.playerId);
+  assert.deepEqual(payers, [3]);
+});
+
+test('BK-L5: exempt player never loses; Stechen among eligible decides loserId', () => {
+  let state = bilderkegel.initState(players3, { exemptPlayerId: 3 });
+  state = playRegular(state, [1, 2, 3], { 1: [0, 1], 2: [0, 1], 3: [0, 0] });
+  assert.equal(state.stechen, true);
+  assert.deepEqual([...state.stechenPlayers].sort(), [1, 2]);
+  state = bilderkegel.applyThrow(state, 1, 5);
+  state = bilderkegel.applyThrow(state, 2, 1);
+  assert.equal(state.loserId, 2);
+  const r3 = bilderkegel.getFinalResults(state).find(r => r.playerId === 3);
+  assert.equal(r3.payer, false);
+});
+
+test('BK-L6: getLoserId is null-safe and falls back to the old minimum rule for undecided states', () => {
+  assert.equal(bilderkegel.getLoserId(null), null);
+  assert.equal(bilderkegel.getLoserId({ players: [] }), null);
+  const mk = (id, v) => ({ id, name: 'P' + id, emoji: 'x', bildPts: [v, v, v, v, v], wuerfe: [[], [], [], [], []], pudel: 0, stechenWuerfe: [] });
+  const state = {
+    players: [mk(7, 1), mk(8, 1), mk(9, 2)],
+    done: false, stechen: false, stechenPlayers: [], exemptPlayerId: 7
+  };
+  assert.equal(bilderkegel.getLoserId(state), 8);
+});

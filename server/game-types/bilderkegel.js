@@ -14,6 +14,22 @@ function bkTotal(p) {
   return p.bildPts.reduce((a, b) => a + (b !== null ? b : 0), 0);
 }
 
+// Single source of truth for "who is the BK loser (payer)".
+// - decided game: state.loserId, set by applyThrow (Stechen loser when last place was tied)
+// - states that never reached a decision (old games whose replay ends in an open tie):
+//   first player in seat order with the minimum total among non-exempt players
+//   (all players when none is eligible) -- the historical rule, so old counts stay unchanged.
+function getLoserId(state) {
+  if (!state || !state.players || state.players.length === 0) return null;
+  if (state.loserId !== null && state.loserId !== undefined) return state.loserId;
+  const exempt = state.exemptPlayerId || null;
+  const eligible = state.players.filter(p => p.id !== exempt);
+  const eff = eligible.length > 0 ? eligible : state.players;
+  const minTot = Math.min(...eff.map(p => bkTotal(p)));
+  const loser = eff.find(p => bkTotal(p) === minTot);
+  return loser ? loser.id : null;
+}
+
 module.exports = {
   id: 'bilderkegel',
   name: 'Bilderkegel',
@@ -33,7 +49,8 @@ module.exports = {
       done: false,
       stechen: false,
       stechenPlayers: [],
-      exemptPlayerId: (config && config.exemptPlayerId) || null
+      exemptPlayerId: (config && config.exemptPlayerId) || null,
+      loserId: null
     };
   },
 
@@ -63,6 +80,7 @@ module.exports = {
           s.done = true;
           s.stechen = false;
           s.stechenPlayers = [payers[0].id];
+          s.loserId = payers[0].id;
         } else {
           // Still tied — new stechen round with only the tied players
           s.stechenPlayers = payers.map(x => x.id);
@@ -99,6 +117,7 @@ module.exports = {
             s.stechenPlayers = tiedIds;
           } else {
             s.done = true;
+            s.loserId = tiedIds[0];
           }
         }
       }
@@ -111,6 +130,8 @@ module.exports = {
     return state.done;
   },
 
+  getLoserId,
+
   getFinalResults(state) {
     const tots = state.players.map(p => bkTotal(p));
     const maxP = Math.max(...tots);
@@ -118,9 +139,8 @@ module.exports = {
     const eligible = state.players.filter(p => p.id !== state.exemptPlayerId);
     const effPlayers = eligible.length > 0 ? eligible : state.players;
     const minEligibleTot = Math.min(...effPlayers.map(p => bkTotal(p)));
-    // If stechen resolved to one player, that player is the definitive payer
-    const stechenPayer = state.stechenPlayers && state.stechenPlayers.length === 1
-      ? state.stechenPlayers[0] : null;
+    // A decided loser (state.loserId, incl. Stechen result) is the definitive payer
+    const hasLoser = state.loserId !== null && state.loserId !== undefined;
     return state.players.map(p => {
       const tot = bkTotal(p);
       const isEligible = effPlayers.some(e => e.id === p.id);
@@ -128,8 +148,8 @@ module.exports = {
         playerId: p.id,
         score: tot,
         winner: tot === maxP,
-        payer: stechenPayer
-          ? p.id === stechenPayer
+        payer: hasLoser
+          ? p.id === state.loserId
           : (isEligible && tot === minEligibleTot)
       };
     });

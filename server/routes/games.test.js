@@ -1333,3 +1333,89 @@ test('GT36: BK exemption chain — payer_player_id persists across server restar
     `Game 3 should exempt player B (${pB}), got ${g3state.exemptPlayerId}`
   );
 });
+
+// ---------------------------------------------------------------------------
+// GT38: BK Stechen winner is never the loser on any API surface (ID 17 regression).
+//
+// Players 10, 11, 12. Bild 0: 10 scores 2, 11 scores 2, 12 scores 5; Bilder 1-4 all 0.
+// 10 and 11 tie for last place -> Stechen. Seat-first player 10 throws 7 (wins the
+// Stechen), player 11 throws 2 (loses). The server is "restarted" (activeGames entry
+// evicted) in the middle of the Stechen to prove the decision is replayable.
+// (Numbered GT38: GT37 is taken by the plusMinus W5 Pudel test of item 261010-j0w.)
+// ---------------------------------------------------------------------------
+test('GT38: BK Stechen winner seated first is not the loser on any API surface', async () => {
+  const cookie = await loginAndGetCookie();
+  const { activeGames } = require('./games');
+
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'bilderkegel', player_ids: [10, 11, 12] })
+  });
+  assert.equal(createRes.status, 201);
+  const { id: gameId } = await createRes.json();
+
+  async function bkThrow(playerId, value, meta) {
+    const r = await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ player_id: playerId, throw_index: 0, value, meta })
+    });
+    assert.equal(r.status, 200, `throw by ${playerId} (value ${value}): expected 200, got ${r.status}`);
+    return r.json();
+  }
+
+  const bild0 = { 10: 2, 11: 2, 12: 5 };
+  let body;
+  for (let bild = 0; bild < 5; bild++) {
+    for (const pid of [10, 11, 12]) {
+      await bkThrow(pid, bild === 0 ? bild0[pid] : 0, { keinPudel: true });
+      body = await bkThrow(pid, 0, { keinPudel: true });
+    }
+  }
+  assert.equal(body.finished, false, 'tie for last place: game must not be finished yet');
+  assert.equal(body.state.stechen, true);
+  assert.deepEqual([...body.state.stechenPlayers].sort((a, b) => a - b), [10, 11]);
+  assert.equal(body.state.loserId, null);
+
+  // Stechen: seat-first player 10 throws high (wins the Stechen)
+  body = await bkThrow(10, 7);
+  assert.equal(body.finished, false);
+
+  // Simulated restart in the middle of the Stechen
+  activeGames.delete(gameId);
+
+  // Player 11 throws low -> loses the Stechen
+  body = await bkThrow(11, 2);
+  assert.equal(body.finished, true);
+  assert.equal(body.state.loserId, 11);
+
+  // a) persisted payer
+  const row = db.prepare('SELECT payer_player_id FROM games WHERE id = ?').get(gameId);
+  assert.equal(row.payer_player_id, 11);
+
+  // b) game detail
+  const detail = await (await fetch(`${baseUrl}/api/games/${gameId}`)).json();
+  assert.equal(detail.state.loserId, 11);
+  assert.deepEqual(detail.results.filter(r => r.payer).map(r => r.playerId), [11]);
+
+  // c) highlights (TV ticker, tablet symbol)
+  db.prepare("UPDATE games SET finished_at = '2099-01-01 21:00:00' WHERE id = ?").run(gameId);
+  const hl = await (await fetch(`${baseUrl}/api/highlights/current`)).json();
+  assert.ok(hl.bk_loser, 'bk_loser should be set');
+  assert.equal(hl.bk_loser.id, 11);
+
+  // d) stats counter
+  const counts = await (await fetch(`${baseUrl}/api/stats/bk-counts`)).json();
+  assert.equal(counts[11], 1);
+  assert.equal(counts[10], undefined, 'Stechen winner must not be counted');
+
+  // e) Letzter-Abend recap
+  const abendId = db.prepare(
+    "INSERT INTO abende (name, started_at, ended_at) VALUES ('GT38 Abend', '2099-01-01 18:00:00', '2099-01-01 22:00:00')"
+  ).run().lastInsertRowid;
+  db.prepare('UPDATE games SET abend_id = ? WHERE id = ?').run(abendId, gameId);
+  const sum = await (await fetch(`${baseUrl}/api/abende/last-summary`)).json();
+  assert.ok(sum && sum.bk_loser, 'last-summary bk_loser should be set');
+  assert.equal(sum.bk_loser.id, 11);
+});

@@ -3,26 +3,19 @@
 const { Router } = require('express');
 const db = require('../db');
 const { reconstructState } = require('./games');
+const bilderkegel = require('../game-types/bilderkegel');
 
 const router = Router();
 
 // ---------------------------------------------------------------------------
-// Private helper: getBKLoserId
-// Returns the player id with the lowest bkTotal in the given BK game state,
-// or null if state or state.players is falsy.
-// bkTotal: sum of bildPts values, null entries count as 0.
+// Helper: getBKLoserId
+// Returns the BK loser (payer) of the given game state, or null if state or
+// state.players is falsy. Delegates to the game module: the Stechen loser when
+// last place was tied, else the lowest eligible total. Replays of states that
+// never reached a decision fall back to the old minimum rule inside the module.
 // ---------------------------------------------------------------------------
 function getBKLoserId(state) {
-  if (!state || !state.players || state.players.length === 0) return null;
-  const tots = state.players.map(p => ({
-    id: p.id,
-    total: (p.bildPts || []).reduce((a, b) => a + (b !== null ? b : 0), 0)
-  }));
-  const eligible = tots.filter(x => x.id !== (state.exemptPlayerId || null));
-  const effTots = eligible.length > 0 ? eligible : tots;  // fallback: all players if somehow all exempt
-  const minTot = Math.min(...effTots.map(t => t.total));
-  const loser = effTots.find(t => t.total === minTot);
-  return loser ? loser.id : null;
+  return bilderkegel.getLoserId(state);
 }
 
 // ---------------------------------------------------------------------------
@@ -31,7 +24,7 @@ function getBKLoserId(state) {
 //   { kda_champion: { id, name, emoji } | null,
 //     bk_loser:     { id, name, emoji } | null }
 // kda_champion = winner of the most recently finished KDA game
-// bk_loser     = player with the lowest bkTotal in the most recently finished BK game
+// bk_loser     = payer of the most recently finished BK game (Stechen loser when last place was tied)
 // ---------------------------------------------------------------------------
 router.get('/current', (req, res) => {
   const result = { kda_champion: null, bk_loser: null };
