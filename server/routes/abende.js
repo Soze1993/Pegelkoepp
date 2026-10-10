@@ -102,6 +102,20 @@ router.get('/last-summary', (req, res) => {
     }
   }
 
+  // Naturkranz events of this evening (also for players without a finished game)
+  const nkAbendRows = db.prepare(
+    'SELECT player_id, COUNT(*) AS cnt FROM naturkranz WHERE abend_id = ? GROUP BY player_id'
+  ).all(lastAbend.id);
+  const nkAbendMap = {};
+  for (const row of nkAbendRows) {
+    nkAbendMap[row.player_id] = row.cnt;
+    if (!playerStatsMap[row.player_id]) {
+      const p = db.prepare('SELECT id, name, emoji FROM players WHERE id = ?').get(row.player_id);
+      if (!p) continue;
+      playerStatsMap[row.player_id] = { id: p.id, name: p.name, emoji: p.emoji, games_played: 0, wins: 0 };
+    }
+  }
+
   const players = Object.values(playerStatsMap).sort((a, b) => b.wins - a.wins || b.games_played - a.games_played);
 
   const pudelAbendRows = db.prepare(`
@@ -116,6 +130,7 @@ router.get('/last-summary', (req, res) => {
   const pudelAbendMap = {};
   for (const row of pudelAbendRows) pudelAbendMap[row.player_id] = row.pudel_count;
   for (const p of players) p.pudel_count = pudelAbendMap[p.id] || 0;
+  for (const p of players) p.naturkranz_count = nkAbendMap[p.id] || 0;
 
   res.json({
     abend: { id: lastAbend.id, name: lastAbend.name, started_at: lastAbend.started_at, ended_at: lastAbend.ended_at },

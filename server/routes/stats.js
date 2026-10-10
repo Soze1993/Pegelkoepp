@@ -117,6 +117,12 @@ router.get('/', (req, res) => {
     };
   }
 
+  // Naturkranz counts: all events count (with/without game, any game status).
+  const nkMap = {};
+  for (const row of db.prepare('SELECT player_id, COUNT(*) AS cnt FROM naturkranz GROUP BY player_id').all()) {
+    nkMap[row.player_id] = row.cnt;
+  }
+
   // Step 4: Build response array
   const response = players.map(p => {
     const entry = statsMap[p.id];
@@ -144,6 +150,7 @@ router.get('/', (req, res) => {
       total_throws,
       pudel_pct,
       neun_count,
+      naturkranz_count: nkMap[p.id] || 0,
       avg_score,
       personal_bests
     };

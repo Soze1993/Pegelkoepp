@@ -107,14 +107,18 @@ async function endAnyOpenAbend() {
   for (const a of open) await api('POST', `/api/abende/${a.id}/end`);
 }
 
-// Fixture helpers (copied in spirit from stats.test.js)
-function insertFinishedGame(typeKey, playerIds, abendId) {
+// Fixture helper: finished game with optional throws { [playerId]: [values] } (copied in spirit from stats.test.js)
+function insertFinishedGame(typeKey, playerIds, abendId, throwsByPlayer) {
   const r = db.prepare(
     "INSERT INTO games (type_key, status, finished_at, abend_id) VALUES (?, 'finished', datetime('now','localtime'), ?)"
   ).run(typeKey, abendId || null);
   const gid = Number(r.lastInsertRowid);
   playerIds.forEach((pid, i) => {
     db.prepare('INSERT INTO game_players (game_id, player_id, seat) VALUES (?, ?, ?)').run(gid, pid, i);
+    const vals = (throwsByPlayer && throwsByPlayer[pid]) || [];
+    vals.forEach((v, idx) => {
+      db.prepare('INSERT INTO throws (game_id, player_id, throw_index, value) VALUES (?, ?, ?, ?)').run(gid, pid, idx, v);
+    });
   });
   return gid;
 }
@@ -350,4 +354,84 @@ test('NK14: invalid dates answer 400 and write nothing', async () => {
   assert.equal((await both.json()).error, 'game_id and date are mutually exclusive');
   assert.equal(nkCount(), before);
   assert.doesNotThrow(() => db.prepare('SELECT COUNT(*) FROM naturkranz').get());
+});
+
+// ---------------------------------------------------------------------------
+// NK20
+// ---------------------------------------------------------------------------
+test('NK20: GET /api/stats carries naturkranz_count per player', async () => {
+  const pid = Number(db.prepare("INSERT INTO players (name, emoji) VALUES ('NK20Spieler', 'x')").run().lastInsertRowid);
+  const gid = insertFinishedGame('dreiVollen', [pid], null);
+
+  const statsOf = async () => (await (await fetch(baseUrl + '/api/stats')).json()).players;
+
+  let list = await statsOf();
+  assert.ok(list.length > 0);
+  for (const e of list) assert.ok(Number.isInteger(e.naturkranz_count), 'naturkranz_count int for ' + e.name);
+  assert.equal(list.find(e => e.player_id === pid).naturkranz_count, 0);
+
+  const e1 = await (await api('POST', '/api/naturkranz', { player_id: pid, game_id: gid })).json();
+  await api('POST', '/api/naturkranz', { player_id: pid });
+  list = await statsOf();
+  assert.equal(list.find(e => e.player_id === pid).naturkranz_count, 2);
+
+  await api('DELETE', `/api/naturkranz/${e1.id}`);
+  list = await statsOf();
+  assert.equal(list.find(e => e.player_id === pid).naturkranz_count, 1);
+});
+
+// ---------------------------------------------------------------------------
+// NK21
+// ---------------------------------------------------------------------------
+test('NK21: recording a Naturkranz changes no other stats field', async () => {
+  const pid = Number(db.prepare("INSERT INTO players (name, emoji) VALUES ('NK21Spieler', 'x')").run().lastInsertRowid);
+  const oid = Number(db.prepare("INSERT INTO players (name, emoji) VALUES ('NK21Gegner', 'x')").run().lastInsertRowid);
+  const gid = insertFinishedGame('dreiVollen', [pid, oid], null, { [pid]: [9, 0, 5], [oid]: [1, 1, 1] });
+
+  const entryOf = async () => (await (await fetch(baseUrl + '/api/stats')).json()).players.find(e => e.player_id === pid);
+  const before = await entryOf();
+  const r = await api('POST', '/api/naturkranz', { player_id: pid, game_id: gid });
+  assert.equal(r.status, 201);
+  const after = await entryOf();
+  assert.equal(after.naturkranz_count, before.naturkranz_count + 1);
+  delete before.naturkranz_count;
+  delete after.naturkranz_count;
+  assert.deepEqual(after, before);
+});
+
+// ---------------------------------------------------------------------------
+// NK22
+// ---------------------------------------------------------------------------
+test('NK22: GET /api/abende/last-summary carries naturkranz_count per player', async () => {
+  await endAnyOpenAbend();
+  const pa = Number(db.prepare("INSERT INTO players (name, emoji) VALUES ('NK22A', 'x')").run().lastInsertRowid);
+  const pb = Number(db.prepare("INSERT INTO players (name, emoji) VALUES ('NK22B', 'x')").run().lastInsertRowid);
+  const pc = Number(db.prepare("INSERT INTO players (name, emoji) VALUES ('NK22C', 'x')").run().lastInsertRowid);
+
+  const abendId = Number(db.prepare(
+    "INSERT INTO abende (name, started_at, ended_at) VALUES ('Zukunft', '2030-06-01 19:00:00', '2030-06-01 23:00:00')"
+  ).run().lastInsertRowid);
+  const otherAbend = Number(db.prepare(
+    "INSERT INTO abende (name, started_at, ended_at) VALUES ('Anderer', '2030-05-01 19:00:00', '2030-05-01 23:00:00')"
+  ).run().lastInsertRowid);
+  const gid = insertFinishedGame('dreiVollen', [pa, pb], abendId, { [pa]: [5, 5, 5], [pb]: [1, 1, 1] });
+  const otherGid = insertFinishedGame('dreiVollen', [pa, pb], otherAbend, { [pa]: [5, 5, 5], [pb]: [1, 1, 1] });
+
+  assert.equal((await api('POST', '/api/naturkranz', { player_id: pa, game_id: gid })).status, 201);
+  assert.equal((await api('POST', '/api/naturkranz', { player_id: pc, date: '2030-06-01' })).status, 201);
+  // event of another abend must not be counted
+  assert.equal((await api('POST', '/api/naturkranz', { player_id: pb, game_id: otherGid })).status, 201);
+
+  const sum = await (await fetch(baseUrl + '/api/abende/last-summary')).json();
+  assert.equal(sum.abend.id, abendId);
+  const a = sum.players.find(p => p.id === pa);
+  const b = sum.players.find(p => p.id === pb);
+  const c = sum.players.find(p => p.id === pc);
+  assert.equal(a.naturkranz_count, 1);
+  assert.equal(b.naturkranz_count, 0);
+  assert.ok(c, 'player with only a Naturkranz is listed');
+  assert.equal(c.games_played, 0);
+  assert.equal(c.wins, 0);
+  assert.equal(c.pudel_count, 0);
+  assert.equal(c.naturkranz_count, 1);
 });

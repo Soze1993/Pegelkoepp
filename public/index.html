@@ -753,6 +753,10 @@ function onNaturkranzChanged(data) {
     notify('👑 Naturkranz: ' + (data.player_name || ''));
   }
   nkRefreshVisible(data ? data.player_id : undefined);
+  var stEl = document.getElementById('pg-stats');
+  if (stEl && stEl.classList.contains('active')) renderStats().catch(function(){});
+  var spEl2 = document.getElementById('pg-spiele');
+  if (spEl2 && spEl2.classList.contains('active')) renderSpiele().catch(function(){});
 }
 
 async function startAbend() {
@@ -1454,11 +1458,11 @@ async function renderSpiele() {
     });
     var recapTbl2 = document.createElement('table');
     recapTbl2.className = 'stbl';
-    recapTbl2.innerHTML = '<thead><tr><th>Spieler</th><th style="text-align:right">Spiele</th><th style="text-align:right">Siege</th><th style="text-align:right">Pudel</th></tr></thead>';
+    recapTbl2.innerHTML = '<thead><tr><th>Spieler</th><th style="text-align:right">Spiele</th><th style="text-align:right">Siege</th><th style="text-align:right">Pudel</th><th style="text-align:right" title="Naturkranz">👑</th></tr></thead>';
     var recapTbody2 = document.createElement('tbody');
     var recapPlayers = recapData.players || [];
     if (!recapPlayers.length) {
-      recapTbody2.innerHTML = '<tr><td colspan="3" class="empty" style="padding:16px;text-align:center">Keine Spieler aufgezeichnet</td></tr>';
+      recapTbody2.innerHTML = '<tr><td colspan="5" class="empty" style="padding:16px;text-align:center">Keine Spieler aufgezeichnet</td></tr>';
     } else {
       recapPlayers.forEach(function(p) {
         var tr = document.createElement('tr');
@@ -1466,7 +1470,8 @@ async function renderSpiele() {
         var tdGames = document.createElement('td'); tdGames.style.textAlign = 'right'; tdGames.style.color = 'var(--mut)'; tdGames.textContent = p.games_played;
         var tdWins = document.createElement('td'); tdWins.style.textAlign = 'right'; tdWins.className = 'snum'; tdWins.style.color = p.wins > 0 ? 'var(--ac)' : 'var(--mut)'; tdWins.textContent = p.wins || '—';
         var tdPudel = document.createElement('td'); tdPudel.style.textAlign = 'right'; tdPudel.style.color = p.pudel_count > 0 ? 'var(--red)' : 'var(--mut)'; tdPudel.textContent = p.pudel_count || '—';
-        tr.appendChild(tdName); tr.appendChild(tdGames); tr.appendChild(tdWins); tr.appendChild(tdPudel);
+        var tdNk = document.createElement('td'); tdNk.style.textAlign = 'right'; tdNk.style.color = p.naturkranz_count > 0 ? 'var(--ac)' : 'var(--mut)'; tdNk.textContent = p.naturkranz_count || '—';
+        tr.appendChild(tdName); tr.appendChild(tdGames); tr.appendChild(tdWins); tr.appendChild(tdPudel); tr.appendChild(tdNk);
         recapTbody2.appendChild(tr);
       });
     }
@@ -2348,7 +2353,7 @@ async function renderStats() {
   S.bkCounts = bkData || {};
 
   var stats = (statsData && (statsData.players || statsData)) || [];
-  if (!stats.length || stats.every(function(p){return !p.wins && !p.losses && !p.draws;})) {
+  if (!stats.length || (stats.every(function(p){return !p.wins && !p.losses && !p.draws;}) && stats.every(function(p){return !(p.naturkranz_count > 0);}))) {
     el.innerHTML = '<div class="empty"><div class="icon">🎳</div><p>Noch keine Spiele gespielt.<br><span style="color:var(--mut);font-size:12px">Spielt ein Spiel zu Ende, um Statistiken zu sehen.</span></p></div>';
     return;
   }
@@ -2555,6 +2560,36 @@ async function renderStats() {
     dvCard.appendChild(dvTitle); dvCard.appendChild(dvRow);
     frag.appendChild(dvCard);
   }
+
+  // Naturkranz card
+  var nkCard = document.createElement('div');
+  nkCard.className = 'card';
+  nkCard.style.marginBottom = '16px';
+  var nkTitle = document.createElement('div'); nkTitle.className = 'stitle'; nkTitle.textContent = '👑 Naturkranz';
+  nkCard.appendChild(nkTitle);
+  var nkList = stats.filter(function(p){ return p.naturkranz_count > 0; }).sort(function(a, b){
+    return (b.naturkranz_count - a.naturkranz_count) || String(a.name).localeCompare(String(b.name));
+  });
+  if (!nkList.length) {
+    var nkNone = document.createElement('div'); nkNone.style.cssText = 'color:var(--mut);font-size:13px'; nkNone.textContent = 'Noch kein Naturkranz erfasst';
+    nkCard.appendChild(nkNone);
+  } else {
+    var nkTbl = document.createElement('table'); nkTbl.className = 'stbl';
+    var nkHead = document.createElement('thead'); var nkHr = document.createElement('tr');
+    var nkTh1 = document.createElement('th'); nkTh1.textContent = 'Spieler';
+    var nkTh2 = document.createElement('th'); nkTh2.style.textAlign = 'right'; nkTh2.textContent = 'Anzahl';
+    nkHr.appendChild(nkTh1); nkHr.appendChild(nkTh2); nkHead.appendChild(nkHr); nkTbl.appendChild(nkHead);
+    var nkBody = document.createElement('tbody');
+    nkList.forEach(function(p) {
+      var tr = document.createElement('tr');
+      var tdN = document.createElement('td'); tdN.textContent = (p.emoji || '') + ' ' + p.name;
+      var tdC = document.createElement('td'); tdC.className = 'snum'; tdC.style.textAlign = 'right'; tdC.style.color = 'var(--ac)'; tdC.textContent = p.naturkranz_count;
+      tr.appendChild(tdN); tr.appendChild(tdC); nkBody.appendChild(tr);
+    });
+    nkTbl.appendChild(nkBody);
+    nkCard.appendChild(nkTbl);
+  }
+  frag.appendChild(nkCard);
 
   // Per-player cards (existing + Section F: streak chips)
   stats.forEach(function(p) {
