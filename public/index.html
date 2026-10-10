@@ -399,7 +399,7 @@ var S={
 function today(){return new Date().toISOString().slice(0,10);}
 function notify(msg,col){var n=document.getElementById('notif');n.textContent=msg;n.style.background=col||'var(--grn)';n.classList.add('show');setTimeout(function(){n.classList.remove('show');},2400);}
 function showTab(id){document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});var pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('active');var map={spiele:0,spielen:1,bib:2,spieler:3,stats:4};var tabs=document.querySelectorAll('.tab');if(map[id]!==undefined&&tabs[map[id]])tabs[map[id]].classList.add('active');renderAll();}
-function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-gu'){document.getElementById('m-gu-datum').value=today();renderTeamWahl('m-gu-a','m-gu-b',guA,guB);}if(id==='m-ht'){document.getElementById('m-ht-datum').value=today();renderTeamWahl('m-ht-a','m-ht-b',htA,htB);}if(id==='m-fb'){document.getElementById('m-fb-datum').value=today();renderTeamWahl('m-fb-a','m-fb-b',fbA,fbB);}if(id==='m-skr'){document.getElementById('m-skr-datum').value=today();renderTeamWahl('m-skr-a','m-skr-b',skrA,skrB);}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
+function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-gu'){document.getElementById('m-gu-datum').value=today();renderTeamWahl('m-gu-a','m-gu-b','gu');}if(id==='m-ht'){document.getElementById('m-ht-datum').value=today();renderTeamWahl('m-ht-a','m-ht-b','ht');}if(id==='m-fb'){document.getElementById('m-fb-datum').value=today();renderTeamWahl('m-fb-a','m-fb-b','fb');}if(id==='m-skr'){document.getElementById('m-skr-datum').value=today();renderTeamWahl('m-skr-a','m-skr-b','skr');}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function updSp(id,opts){return;}
 
@@ -1691,21 +1691,29 @@ function togBK(id,el){if(bkSel.indexOf(id)>=0){bkSel=bkSel.filter(function(x){re
 async function startBK(){if(bkSel.length<2){notify('Mind. 2 Spieler','var(--red)');return;}var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'bilderkegel',player_ids:bkSel})});if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-bk');notify('🖼 Bilderkegel gestartet!');showTab('spielen');}
 
 // ── Team-game shared helpers ──────────────────────────────────────────────
-function renderTeamWahl(aId,bId,arrA,arrB){
+// gameKey → [arrA, arrB] — splice in place so startTeamSpiel always reads live refs
+function _teamArrs(k){return k==='gu'?[guA,guB]:k==='ht'?[htA,htB]:k==='fb'?[fbA,fbB]:[skrA,skrB];}
+function renderTeamWahl(aId,bId,gameKey){
+  var arrs=_teamArrs(gameKey);arrs[0].length=0;arrs[1].length=0;
   var spieler=S.spieler.filter(function(s){return !s.archived;});
-  function mkBtn(id,arr,other,el0,el1){
-    return '<div onclick="togTeam('+id+',this,'+JSON.stringify(arr)+','+JSON.stringify(other)+',\''+el0+'\',\''+el1+'\')" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+spieler.find(function(s){return s.id===id;}).emoji+' '+spieler.find(function(s){return s.id===id;}).name+'</div>';
-  }
-  document.getElementById(aId).innerHTML=spieler.map(function(s){return '<div data-sid="'+s.id+'" onclick="togTeamA('+s.id+',this,'+JSON.stringify(arrA)+','+JSON.stringify(arrB)+',\''+aId+'\',\''+bId+'\')" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+(s.is_guest?s.name+' (Gast)':s.name)+'</div>';}).join('');
-  document.getElementById(bId).innerHTML=spieler.map(function(s){return '<div data-sid="'+s.id+'" onclick="togTeamB('+s.id+',this,'+JSON.stringify(arrA)+','+JSON.stringify(arrB)+',\''+aId+'\',\''+bId+'\')" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+(s.is_guest?s.name+' (Gast)':s.name)+'</div>';}).join('');
+  ['A','B'].forEach(function(t,ti){
+    var cId=ti===0?aId:bId;
+    document.getElementById(cId).innerHTML=spieler.map(function(s){
+      return '<div data-sid="'+s.id+'" onclick="togTeam('+s.id+',\''+t+'\',\''+gameKey+'\',\''+aId+'\',\''+bId+'\',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+(s.is_guest?s.name+' (Gast)':s.name)+'</div>';
+    }).join('');
+  });
 }
-function _togTeam(id,el,own,other,ownId,otherId,colOwn){
-  var inOwn=own.indexOf(id)>=0,inOther=other.indexOf(id)>=0;
-  if(inOwn){own.splice(own.indexOf(id),1);el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}
-  else{if(inOther){other.splice(other.indexOf(id),1);document.querySelectorAll('#'+otherId+' [data-sid="'+id+'"]').forEach(function(e){e.style.borderColor='var(--brd)';e.style.background='var(--bg3)';e.style.color='var(--txt)';});}own.push(id);el.style.borderColor=colOwn;el.style.background=colOwn+'22';el.style.color=colOwn;}
+function togTeam(id,team,gameKey,aId,bId,el){
+  var arrs=_teamArrs(gameKey),a=arrs[0],b=arrs[1];
+  // Remove from both arrays (splice in place keeps live reference intact)
+  var ia=a.indexOf(id);if(ia>=0)a.splice(ia,1);
+  var ib=b.indexOf(id);if(ib>=0)b.splice(ib,1);
+  // Reset all buttons for this player in both containers
+  [aId,bId].forEach(function(cId){document.querySelectorAll('#'+cId+' [data-sid="'+id+'"]').forEach(function(btn){btn.style.borderColor='var(--brd)';btn.style.background='var(--bg3)';btn.style.color='var(--txt)';});});
+  // Highlight selected team
+  if(team==='A'){a.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}
+  else{b.push(id);el.style.borderColor='var(--grn)';el.style.background='var(--grn)22';el.style.color='var(--grn)';}
 }
-function togTeamA(id,el,a,b,aId,bId){_togTeam(id,el,a,b,aId,bId,'var(--ac)');}
-function togTeamB(id,el,a,b,aId,bId){_togTeam(id,el,b,a,bId,aId,'var(--grn)');}
 async function startTeamSpiel(typeKey,aArr,bArr,configObj,modalId,label){
   if(aArr.length<1||bArr.length<1){notify('Mind. 1 Spieler pro Team','var(--red)');return;}
   var roles={};aArr.forEach(function(id){roles[id]='A';});bArr.forEach(function(id){roles[id]='B';});
