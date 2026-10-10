@@ -339,6 +339,71 @@ test('GT10: Duplicate throw returns 409; state not mutated by second throw', asy
 });
 
 // ---------------------------------------------------------------------------
+// GT37: plusMinus Pudel on W5 (geteilt) divides by 9 like a thrown 9;
+//        the throws row keeps value 0 (ID 16 regression)
+// ---------------------------------------------------------------------------
+test('GT37: plusMinus Pudel on W5 divides by 9, throws row keeps value 0', async () => {
+  const cookie = await loginAndGetCookie();
+
+  const createRes = await fetch(`${baseUrl}/api/games`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ type_key: 'plusMinus', player_ids: [1, 2] })
+  });
+  const { id: gameId } = await createRes.json();
+
+  const roundValues = [
+    [5, 5], [3, 3], [2, 2], [4, 4],
+    [0, 9] // round 5: player 1 Pudel, player 2 real 9 (old workaround)
+  ];
+  let lastBody;
+  for (let r = 0; r < roundValues.length; r++) {
+    for (let pi = 0; pi < 2; pi++) {
+      const res = await fetch(`${baseUrl}/api/games/${gameId}/throws`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie },
+        body: JSON.stringify({ player_id: pi + 1, throw_index: r, value: roundValues[r][pi] })
+      });
+      assert.equal(res.status, 200, `Round ${r + 1} player ${pi + 1}: expected 200, got ${res.status}`);
+      lastBody = await res.json();
+    }
+  }
+
+  assert.equal(lastBody.finished, true);
+  const p1 = lastBody.state.players.find(p => p.id === 1);
+  const p2 = lastBody.state.players.find(p => p.id === 2);
+  assert.deepEqual(p1.wuerfe, [5, 3, 2, 4, 9]);
+  assert.equal(p1.pudel, 1);
+  assert.deepEqual(p2.wuerfe, [5, 3, 2, 4, 9]);
+  assert.equal(p2.pudel, 0);
+
+  // Finished game: state is rebuilt from the throws table
+  const getRes = await fetch(`${baseUrl}/api/games/${gameId}`);
+  const getBody = await getRes.json();
+  const r1 = getBody.results.find(r => r.playerId === 1);
+  const r2 = getBody.results.find(r => r.playerId === 2);
+  assert.equal(r1.score, 2.67);
+  assert.equal(r2.score, 2.67);
+  assert.equal(r1.winner, true);
+  assert.equal(r2.winner, true);
+
+  // DB: raw value stays 0 with no meta; the manual 9 stays 9
+  const row1 = db.prepare('SELECT value, meta FROM throws WHERE game_id = ? AND player_id = 1 AND throw_index = 4').get(gameId);
+  assert.equal(row1.value, 0);
+  assert.equal(row1.meta, null);
+  const row2 = db.prepare('SELECT value FROM throws WHERE game_id = ? AND player_id = 2 AND throw_index = 4').get(gameId);
+  assert.equal(row2.value, 9);
+
+  // Stats predicates for player 1 in this game
+  const nines = db.prepare('SELECT COUNT(*) AS c FROM throws WHERE game_id = ? AND player_id = 1 AND value = 9').get(gameId);
+  assert.equal(nines.c, 0);
+  const pudels = db.prepare(
+    "SELECT COUNT(*) AS c FROM throws WHERE game_id = ? AND player_id = 1 AND value = 0 AND (meta IS NULL OR json_extract(meta, '$.keinPudel') IS NULL)"
+  ).get(gameId);
+  assert.equal(pudels.c, 1);
+});
+
+// ---------------------------------------------------------------------------
 // GT10b: dreiVollen Stechen — throw after regular 3 throws succeeds (no UNIQUE collision)
 //         Regression test for: Stechen sends throw_index=0, colliding with regular throw.
 //         Fix: dreiVollen uses auto-increment throw_index, same as kda/bilderkegel.

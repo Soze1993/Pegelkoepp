@@ -1,8 +1,9 @@
 'use strict';
 
 // Pudel substitution per round index (0-based):
-// round 0 (W1): 0, round 1 (W2): 0, round 2 (W3): 9, round 3 (W4): 1, round 4 (W5): 1
-const PUDEL_SUB = [0, 0, 9, 1, 1];
+// round 0 (W1): 0, round 1 (W2): 0, round 2 (W3): 9, round 3 (W4): 1, round 4 (W5): 9
+// Rule: a Pudel takes the worst value for the operator of its round (+0, +0, -9, x1, /9).
+const PUDEL_SUB = [0, 0, 9, 1, 9];
 
 function pmCalc(w) {
   if (!w || !w.length) return 0;

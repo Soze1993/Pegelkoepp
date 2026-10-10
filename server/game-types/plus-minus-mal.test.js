@@ -160,3 +160,57 @@ test('P6: W1=W2=0 edge case — W3 capped to 0, pmCalc floor gives minimum 1; sc
   const results = plusMinus.getFinalResults(state);
   assert.equal(results[0].score, 9); // 0+0-0=0 → pmCalc floor→1, ×9=9, ÷1=9
 });
+
+// P7: Pudel on W5 (geteilt) substitutes 9 -> divide by 9 (ID 16)
+test('P7: Pudel on W5 stored as 9; [5,3,2,4,0] => ((5+3-2)*4)/9 = 2.67', () => {
+  let state = plusMinus.initState([{ id: 1, name: 'A', emoji: 'A' }]);
+  for (const v of [5, 3, 2, 4, 0]) state = plusMinus.applyThrow(state, 1, v);
+  const p = state.players.find(x => x.id === 1);
+  assert.equal(p.pudel, 1);
+  assert.equal(p.wuerfe[4], 9);
+  assert.equal(plusMinus.getFinalResults(state)[0].score, 2.67);
+});
+
+// P8: A Pudel on W5 scores exactly like a thrown 9 (ID 16 regression)
+test('P8: W5 Pudel scores the same as a thrown 9; both winners', () => {
+  let state = plusMinus.initState(players2);
+  const throws = [
+    { playerId: 1, value: 5 }, { playerId: 2, value: 5 },
+    { playerId: 1, value: 3 }, { playerId: 2, value: 3 },
+    { playerId: 1, value: 2 }, { playerId: 2, value: 2 },
+    { playerId: 1, value: 4 }, { playerId: 2, value: 4 },
+    { playerId: 1, value: 0 }, { playerId: 2, value: 9 }
+  ];
+  for (const t of throws) state = plusMinus.applyThrow(state, t.playerId, t.value);
+  const results = plusMinus.getFinalResults(state);
+  const r1 = results.find(r => r.playerId === 1);
+  const r2 = results.find(r => r.playerId === 2);
+  assert.equal(r1.score, 2.67);
+  assert.equal(r2.score, 2.67);
+  assert.equal(r1.score, r2.score);
+  assert.equal(r1.winner, true);
+  assert.equal(r2.winner, true);
+  assert.equal(r1.pudel, 1);
+  assert.equal(r2.pudel, 0);
+});
+
+// P9: 0 flagged keinPudel on W5 is never substituted nor counted; guard keeps result finite
+test('P9: W5 = 0 with keinPudel is not substituted, not counted; score stays 24', () => {
+  let state = plusMinus.initState([{ id: 1, name: 'A', emoji: 'A' }]);
+  for (const v of [5, 3, 2, 4]) state = plusMinus.applyThrow(state, 1, v);
+  state = plusMinus.applyThrow(state, 1, 0, { keinPudel: true });
+  const p = state.players.find(x => x.id === 1);
+  assert.equal(p.pudel, 0);
+  assert.equal(p.wuerfe[4], 0);
+  assert.equal(plusMinus.getFinalResults(state)[0].score, 24);
+});
+
+// P10: Pudel substitution table across W3..W5
+test('P10: [9,9,0,0,0] => wuerfe [9,9,9,1,9], pudel 3, score 1', () => {
+  let state = plusMinus.initState([{ id: 1, name: 'A', emoji: 'A' }]);
+  for (const v of [9, 9, 0, 0, 0]) state = plusMinus.applyThrow(state, 1, v);
+  const p = state.players.find(x => x.id === 1);
+  assert.deepEqual(p.wuerfe, [9, 9, 9, 1, 9]);
+  assert.equal(p.pudel, 3);
+  assert.equal(plusMinus.getFinalResults(state)[0].score, 1);
+});
