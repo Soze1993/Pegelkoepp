@@ -183,6 +183,11 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
   <button class="btn bg" style="width:100%;margin-top:12px" onclick="closeM('m-sp-detail')">Schließen</button>
 </div></div>
 
+<div class="mo" id="m-nk"><div class="md">
+  <div id="m-nk-c"></div>
+  <button class="btn bg" style="width:100%;margin-top:12px" onclick="closeM('m-nk')">Schließen</button>
+</div></div>
+
 <div class="mo" id="m-st"><div class="md">
   <h2>Neues Spiel</h2>
   <div class="fg"><label>Icon</label><div class="egrid" id="m-st-emoji"></div></div>
@@ -488,6 +493,8 @@ function initSocket() {
     showWinnerBanner(data.state);
     refreshPlayerStats();
   });
+
+  socket.on('naturkranz:changed', onNaturkranzChanged);
 }
 
 function joinGameRoom(gameId) {
@@ -517,6 +524,96 @@ async function submitUndo() {
   var data = await res.json();
   S.aktSpiel.state = data.state;
   renderSpielenTab();
+}
+
+// ---- Naturkranz (quick 261010-j10) ----
+var nkPlayers = [], nkSel = null, nkBusy = false;
+
+function appendNaturkranzButton(el) {
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:0 0 8px';
+  var btn = document.createElement('button');
+  btn.className = 'btn bg';
+  btn.textContent = '👑 Naturkranz';
+  btn.style.cssText = 'width:100%;color:var(--ac)';
+  btn.onclick = openNaturkranzModal;
+  wrap.appendChild(btn);
+  el.appendChild(wrap);
+}
+
+async function openNaturkranzModal() {
+  if (!S.aktSpiel) return;
+  var res = await fetch('/api/games/' + S.aktSpiel.gameId);
+  if (!res.ok) { notify('Fehler beim Laden', 'var(--red)'); return; }
+  var data = await res.json();
+  nkPlayers = data.players || [];
+  nkSel = null;
+  nkBusy = false;
+  renderNaturkranzModal();
+  openM('m-nk');
+}
+
+function renderNaturkranzModal() {
+  var c = document.getElementById('m-nk-c');
+  if (!c) return;
+  c.innerHTML = '';
+  var h = document.createElement('div');
+  h.style.cssText = 'font-family:var(--fh);font-size:24px;margin-bottom:6px';
+  h.textContent = '👑 Naturkranz';
+  c.appendChild(h);
+  var hint = document.createElement('div');
+  hint.style.cssText = 'color:var(--mut);font-size:13px;margin-bottom:12px';
+  hint.textContent = 'Wer hat den Naturkranz geworfen? Der Spielstand bleibt unverändert.';
+  c.appendChild(hint);
+
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px';
+  nkPlayers.forEach(function(p) {
+    var b = document.createElement('button');
+    b.className = 'btn bg';
+    b.textContent = (p.emoji || '') + ' ' + p.name;
+    if (nkSel === p.id) { b.style.borderColor = 'var(--ac)'; b.style.background = '#e8b84b22'; }
+    b.onclick = function() { nkSel = p.id; renderNaturkranzModal(); };
+    row.appendChild(b);
+  });
+  c.appendChild(row);
+
+  var sel = nkPlayers.find(function(p) { return p.id === nkSel; });
+  var ok = document.createElement('button');
+  ok.className = 'btn bp';
+  ok.style.cssText = 'width:100%';
+  ok.textContent = sel ? 'Naturkranz für ' + sel.name + ' eintragen' : 'Spieler wählen';
+  var off = nkSel === null || nkBusy;
+  ok.disabled = off;
+  if (off) ok.style.opacity = '.4';
+  ok.onclick = nkSubmit;
+  c.appendChild(ok);
+}
+
+async function nkSubmit() {
+  if (nkSel === null || nkBusy || !S.aktSpiel) return;
+  var sel = nkPlayers.find(function(p) { return p.id === nkSel; });
+  var name = sel ? sel.name : '';
+  nkBusy = true;
+  renderNaturkranzModal();
+  var res = await fetch('/api/naturkranz', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ player_id: nkSel, game_id: S.aktSpiel.gameId })
+  });
+  nkBusy = false;
+  if (!res.ok) {
+    notify(res.status === 401 ? 'Bitte neu anmelden' : 'Fehler beim Speichern', 'var(--red)');
+    renderNaturkranzModal();
+    return;
+  }
+  closeM('m-nk');
+  notify('👑 Naturkranz für ' + name + ' eingetragen');
+}
+
+function onNaturkranzChanged(data) {
+  if (data && data.action === 'added') {
+    notify('👑 Naturkranz: ' + (data.player_name || ''));
+  }
 }
 
 async function startAbend() {
@@ -1376,6 +1473,7 @@ function renderSpielenTab() {
     undoDiv.appendChild(undoBtn);
     el.appendChild(undoDiv);
   }
+  appendNaturkranzButton(el);
 }
 
 // Bilderkegel

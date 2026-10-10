@@ -59,11 +59,12 @@ test('DB sets foreign_keys ON', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Test 3: All 7 tables exist (excluding SQLite internal tables like sqlite_sequence)
+// Test 3: All 8 tables exist (excluding SQLite internal tables like sqlite_sequence)
 // Phase 4 added: abende table (via migrations array)
 // Quick 260526-wvg added: feedback table
+// Quick 261010-j10 added: naturkranz table
 // ---------------------------------------------------------------------------
-test('All 7 tables exist after init', () => {
+test('All 8 tables exist after init', () => {
   const db = freshDb();
   const tables = db
     .prepare(
@@ -71,11 +72,11 @@ test('All 7 tables exist after init', () => {
     )
     .all()
     .map(r => r.name);
-  const expected = ['abende', 'feedback', 'game_players', 'game_type_defs', 'games', 'players', 'throws'];
+  const expected = ['abende', 'feedback', 'game_players', 'game_type_defs', 'games', 'naturkranz', 'players', 'throws'];
   for (const t of expected) {
     assert.ok(tables.includes(t), `Missing table: ${t} (found: ${tables.join(', ')})`);
   }
-  assert.equal(tables.length, 7, `Expected 7 tables, found ${tables.length}: ${tables.join(', ')}`);
+  assert.equal(tables.length, 8, `Expected 8 tables, found ${tables.length}: ${tables.join(', ')}`);
 });
 
 // ---------------------------------------------------------------------------
@@ -222,4 +223,19 @@ test('DB06: migrations are idempotent — re-requiring db/index does not throw a
   const throwsCols = db2.prepare('PRAGMA table_info(throws)').all();
   const hasMeta = throwsCols.some(c => c.name === 'meta');
   assert.ok(hasMeta, 'Wave 1 migration not yet implemented: throws.meta column missing after idempotent re-require');
+});
+
+// ---------------------------------------------------------------------------
+// DB07: naturkranz table has the expected columns and nullability (quick 261010-j10)
+// ---------------------------------------------------------------------------
+test('DB07: naturkranz table has id, player_id, game_id, abend_id, created_at with correct nullability', () => {
+  const db = freshDb();
+  const cols = db.prepare('PRAGMA table_info(naturkranz)').all();
+  const byName = Object.fromEntries(cols.map(c => [c.name, c]));
+  for (const n of ['id', 'player_id', 'game_id', 'abend_id', 'created_at']) {
+    assert.ok(byName[n], 'Missing column: ' + n);
+  }
+  assert.equal(byName.player_id.notnull, 1, 'player_id must be NOT NULL');
+  assert.equal(byName.game_id.notnull, 0, 'game_id must be nullable');
+  assert.equal(byName.abend_id.notnull, 0, 'abend_id must be nullable');
 });

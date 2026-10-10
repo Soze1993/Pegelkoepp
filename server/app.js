@@ -70,6 +70,7 @@ app.use('/api/stats',      require('./routes/stats'));
 app.use('/api/highlights', require('./routes/highlights'));
 app.use('/api/game-types', require('./routes/game-types'));
 app.use('/api/feedback',  require('./routes/feedback'));
+app.use('/api/naturkranz', require('./routes/naturkranz'));
 
 // --- Error middleware — LAST (Express 5: async errors auto-forwarded, no express-async-errors needed) ---
 // eslint-disable-next-line no-unused-vars
