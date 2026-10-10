@@ -555,14 +555,62 @@ function bkTotal(p) {
   return (p.bildPts || []).reduce(function(a, b) { return a + (b !== null ? b : 0); }, 0);
 }
 
-// BK loser detection — player with the minimum bkTotal, excluding außer-Konkurrenz
+// BK loser id of a DECIDED game. The server game module decides (the Stechen loser when
+// last place was tied) and carries it in state.loserId; the TV never re-derives it from totals.
+function bkLoserId(state) {
+  if (!state || state.done !== true) return null;
+  return (state.loserId === null || state.loserId === undefined) ? null : state.loserId;
+}
+
+// BK loser name for the end banner — name of the player with state.loserId
 function getBKLoserName(state) {
-  if (!state || !state.players || !state.players.length) return '—';
-  var eligible = state.players.filter(function(p) { return p.id !== state.exemptPlayerId; });
-  var pool = eligible.length > 0 ? eligible : state.players;
-  var withTotals = pool.map(function(p) { return { name: p.name, total: bkTotal(p) }; });
-  withTotals.sort(function(a, b) { return a.total - b.total; });
-  return withTotals[0].name;
+  var id = bkLoserId(state);
+  if (id === null || !state.players) return '—';
+  for (var i = 0; i < state.players.length; i++) {
+    if (state.players[i].id === id) return state.players[i].name;
+  }
+  return '—';
+}
+
+// BK row marks: which row is the active thrower and which rows get the red "loser" styling.
+// - decided game: no active row; the single decided loser
+// - Stechen running: only the players still tied; active = next Stechen thrower in seat order
+// - regular play: active = current player; live last place (first in seat order with the
+//   strictly lowest total among non-exempt players) once the game has started
+function bkRowMarks(state) {
+  if (!state) return { activeId: null, loserIds: [] };
+  var players = state.players || [];
+  if (state.done) {
+    var lid = bkLoserId(state);
+    return { activeId: null, loserIds: lid === null ? [] : [lid] };
+  }
+  if (state.stechen) {
+    var cand = (state.stechenPlayers || []).slice();
+    var next = null;
+    for (var i = 0; i < players.length; i++) {
+      var sp = players[i];
+      if (cand.indexOf(sp.id) !== -1 && (!sp.stechenWuerfe || sp.stechenWuerfe.length === 0)) {
+        next = sp.id;
+        break;
+      }
+    }
+    return { activeId: next, loserIds: cand };
+  }
+  var activeId = players[state.aktSpIdx] ? players[state.aktSpIdx].id : null;
+  var started = state.aktBildIdx > 0 || players.some(function(p) {
+    return (p.bildPts || []).some(function(v) { return v !== null; });
+  });
+  var loserIds = [];
+  if (started) {
+    var minTotal = null, minId = null;
+    players.forEach(function(p) {
+      if (p.id === state.exemptPlayerId) return;
+      var t = bkTotal(p);
+      if (minTotal === null || t < minTotal) { minTotal = t; minId = p.id; }
+    });
+    if (minId !== null) loserIds = [minId];
+  }
+  return { activeId: activeId, loserIds: loserIds };
 }
 
 // End-of-game full-screen overlay (UI-SPEC: tv-end-overlay)
@@ -661,20 +709,9 @@ function renderBilderkegelTV(state) {
 
   // Active bild / player
   var aktBildIdx  = (!state.done && state.aktBildIdx >= 0 && state.aktBildIdx < 5) ? state.aktBildIdx : -1;
-  var aktPlayerId = (!state.done && state.players[state.aktSpIdx]) ? state.players[state.aktSpIdx].id : null;
 
-  // Loser detection
-  var gameStarted = state.aktBildIdx > 0 || state.players.some(function(p) {
-    return (p.bildPts || []).some(function(v) { return v !== null; });
-  });
-  var minTotal = null, loserIdx = -1;
-  if (gameStarted) {
-    state.players.forEach(function(p, i) {
-      if (p.id === state.exemptPlayerId) return;
-      var t = bkTotal(p);
-      if (minTotal === null || t < minTotal) { minTotal = t; loserIdx = i; }
-    });
-  }
+  // Row marks (active thrower + loser candidates) — Stechen-aware, see bkRowMarks
+  var marks = bkRowMarks(state);
 
   // Container — position:fixed so #game { padding:2vw } doesn't push it down
   // Game name lives in #tv-top-bar (no per-screen header): saves ~56px and avoids top-bar overlap
@@ -733,8 +770,8 @@ function renderBilderkegelTV(state) {
 
   // --- Player rows ---
   state.players.forEach(function(player, idx) {
-    var isActive = player.id === aktPlayerId;
-    var isLoser  = idx === loserIdx;
+    var isActive = player.id === marks.activeId;
+    var isLoser  = marks.loserIds.indexOf(player.id) !== -1;
     var bildPts  = player.bildPts || [];
 
     var row = document.createElement('div');
