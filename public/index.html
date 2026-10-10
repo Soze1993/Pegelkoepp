@@ -883,6 +883,28 @@ function getWinnerName(state, type_key) {
     var bkPl = state.players.slice().sort(function(a,b){ var sa=a.bildPts.reduce(function(x,y){return x+(y||0);},0),sb=b.bildPts.reduce(function(x,y){return x+(y||0);},0);return sb-sa; });
     return bkPl[0].name || 'Unbekannt';
   }
+  // Team-Spiele mit tA/tB (GU, HT, Fußball, SKR)
+  if (type_key === 'geradeUngerade' || type_key === 'henneferTreppe' || type_key === 'fussball' || type_key === 'seifenkistenrennen') {
+    if (state.winner === 'draw') return 'Unentschieden';
+    var winTeam = state.winner === 'A' ? state.tA : state.winner === 'B' ? state.tB : null;
+    if (winTeam && winTeam.length) return winTeam.map(function(p){return p.name;}).join(' & ');
+    return 'Unbekannt';
+  }
+  // Steigrohr — winner is a pair index
+  if (type_key === 'steigrohr') {
+    if (!state.paare || state.winner == null) return 'Unbekannt';
+    var wp = state.paare[state.winner];
+    return wp ? wp.spieler.map(function(p){return p.name;}).join(' & ') : 'Unbekannt';
+  }
+  // Mixed Partie — highest scorer
+  if (type_key === 'mixedPartie') {
+    if (!state.players || !state.players.length) return 'Unbekannt';
+    var best = state.players.slice().sort(function(a,b){
+      function sc(p){var r3=p.r3.h!==null&&p.r3.z!==null&&p.r3.e!==null?p.r3.h*100+p.r3.z*10+p.r3.e:0;var r4=p.r4.h!==null&&p.r4.z!==null&&p.r4.e!==null?p.r4.h*100+p.r4.z*10+p.r4.e:0;return(p.r1||0)+(p.r2||0)+r3-r4;}
+      return sc(b)-sc(a);
+    });
+    return best[0].name || 'Unbekannt';
+  }
   // dreiVollen, plusMinus, grosseHaus, kleineHaus, anker — all have state.players sorted by score
   if (state.players && state.players.length) {
     var pl = state.players.slice();
