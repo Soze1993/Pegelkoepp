@@ -1752,12 +1752,16 @@ function renderTeamWahl(aId,bId,gameKey){
 }
 function togTeam(id,team,gameKey,aId,bId,el){
   var arrs=_teamArrs(gameKey),a=arrs[0],b=arrs[1];
-  // Remove from both arrays (splice in place keeps live reference intact)
+  var own=team==='A'?a:b;
+  var wasInOwn=own.indexOf(id)>=0;
+  // Remove from both arrays
   var ia=a.indexOf(id);if(ia>=0)a.splice(ia,1);
   var ib=b.indexOf(id);if(ib>=0)b.splice(ib,1);
-  // Reset all buttons for this player in both containers
+  // Reset all buttons for this player
   [aId,bId].forEach(function(cId){document.querySelectorAll('#'+cId+' [data-sid="'+id+'"]').forEach(function(btn){btn.style.borderColor='var(--brd)';btn.style.background='var(--bg3)';btn.style.color='var(--txt)';});});
-  // Highlight selected team
+  // Second click on same team = deselect only
+  if(wasInOwn)return;
+  // Add to selected team and highlight
   if(team==='A'){a.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}
   else{b.push(id);el.style.borderColor='var(--grn)';el.style.background='var(--grn)22';el.style.color='var(--grn)';}
 }
