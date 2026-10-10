@@ -340,6 +340,28 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
   </div>
 </div></div>
 
+<!-- Steigrohr -->
+<div class="mo" id="m-sr"><div class="md">
+  <h2>🪠 Steigrohr</h2>
+  <div class="fg"><label>Datum</label><input type="date" id="m-sr-datum"></div>
+  <div class="fg"><label>Anzahl Paare</label>
+    <div style="display:flex;gap:8px;margin-top:6px" id="m-sr-paar-btns">
+      <button class="btn bg" onclick="setSRPaare(2)" id="sr-pn-2">2 Paare</button>
+      <button class="btn bg" onclick="setSRPaare(3)" id="sr-pn-3">3 Paare</button>
+      <button class="btn bg" onclick="setSRPaare(4)" id="sr-pn-4">4 Paare</button>
+    </div>
+  </div>
+  <div class="fg"><label>Spieler den Paaren zuordnen</label>
+    <div style="font-size:12px;color:var(--mut);margin-bottom:6px">Auf Paar-Nummer klicken um zuzuordnen</div>
+    <div id="m-sr-wahl" style="display:flex;flex-direction:column;gap:6px;margin-top:4px"></div>
+  </div>
+  <div style="font-size:12px;color:var(--mut);margin-top:-4px">Pudel = 5 Pkt · Kranz = 12 Pkt · Jede Runde höher als die vorherige</div>
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button class="btn bp" style="flex:1" onclick="startSR()">Starten</button>
+    <button class="btn bg" onclick="closeM('m-sr')">Abbrechen</button>
+  </div>
+</div></div>
+
 <div class="mo" id="m-start-abend"><div class="md">
   <h2>Abend starten</h2>
   <div class="fg"><label>Name (optional)</label><input type="text" id="m-abend-name" placeholder="z.B. Freitagsrunde (optional)"></div>
@@ -368,6 +390,7 @@ var socket = null;
 var EMOJIS=['🎳','🎯','⚡','🦁','🔥','💪','🐆','🌟','🧊','🎸','🏆','🎲','🃏','🥇','🎪'];
 var selEmo='🎳',selSTEmo='🎯',genTyp=null,genSel=[],hausWurf=null,hausSlot=null,selK=null,ankerPts=null,vgSel=null,fjSel=null,bkK=null,bkSel=[];
 var guA=[],guB=[],htA=[],htB=[],fbA=[],fbB=[],skrA=[],skrB=[];
+var srAnzahlPaare=2,srZuordnung={}; // playerId → paarNr (1-based)
 var selKeinPudel=false;
 
 function mkSp(id,name,emoji){return{id:id,name:name,emoji:emoji,spiele:0,siege:0,niederlagen:0,pts:0,avg_score:0,best:0,wuerfe:0,pudel:0,neun:0,bezahlCount:0,tDatum:'',tSiege:0,tNiederlagen:0,pudel_paid:0,pudel_offen:0};}
@@ -390,7 +413,8 @@ var S={
     {id:'henneferTreppe',bi:true,icon:'🪜',name:'Hennefer Treppe',desc:'2 Teams, 10 Runden Abraeumen. Reihum je 1 Wurf bis Fehlwurf. Punkte = Kegel x Wuerfe. Team mit meisten Punkten gewinnt.',mode:'teams'},
     {id:'fussball',bi:true,icon:'⚽',name:'Fußball',desc:'2 Teams, Abraeumen. Alle Kegel geraeumt = Tor. Pudel = Elfmeter. Sieg: mind. 5 Tore und 2 Tore Vorsprung.',mode:'teams'},
     {id:'seifenkistenrennen',bi:true,icon:'🚗',name:'Seifenkistenrennen',desc:'2 Teams rasen auf einer Strecke. Jeder Wurf bewegt das Team um die geworfene Zahl vor. Erstes Team am Ziel gewinnt.',mode:'teams'},
-    {id:'mixedPartie',bi:true,icon:'🎲',name:'Mixed Partie',desc:'4 Runden: Volle, Abraeumen, Grosse Hausnummer (+), Kleine Hausnummer (-). Gesamtergebnis: R1+R2+R3-R4.',mode:'multi'}
+    {id:'mixedPartie',bi:true,icon:'🎲',name:'Mixed Partie',desc:'4 Runden: Volle, Abraeumen, Grosse Hausnummer (+), Kleine Hausnummer (-). Gesamtergebnis: R1+R2+R3-R4.',mode:'multi'},
+    {id:'steigrohr',bi:true,icon:'🪠',name:'Steigrohr',desc:'Paare (2 Spieler) werfen je 2 Wuerfe. Jede Runde muss besser als die vorherige sein. Wer nicht steigert scheidet aus. Pudel=5, Kranz=12.',mode:'paare'}
   ],
   aktSpiel:null,
   aktAbend:null
@@ -399,7 +423,7 @@ var S={
 function today(){return new Date().toISOString().slice(0,10);}
 function notify(msg,col){var n=document.getElementById('notif');n.textContent=msg;n.style.background=col||'var(--grn)';n.classList.add('show');setTimeout(function(){n.classList.remove('show');},2400);}
 function showTab(id){document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});var pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('active');var map={spiele:0,spielen:1,bib:2,spieler:3,stats:4};var tabs=document.querySelectorAll('.tab');if(map[id]!==undefined&&tabs[map[id]])tabs[map[id]].classList.add('active');renderAll();}
-function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-gu'){document.getElementById('m-gu-datum').value=today();renderTeamWahl('m-gu-a','m-gu-b','gu');}if(id==='m-ht'){document.getElementById('m-ht-datum').value=today();renderTeamWahl('m-ht-a','m-ht-b','ht');}if(id==='m-fb'){document.getElementById('m-fb-datum').value=today();renderTeamWahl('m-fb-a','m-fb-b','fb');}if(id==='m-skr'){document.getElementById('m-skr-datum').value=today();renderTeamWahl('m-skr-a','m-skr-b','skr');}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
+function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-gu'){document.getElementById('m-gu-datum').value=today();renderTeamWahl('m-gu-a','m-gu-b','gu');}if(id==='m-ht'){document.getElementById('m-ht-datum').value=today();renderTeamWahl('m-ht-a','m-ht-b','ht');}if(id==='m-fb'){document.getElementById('m-fb-datum').value=today();renderTeamWahl('m-fb-a','m-fb-b','fb');}if(id==='m-skr'){document.getElementById('m-skr-datum').value=today();renderTeamWahl('m-skr-a','m-skr-b','skr');}if(id==='m-sr'){document.getElementById('m-sr-datum').value=today();srAnzahlPaare=2;renderSRWahl();}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function updSp(id,opts){return;}
 
@@ -1314,7 +1338,7 @@ async function renderBib(){
 }
 
 // Spiel starten
-function startTyp(id){var st=S.typen.find(function(s){return s.id===id;});if(!st)return;if(id==='viergewinnt'){openM('m-vg');return;}if(id==='fuchsjagd'){openM('m-fj');return;}if(id==='anker'){openM('m-anker');return;}if(id==='kda'){openM('m-kda');return;}if(id==='bilderkegel'){openM('m-bk');return;}if(id==='geradeUngerade'){openM('m-gu');return;}if(id==='henneferTreppe'){openM('m-ht');return;}if(id==='fussball'){openM('m-fb');return;}if(id==='seifenkistenrennen'){openM('m-skr');return;}genTyp=st;genSel=[];document.getElementById('m-gen-title').textContent=st.icon+' '+st.name;document.getElementById('m-gen-datum').value=today();document.getElementById('m-gen-extra').innerHTML='';document.getElementById('m-gen-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togGen('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');openM('m-spiel-gen');}
+function startTyp(id){var st=S.typen.find(function(s){return s.id===id;});if(!st)return;if(id==='viergewinnt'){openM('m-vg');return;}if(id==='fuchsjagd'){openM('m-fj');return;}if(id==='anker'){openM('m-anker');return;}if(id==='kda'){openM('m-kda');return;}if(id==='bilderkegel'){openM('m-bk');return;}if(id==='geradeUngerade'){openM('m-gu');return;}if(id==='henneferTreppe'){openM('m-ht');return;}if(id==='fussball'){openM('m-fb');return;}if(id==='seifenkistenrennen'){openM('m-skr');return;}if(id==='steigrohr'){openM('m-sr');return;}genTyp=st;genSel=[];document.getElementById('m-gen-title').textContent=st.icon+' '+st.name;document.getElementById('m-gen-datum').value=today();document.getElementById('m-gen-extra').innerHTML='';document.getElementById('m-gen-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togGen('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');openM('m-spiel-gen');}
 function togGen(id,el){if(genSel.indexOf(id)>=0){genSel=genSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{genSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
 function makeGP(id){var s=S.spieler.find(function(x){return x.id===id;});return{id:s.id,name:s.name,emoji:s.emoji,wuerfe:[],pudel:0,slots:{h:null,z:null,e:null}};}
 async function startGenSpiel() {
@@ -1667,6 +1691,7 @@ function renderSpielenTab() {
     case 'fussball':          renderFBSpiel(el, S.aktSpiel.state); break;
     case 'seifenkistenrennen':renderSKRSpiel(el, S.aktSpiel.state); break;
     case 'mixedPartie':       renderMPSpiel(el, S.aktSpiel.state); break;
+    case 'steigrohr':         renderSRSpiel(el, S.aktSpiel.state); break;
     default:                  renderNSpiel(el, S.aktSpiel.state); break;
   }
   // Append undo button after sub-renderer (only when game is still active)
@@ -1845,6 +1870,91 @@ function renderSKRSpiel(el,state){
   el.innerHTML=html+(aktSp?'<div class="wi"><span>Nächster Wurf (Team '+sp.aktTeam+')</span><strong>'+aktSp.emoji+' '+aktSp.name+'</strong></div>':'')+
     '<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Geworfene Kegel = Felder vorwärts</div>'+
     kgrid(teamWurfVal,'teamWurfSel')+'<button class="btn bp" style="width:100%;margin-top:4px" onclick="doTeamWurf()">Wurf bestätigen</button>';
+}
+
+// ── Steigrohr modal helpers ──────────────────────────────────────────────
+var SR_FARBEN=['var(--ac)','var(--grn)','#e88c00','#c84bc8'];
+function setSRPaare(n){srAnzahlPaare=n;[2,3,4].forEach(function(i){var b=document.getElementById('sr-pn-'+i);if(b){b.className='btn '+(i===n?'bp':'bg');}});renderSRWahl();}
+function renderSRWahl(){
+  srZuordnung={};
+  var spieler=S.spieler.filter(function(s){return !s.archived;});
+  var html=spieler.map(function(s){
+    var btns='';for(var p=1;p<=srAnzahlPaare;p++){btns+='<button id="sr-btn-'+s.id+'-'+p+'" class="btn bg" style="padding:4px 10px;font-size:12px" onclick="togSR('+s.id+','+p+')">'+p+'</button>';}
+    return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0"><span style="min-width:110px;font-size:13px;font-weight:600">'+s.emoji+' '+s.name+'</span>'+btns+'</div>';
+  }).join('');
+  document.getElementById('m-sr-wahl').innerHTML=html;
+}
+function togSR(id,paarNr){
+  var prev=srZuordnung[id];
+  if(prev){var old=document.getElementById('sr-btn-'+id+'-'+prev);if(old){old.style.background='var(--bg3)';old.style.color='var(--txt)';old.style.borderColor='var(--brd)';}}
+  if(prev===paarNr){delete srZuordnung[id];return;}
+  srZuordnung[id]=paarNr;
+  var btn=document.getElementById('sr-btn-'+id+'-'+paarNr);
+  if(btn){var c=SR_FARBEN[paarNr-1];btn.style.background=c+'33';btn.style.color=c;btn.style.borderColor=c;}
+}
+async function startSR(){
+  var pids=Object.keys(srZuordnung);
+  if(pids.length<srAnzahlPaare*2){notify('Mind. 2 Spieler pro Paar','var(--red)');return;}
+  // Check each pair has ≥2 players
+  var paarCount={};pids.forEach(function(id){var p=srZuordnung[id];paarCount[p]=(paarCount[p]||0)+1;});
+  for(var p=1;p<=srAnzahlPaare;p++){if((paarCount[p]||0)<2){notify('Paar '+p+' hat zu wenige Spieler','var(--red)');return;}}
+  var roles={};pids.forEach(function(id){roles[parseInt(id)]=String(srZuordnung[id]);});
+  var player_ids=pids.map(Number);
+  var d=document.getElementById('m-sr-datum').value;
+  var res=await fetch('/api/games',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type_key:'steigrohr',player_ids:player_ids,roles:roles,date:d})});
+  if(!res.ok){notify('Fehler beim Starten','var(--red)');return;}
+  var data=await res.json();var detail=await fetch('/api/games/'+data.id).then(function(r){return r.json();});
+  S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM('m-sr');notify('🪠 Steigrohr gestartet!');showTab('spielen');
+}
+
+// ── Steigrohr throw helpers ──────────────────────────────────────────────
+var srWurfVal=null,srKranz=false,srKeinPudel=false;
+function srWurfSel(n){srWurfVal=n;srKranz=false;srKeinPudel=selKeinPudel;renderSpielenTab();}
+
+// ── Steigrohr renderer ───────────────────────────────────────────────────
+function renderSRSpiel(el,state){
+  var sp=state;if(!sp){el.innerHTML='';return;}
+  var aktPaar=sp.paare[sp.aktPaarIdx];
+  // Scoreboard
+  var tblRows=sp.paare.map(function(paar){
+    var isAkt=!sp.done&&paar.idx===sp.aktPaarIdx;var isOut=!paar.aktiv;
+    var rundenStr=paar.runden.map(function(r,i){return'<span style="font-size:11px;color:var(--mut)">R'+(i+1)+':'+r+'</span>';}).join(' ');
+    return '<tr style="'+(isAkt?'background:var(--ac)11':isOut?'opacity:.45':'')+'"><td><strong style="'+(isAkt?'color:var(--ac)':'')+'">Paar '+paar.paarNr+'</strong><br><span style="font-size:12px;color:var(--mut)">'+paar.spieler.map(function(s){return s.emoji+' '+s.name;}).join(', ')+'</span></td>'
+      +'<td style="text-align:right;font-weight:700;font-size:18px">'+paar.gesamt+'</td>'
+      +'<td style="text-align:right">'+(isOut?'<span style="color:var(--red);font-size:12px">❌ out</span>':rundenStr)+'</td></tr>';
+  }).join('');
+  var tbl='<div class="card" style="overflow-x:auto;margin-bottom:10px"><table class="stbl"><thead><tr><th>Paar</th><th style="text-align:right">Ges.</th><th style="text-align:right">Runden</th></tr></thead><tbody>'+tblRows+'</tbody></table></div>';
+  if(sp.done){
+    var winner=sp.paare[sp.winner];
+    el.innerHTML='<div style="text-align:center;padding:14px 0 8px;font-family:var(--fh);font-size:26px;color:var(--ac)">🏆 Paar '+winner.paarNr+' gewinnt!</div>'+tbl+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';return;
+  }
+  // Current player to throw
+  var wurfNr=sp.wuerfe.length+1;
+  var aktSpielerIdx=sp.wuerfe.length%aktPaar.spieler.length;
+  var aktSpieler=aktPaar.spieler[aktSpielerIdx];
+  var prevScore=aktPaar.runden.length>0?aktPaar.runden[aktPaar.runden.length-1]:null;
+  var ziel=prevScore!==null?'Ziel: > '+prevScore+' Pkt':'Erste Runde';
+  var bisherStr=sp.wuerfe.length>0?'1. Wurf: <strong>'+sp.wuerfe[0]+'</strong> · ':' ';
+  el.innerHTML=tbl
+    +'<div class="card"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:6px">Runde '+sp.runde+' · Paar '+aktPaar.paarNr+' · '+ziel+'</div>'
+    +'<div class="wi"><span>Wurf '+wurfNr+'/2</span><strong>'+aktSpieler.emoji+' '+aktSpieler.name+'</strong></div>'
+    +(sp.wuerfe.length>0?'<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">'+bisherStr+'</div>':'')
+    +'<div style="display:flex;gap:8px;margin-bottom:4px"><button class="btn '+(srKranz?'bp':'bg')+'" style="flex:1" onclick="srKranz=!srKranz;srWurfVal=srKranz?12:null;srKeinPudel=false;renderSpielenTab()">Kranz (12)</button></div>'
+    +'<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Kegel (Pudel = 5 Pkt automatisch)</div>'
+    +kgrid(srKranz?null:srWurfVal,'srWurfSel')
+    +'<button class="btn bp" style="width:100%;margin-top:4px" onclick="doSRWurf()">Wurf bestätigen</button></div>';
+}
+async function doSRWurf(){
+  if(srWurfVal===null&&!srKranz){notify('Bitte Zahl wählen','var(--red)');return;}
+  var sp=S.aktSpiel.state;var paar=sp.paare[sp.aktPaarIdx];
+  var aktSpielerIdx=sp.wuerfe.length%paar.spieler.length;
+  var pid=paar.spieler[aktSpielerIdx].id;
+  var value=srKranz?9:srWurfVal; // send raw value; backend handles kranz via meta
+  var meta=srKranz?{kranz:true}:(srKeinPudel&&srWurfVal===0?{keinPudel:true}:{});
+  var res=await fetch('/api/games/'+S.aktSpiel.gameId+'/throw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({playerId:pid,value:value,meta:meta})});
+  if(!res.ok){notify('Fehler','var(--red)');return;}
+  var data=await res.json();S.aktSpiel.state=data.state;
+  srWurfVal=null;srKranz=false;srKeinPudel=false;selKeinPudel=false;renderSpielenTab();
 }
 
 // ── Mixed Partie renderer ────────────────────────────────────────────────

@@ -15,4 +15,5 @@ module.exports = {
   'fussball':            require('./fussball'),
   'seifenkistenrennen':  require('./seifenkistenrennen'),
   'mixedPartie':         require('./mixed-partie'),
+  'steigrohr':           require('./steigrohr'),
 };

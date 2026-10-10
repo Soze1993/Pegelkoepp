@@ -31,7 +31,8 @@ var GAME_NAMES = {
   'henneferTreppe': 'Hennefer Treppe',
   'fussball': 'Fußball',
   'seifenkistenrennen': 'Seifenkistenrennen',
-  'mixedPartie': 'Mixed Partie'
+  'mixedPartie': 'Mixed Partie',
+  'steigrohr': 'Steigrohr'
 };
 
 function kegelSVGtv(activePins, w, h) {
@@ -178,6 +179,7 @@ function renderGame(state) {
   if (currentTypeKey === 'geradeUngerade' || currentTypeKey === 'henneferTreppe' ||
       currentTypeKey === 'fussball' || currentTypeKey === 'seifenkistenrennen') { renderTeamTV(state); return; }
   if (currentTypeKey === 'mixedPartie') { renderGenericScoreTV(state); return; }
+  if (currentTypeKey === 'steigrohr') { renderSteigrohrTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
@@ -1876,6 +1878,59 @@ function renderTeamTV(state) {
   wrap.appendChild(vsEl);
 
   wrap.appendChild(makeTeamCard('B', s.tB, scoreB, s.winner, s.aktTeam));
+  gameEl.replaceChildren(wrap);
+}
+
+// ── Steigrohr TV renderer ────────────────────────────────────────────────
+function renderSteigrohrTV(state) {
+  if (!state) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  var s = state;
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:grid;grid-template-columns:repeat(' + Math.min(s.paare.length, 4) + ',1fr);gap:24px;padding:40px;height:100%;box-sizing:border-box;align-items:start';
+
+  var FARBEN = ['var(--ac)', '#4caf7d', '#e88c00', '#c84bc8'];
+
+  s.paare.forEach(function(paar) {
+    var isAkt = !s.done && paar.idx === s.aktPaarIdx;
+    var isOut = !paar.aktiv;
+    var farbe = FARBEN[paar.paarNr - 1] || 'var(--ac)';
+
+    var card = document.createElement('div');
+    card.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding:28px 16px;border-radius:16px;background:' + (isAkt ? farbe + '22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? farbe : isOut ? 'transparent' : 'var(--brd)') + ';opacity:' + (isOut ? '.4' : '1');
+
+    var paarLabel = document.createElement('div');
+    paarLabel.style.cssText = 'font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:' + (isAkt ? farbe : 'var(--mut)');
+    paarLabel.textContent = 'Paar ' + paar.paarNr + (isAkt ? ' 🎳' : isOut ? ' ❌' : '');
+    card.appendChild(paarLabel);
+
+    // Big total score
+    var scoreEl = document.createElement('div');
+    scoreEl.style.cssText = 'font-family:var(--fh);font-size:80px;line-height:1;color:' + (isOut ? 'var(--mut)' : farbe) + ';margin:8px 0';
+    scoreEl.textContent = String(paar.gesamt);
+    card.appendChild(scoreEl);
+
+    // Round history
+    var rndEl = document.createElement('div');
+    rndEl.style.cssText = 'font-size:16px;color:var(--mut);margin-bottom:10px';
+    rndEl.textContent = paar.runden.map(function(r, i) { return 'R' + (i + 1) + ':' + r; }).join('  ') || '–';
+    card.appendChild(rndEl);
+
+    // Player names — large
+    paar.spieler.forEach(function(p, i) {
+      var row = document.createElement('div');
+      var aktIdx = s.wuerfe ? s.wuerfe.length % paar.spieler.length : 0;
+      var isThrowing = isAkt && i === aktIdx;
+      row.style.cssText = 'font-size:26px;padding:3px 0;' + (isThrowing ? 'color:' + farbe + ';font-weight:800' : '');
+      row.textContent = (isThrowing ? '▶ ' : '') + p.emoji + ' ' + p.name;
+      card.appendChild(row);
+    });
+
+    wrap.appendChild(card);
+  });
+
   gameEl.replaceChildren(wrap);
 }
 
