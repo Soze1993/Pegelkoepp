@@ -1783,9 +1783,9 @@ async function startTeamSpiel(typeKey,aArr,bArr,configObj,modalId,label){
   S.aktSpiel={gameId:data.id,state:detail.state,type_key:data.type_key};joinGameRoom(data.id);closeM(modalId);notify(label+' gestartet!');showTab('spielen');
 }
 async function startGU(){var d=document.getElementById('m-gu-datum').value;await startTeamSpiel('geradeUngerade',guA,guB,{date:d},'m-gu','⚖️ Gerade & Ungerade');}
-async function startHT(){var r=parseInt(document.getElementById('m-ht-runden').value)||10;var d=document.getElementById('m-ht-datum').value;await startTeamSpiel('henneferTreppe',htA,htB,{date:d,totalRunden:r},'m-ht','🪜 Hennefer Treppe');}
-async function startFB(){var t=parseInt(document.getElementById('m-fb-tore').value)||5;var d=document.getElementById('m-fb-datum').value;await startTeamSpiel('fussball',fbA,fbB,{date:d,targetGoals:t},'m-fb','⚽ Fußball');}
-async function startSKR(){var n=Math.max(8,Math.min(15,parseInt(document.getElementById('m-skr-felder').value)||12));var d=document.getElementById('m-skr-datum').value;await startTeamSpiel('seifenkistenrennen',skrA,skrB,{date:d,numFields:n},'m-skr','🚗 Seifenkistenrennen');}
+async function startHT(){var r=parseInt(document.getElementById('m-ht-runden').value)||10;var d=document.getElementById('m-ht-datum').value;await startTeamSpiel('henneferTreppe',htA,htB,{date:d,config:{totalRunden:r}},'m-ht','🪜 Hennefer Treppe');}
+async function startFB(){var t=parseInt(document.getElementById('m-fb-tore').value)||5;var d=document.getElementById('m-fb-datum').value;await startTeamSpiel('fussball',fbA,fbB,{date:d,config:{targetGoals:t}},'m-fb','⚽ Fußball');}
+async function startSKR(){var n=Math.max(8,Math.min(15,parseInt(document.getElementById('m-skr-felder').value)||12));var d=document.getElementById('m-skr-datum').value;await startTeamSpiel('seifenkistenrennen',skrA,skrB,{date:d,config:{numFields:n}},'m-skr','🚗 Seifenkistenrennen');}
 
 // ── Gerade & Ungerade renderer ───────────────────────────────────────────
 function renderGUSpiel(el,state){
