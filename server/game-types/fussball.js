@@ -70,21 +70,27 @@ module.exports = {
     }
 
     // Normal phase
-    if (value === 0 && !(meta && meta.keinPudel)) {
+    if (value === 0) {
+      if (meta && meta.keinPudel) {
+        // Aus (kein Pudel) — kein Elfmeter, aber Teamwechsel + Volle neu
+        if (team === 'A') s.iA = (s.iA + 1) % s.tA.length;
+        else              s.iB = (s.iB + 1) % s.tB.length;
+        s.remaining = 9;
+        s.aktTeam = team === 'A' ? 'B' : 'A';
+        return s;
+      }
       // Pudel → Elfmeter for the other team
       player.pudel++;
       const otherTeam = team === 'A' ? 'B' : 'A';
       s.phase = 'elfmeter';
       s.elfmeterTeam = otherTeam;
-      // Advance current player (they threw the pudel)
       if (team === 'A') s.iA = (s.iA + 1) % s.tA.length;
       else              s.iB = (s.iB + 1) % s.tB.length;
-      // Switch to other team for elfmeter
       s.aktTeam = otherTeam;
       return s;
     }
 
-    // Regular throw (value > 0 or keinPudel-0)
+    // Regular throw (value > 0)
     s.remaining -= value;
 
     // Advance player within throwing team (cycles regardless of outcome)
