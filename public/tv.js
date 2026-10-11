@@ -176,8 +176,8 @@ function renderGame(state) {
   if (currentTypeKey === 'plusMinus') { renderPlusMinusTV(state); return; }
   if (currentTypeKey === 'anker')     { renderAnkerTV(state); return; }
   if (currentTypeKey === 'dreiVollen') { renderDreiVollenTV(state); return; }
-  if (currentTypeKey === 'geradeUngerade' || currentTypeKey === 'henneferTreppe' ||
-      currentTypeKey === 'fussball') { renderTeamTV(state); return; }
+  if (currentTypeKey === 'geradeUngerade' || currentTypeKey === 'fussball') { renderTeamTV(state); return; }
+  if (currentTypeKey === 'henneferTreppe') { renderHTTV(state); return; }
   if (currentTypeKey === 'seifenkistenrennen') { renderSKRTV(state); return; }
   if (currentTypeKey === 'mixedPartie') { renderGenericScoreTV(state); return; }
   if (currentTypeKey === 'steigrohr') { renderSteigrohrTV(state); return; }
@@ -1881,6 +1881,82 @@ function renderTeamTV(state) {
 
   wrap.appendChild(makeTeamCard('B', s.tB, scoreB, s.winner, s.aktTeam));
   gameEl.replaceChildren(wrap);
+}
+
+// ── Hennefer Treppe TV renderer ──────────────────────────────────────────
+function renderHTTV(state) {
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+  var s = state;
+  var aktSp = null;
+  if (!s.done) {
+    var aktArr = s.aktTeam === 'A' ? s.tA : s.tB;
+    aktSp = aktArr[s.chainIdx % aktArr.length];
+  }
+  var chainInfo = s.chainThrows.length > 0
+    ? 'Kette: ' + s.chainThrows.join(', ') + ' — ' + s.chainThrows.reduce(function(a,b){return a+b;},0) + ' Kegel / ' + s.chainThrows.length + ' Würfe'
+    : 'Neue Kette';
+
+  // Top: two score cards
+  function scoreCard(team) {
+    var score = team === 'A' ? s.scoreA : s.scoreB;
+    var col = team === 'A' ? '#60a5fa' : '#f87171';
+    var isAkt = !s.done && s.aktTeam === team;
+    var arr = team === 'A' ? s.tA : s.tB;
+    var roster = arr.map(function(p, i) {
+      var isC = isAkt && i === (s.chainIdx % arr.length);
+      return '<div style="font-size:22px;padding:2px 0;'+(isC?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.6)')+'">'+(isC?'▶ ':'   ')+p.emoji+' '+p.name+'</div>';
+    }).join('');
+    return '<div style="flex:1;text-align:center;border:3px solid '+(isAkt?col:'rgba(255,255,255,0.15)')+';border-radius:16px;padding:24px 16px;background:'+(isAkt?col+'22':'rgba(255,255,255,0.05)')+';">'
+      + '<div style="font-size:22px;color:'+col+';font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Team '+team+(isAkt?' 🎳':'')+'</div>'
+      + '<div style="font-family:var(--fh);font-size:80px;color:'+col+';line-height:1">'+score+'</div>'
+      + '<div style="font-size:16px;color:rgba(255,255,255,0.4);margin-bottom:12px">Punkte</div>'
+      + roster
+      + '</div>';
+  }
+
+  // Rounds table
+  var tblRows = '';
+  for (var r = 0; r < s.totalRunden; r++) {
+    var vA = s.rndA[r] !== undefined ? String(s.rndA[r]) : '—';
+    var vB = s.rndB[r] !== undefined ? String(s.rndB[r]) : '—';
+    var isAktR = r === (s.aktRunde - 1) && !s.done;
+    var rowBg = isAktR ? 'background:rgba(255,255,255,0.08)' : '';
+    tblRows += '<tr style="'+rowBg+'">'
+      + '<td style="padding:5px 10px;color:rgba(255,255,255,0.5);font-size:18px">R'+(r+1)+'</td>'
+      + '<td style="text-align:right;padding:5px 14px;font-size:20px;font-weight:'+(isAktR&&s.aktTeam==='A'?'900':'400')+';color:'+(isAktR&&s.aktTeam==='A'?'#60a5fa':'rgba(255,255,255,0.85)')+'">'+vA+'</td>'
+      + '<td style="text-align:right;padding:5px 14px;font-size:20px;font-weight:'+(isAktR&&s.aktTeam==='B'?'900':'400')+';color:'+(isAktR&&s.aktTeam==='B'?'#f87171':'rgba(255,255,255,0.85)')+'">'+vB+'</td>'
+      + '</tr>';
+  }
+  var tbl = '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr>'
+    + '<th style="text-align:left;padding:6px 10px;font-size:16px;color:rgba(255,255,255,0.4);font-weight:600">Runde</th>'
+    + '<th style="text-align:right;padding:6px 14px;font-size:18px;color:#60a5fa;font-weight:700">Team A</th>'
+    + '<th style="text-align:right;padding:6px 14px;font-size:18px;color:#f87171;font-weight:700">Team B</th>'
+    + '</tr></thead>'
+    + '<tbody>'+tblRows+'</tbody>'
+    + '<tfoot><tr style="border-top:2px solid rgba(255,255,255,0.15)">'
+    + '<td style="padding:7px 10px;font-size:18px;font-weight:700;color:rgba(255,255,255,0.7)">Gesamt</td>'
+    + '<td style="text-align:right;padding:7px 14px;font-size:22px;font-weight:900;color:#60a5fa">'+s.scoreA+'</td>'
+    + '<td style="text-align:right;padding:7px 14px;font-size:22px;font-weight:900;color:#f87171">'+s.scoreB+'</td>'
+    + '</tr></tfoot></table>';
+
+  var html = '<div style="padding:20px 30px;height:100%;display:flex;flex-direction:column;box-sizing:border-box;gap:16px">'
+    + '<div style="font-size:24px;font-weight:700;color:rgba(255,255,255,0.4)">🪜 Hennefer Treppe &middot; Runde '+s.aktRunde+'/'+s.totalRunden+'</div>'
+    + '<div style="display:flex;gap:16px">'
+    + scoreCard('A') + scoreCard('B')
+    + '</div>'
+    + '<div style="flex:1;overflow:hidden;background:rgba(255,255,255,0.04);border-radius:12px;padding:8px 4px">'+tbl+'</div>';
+
+  if (!s.done) {
+    html += '<div style="font-size:18px;color:rgba(255,255,255,0.5);text-align:center">'+chainInfo+' &middot; Restpins: '+s.remaining+'</div>';
+  } else {
+    var wCol = s.winner === 'A' ? '#60a5fa' : s.winner === 'B' ? '#f87171' : '#fbbf24';
+    var wTxt = s.winner === 'draw' ? 'Unentschieden!' : '🏆 Team ' + s.winner + ' gewinnt!';
+    html += '<div style="text-align:center;font-size:48px;font-weight:900;color:'+wCol+'">'+wTxt+'</div>';
+  }
+  html += '</div>';
+  gameEl.innerHTML = html;
 }
 
 // ── Seifenkistenrennen TV renderer ───────────────────────────────────────

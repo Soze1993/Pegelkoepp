@@ -1862,20 +1862,37 @@ function renderHTSpiel(el,state){
   var sp=state;if(!sp){el.innerHTML='';return;}
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktSp=aktArr[sp.chainIdx%aktArr.length];
   var chainInfo=sp.chainThrows.length>0?'Kette: '+sp.chainThrows.join(', ')+' ('+sp.chainThrows.reduce(function(a,b){return a+b;},0)+' Kegel, '+sp.chainThrows.length+' Würfe)':'Neue Kette';
-  function teamBlock(team,arr,score,rndArr){
+  function teamBlock(team,arr){
     var isAkt=sp.aktTeam===team&&!sp.done;
-    return '<div class="card" style="'+(isAkt?'border:2px solid var(--ac)':'')+';flex:1;min-width:140px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:4px">Team '+team+(isAkt?' 🎳':'')+' <span style="float:right;font-size:14px;font-weight:700;color:var(--ac)">'+score+'</span></div>'
-      +arr.map(function(p,i){var isC=isAkt&&i===(sp.chainIdx%arr.length);return '<div style="padding:2px 0;'+(isC?'color:var(--ac);font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')
-      +(rndArr.length?'<div style="font-size:10px;color:var(--mut);margin-top:4px">'+rndArr.map(function(v,i){return 'R'+(i+1)+':'+v;}).join(' ')+'</div>':'')
+    var tc=team==='A'?'var(--ac)':'var(--red)';
+    var score=team==='A'?sp.scoreA:sp.scoreB;
+    return '<div class="card" style="'+(isAkt?'border:2px solid '+tc+';':'')+';flex:1;min-width:140px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:4px">Team '+team+(isAkt?' 🎳':'')+' <span style="float:right;font-size:14px;font-weight:700;color:'+tc+'">'+score+'</span></div>'
+      +arr.map(function(p,i){var isC=isAkt&&i===(sp.chainIdx%arr.length);return '<div style="padding:2px 0;'+(isC?'color:'+tc+';font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')
       +'</div>';
   }
-  var html='<div style="display:flex;gap:10px;margin-bottom:8px">'+teamBlock('A',sp.tA,sp.scoreA,sp.rndA)+teamBlock('B',sp.tB,sp.scoreB,sp.rndB)+'</div>';
+  // Rundentabelle
+  var maxR=Math.max(sp.rndA.length,sp.rndB.length,sp.aktRunde-1+(sp.aktTeam==='A'?0:1));
+  var rows='';
+  for(var r=0;r<sp.totalRunden;r++){
+    var vA=sp.rndA[r]!==undefined?sp.rndA[r]:'—';
+    var vB=sp.rndB[r]!==undefined?sp.rndB[r]:'—';
+    var aktR=r===(sp.aktRunde-1)&&!sp.done;
+    rows+='<tr style="'+(aktR?'background:var(--ac)11':'')+'"><td style="padding:3px 6px;color:var(--mut)">R'+(r+1)+'</td>'
+      +'<td style="text-align:right;padding:3px 6px;font-weight:'+(aktR&&sp.aktTeam==='A'?'700':'400')+';color:'+(aktR&&sp.aktTeam==='A'?'var(--ac)':'var(--txt)')+'">'+vA+'</td>'
+      +'<td style="text-align:right;padding:3px 6px;font-weight:'+(aktR&&sp.aktTeam==='B'?'700':'400')+';color:'+(aktR&&sp.aktTeam==='B'?'var(--red)':'var(--txt)')+'">'+vB+'</td></tr>';
+  }
+  var tbl='<div class="card" style="padding:6px;overflow-x:auto;margin-bottom:8px"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+    +'<thead><tr><th style="text-align:left;padding:3px 6px;color:var(--mut);font-weight:600">Runde</th><th style="text-align:right;padding:3px 6px;color:var(--ac)">Team A</th><th style="text-align:right;padding:3px 6px;color:var(--red)">Team B</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr style="border-top:1px solid var(--brd)"><td style="padding:4px 6px;font-weight:700">Gesamt</td><td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--ac)">'+sp.scoreA+'</td><td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--red)">'+sp.scoreB+'</td></tr></tfoot>'
+    +'</table></div>';
+  var html='<div style="display:flex;gap:10px;margin-bottom:8px">'+teamBlock('A',sp.tA)+teamBlock('B',sp.tB)+'</div>'+tbl;
   if(sp.done){
     var wl=sp.winner==='draw'?'Unentschieden!':(sp.winner==='A'?'Team A gewinnt!':'Team B gewinnt!');
     el.innerHTML='<div style="text-align:center;padding:16px 0 8px;font-family:var(--fh);font-size:26px;color:var(--ac)">'+wl+'</div>'+html+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';return;
   }
   el.innerHTML=html
-    +'<div style="text-align:center;font-size:12px;color:var(--mut);margin-bottom:6px">Runde '+sp.aktRunde+'/'+sp.totalRunden+' &middot; '+chainInfo+' &middot; Restpins: '+sp.remaining+'</div>'
+    +'<div style="text-align:center;font-size:12px;color:var(--mut);margin-bottom:6px">'+chainInfo+' &middot; Restpins: '+sp.remaining+'</div>'
     +(aktSp?'<div class="wi"><span>Wurf</span><strong>'+aktSp.emoji+' '+aktSp.name+'</strong></div>':'')+
     '<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Kegel (0=Fehlwurf)</div>'+
     kgrid(teamWurfVal,'teamWurfSel')+'<button class="btn bp" style="width:100%;margin-top:4px" onclick="doTeamWurf()">Wurf bestätigen</button>';
