@@ -2182,8 +2182,8 @@ function renderMPTV(state) {
       let throwInfo;
       if (state.runde === 1)      throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/3 — Volle';
       else if (state.runde === 2) throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining;
-      else if (state.runde === 3) throwInfo = state.zehner === null ? 'Zehner' : 'Einer (Zehner: '+state.zehner+')';
-      else                        throwInfo = state.zehner === null ? 'Zehner' : 'Einer (Zehner: '+state.zehner+')';
+      else if (state.runde === 3) throwInfo = aktP.zehner === null ? 'Zehner' : 'Einer (Zehner: '+aktP.zehner+')';
+      else                        throwInfo = aktP.zehner === null ? 'Zehner' : 'Einer (Zehner: '+aktP.zehner+')';
       const cur = document.createElement('div');
       cur.style.cssText = 'text-align:center;padding:14px;border-radius:10px;border:2px solid '+col+';background:'+col+'22';
       cur.innerHTML = '<div style="font-size:36px">'+aktP.emoji+'</div>'
