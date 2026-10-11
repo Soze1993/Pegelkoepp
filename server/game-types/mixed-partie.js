@@ -96,26 +96,28 @@ function _teamTotal(arr) {
 }
 
 function _advance(s) {
-  const team    = s.aktTeam;
-  const teamArr = team === 'A' ? s.tA : s.tB;
-  const idx     = team === 'A' ? s.iA  : s.iB;
-  const next    = idx + 1;
+  // Increment current team's player index
+  if (s.aktTeam === 'A') s.iA++;
+  else                   s.iB++;
 
-  if (next < teamArr.length) {
-    if (team === 'A') s.iA = next;
-    else              s.iB = next;
-  } else {
-    if (team === 'A') {
-      s.aktTeam = 'B'; s.iB = 0;
-    } else {
-      s.runde++;
-      s.aktTeam = 'A'; s.iA = 0; s.iB = 0; s.remaining = 9;
-      if (s.runde > 4) {
-        s.done = true;
-        const sA = _teamTotal(s.tA), sB = _teamTotal(s.tB);
-        s.winner = sA > sB ? 'A' : sB > sA ? 'B' : 'draw';
-      }
+  const aDone = s.iA >= s.tA.length;
+  const bDone = s.iB >= s.tB.length;
+
+  if (aDone && bDone) {
+    // Both teams finished this round → next round
+    s.runde++;
+    s.aktTeam = 'A'; s.iA = 0; s.iB = 0; s.remaining = 9;
+    if (s.runde > 4) {
+      s.done = true;
+      const sA = _teamTotal(s.tA), sB = _teamTotal(s.tB);
+      s.winner = sA > sB ? 'A' : sB > sA ? 'B' : 'draw';
     }
+  } else if (aDone) {
+    s.aktTeam = 'B'; // A finished, B still has players
+  } else if (bDone) {
+    s.aktTeam = 'A'; // B finished, A still has players
+  } else {
+    s.aktTeam = s.aktTeam === 'A' ? 'B' : 'A'; // Both still have players → interleave
   }
   return s;
 }
