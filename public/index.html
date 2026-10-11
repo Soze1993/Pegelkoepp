@@ -331,6 +331,7 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 <div class="mo" id="m-skr"><div class="md">
   <h2>🚗 Seifenkistenrennen</h2>
   <div class="fg"><label>Datum</label><input type="date" id="m-skr-datum"></div>
+  <div class="fg"><label>Strecke (8–15 Felder)</label><input type="number" id="m-skr-felder" value="12" min="8" max="15" style="width:80px"></div>
   <div class="fg"><label>Team A</label><div id="m-skr-a" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div></div>
   <div class="fg"><label>Team B</label><div id="m-skr-b" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div></div>
   <div style="display:flex;gap:10px;margin-top:18px">
@@ -1784,7 +1785,7 @@ async function startTeamSpiel(typeKey,aArr,bArr,configObj,modalId,label){
 async function startGU(){var d=document.getElementById('m-gu-datum').value;await startTeamSpiel('geradeUngerade',guA,guB,{date:d},'m-gu','⚖️ Gerade & Ungerade');}
 async function startHT(){var r=parseInt(document.getElementById('m-ht-runden').value)||10;var d=document.getElementById('m-ht-datum').value;await startTeamSpiel('henneferTreppe',htA,htB,{date:d,totalRunden:r},'m-ht','🪜 Hennefer Treppe');}
 async function startFB(){var t=parseInt(document.getElementById('m-fb-tore').value)||5;var d=document.getElementById('m-fb-datum').value;await startTeamSpiel('fussball',fbA,fbB,{date:d,targetGoals:t},'m-fb','⚽ Fußball');}
-async function startSKR(){var d=document.getElementById('m-skr-datum').value;await startTeamSpiel('seifenkistenrennen',skrA,skrB,{date:d},'m-skr','🚗 Seifenkistenrennen');}
+async function startSKR(){var n=Math.max(8,Math.min(15,parseInt(document.getElementById('m-skr-felder').value)||12));var d=document.getElementById('m-skr-datum').value;await startTeamSpiel('seifenkistenrennen',skrA,skrB,{date:d,numFields:n},'m-skr','🚗 Seifenkistenrennen');}
 
 // ── Gerade & Ungerade renderer ───────────────────────────────────────────
 function renderGUSpiel(el,state){
@@ -1897,26 +1898,19 @@ function renderFBSpiel(el,state){
 }
 
 // ── Seifenkistenrennen renderer ──────────────────────────────────────────
-var SKR_TRACK=[
-  {v:[2]},{v:[6]},{v:[3]},{v:[3],sc:6},
-  {v:[6]},{v:[1]},{v:[5]},{v:[4]},
-  {v:[7],sc:11},{v:[5]},{v:[2]},{v:[5,8]},
-  {v:[4]},{v:[7]}
-];
-
 function renderSKRSpiel(el,state){
   var sp=state;if(!sp){el.innerHTML='';return;}
-  var N=SKR_TRACK.length;
+  var track=sp.track||[];var N=track.length;
   var posA=sp.posA,posB=sp.posB;
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;var aktSp=aktArr[aktIdx];
-  var nextValA=posA<N?SKR_TRACK[posA].v.join('/'):null;
-  var nextValB=posB<N?SKR_TRACK[posB].v.join('/'):null;
+  var nextValA=posA<N?track[posA].values.join('/'):null;
+  var nextValB=posB<N?track[posB].values.join('/'):null;
 
   function fieldBox(i){
-    var f=SKR_TRACK[i];
+    var f=track[i];
     var isNextA=posA===i,isNextB=posB===i;
     var pastA=posA>i,pastB=posB>i;
-    var label=f.v.join('/');
+    var label=f.values.join('/');
     var bdColor=isNextA&&isNextB?'var(--ac)':isNextA?'var(--ac)':isNextB?'var(--grn)':pastA||pastB?'transparent':'var(--brd)';
     var bg=pastA&&pastB?'var(--bg3)':pastA?'var(--ac)11':pastB?'var(--grn)11':'var(--bg2)';
     var op=pastA&&pastB?'0.35':'1';
@@ -1924,7 +1918,7 @@ function renderSKRSpiel(el,state){
     if(isNextA&&isNextB)marker='<div style="font-size:8px;line-height:1">🔵🔴</div>';
     else if(isNextA)marker='<div style="font-size:9px">🔵</div>';
     else if(isNextB)marker='<div style="font-size:9px">🔴</div>';
-    var sc=f.sc!==undefined?'<div style="font-size:7px;color:var(--ac);line-height:1">⚡'+f.sc+'</div>':'';
+    var sc=f.shortcutTo!==undefined?'<div style="font-size:7px;color:var(--ac);line-height:1">⚡</div>':'';
     return '<div style="min-width:32px;width:32px;border:2px solid '+bdColor+';border-radius:6px;padding:3px 1px;text-align:center;background:'+bg+';opacity:'+op+';flex-shrink:0">'
       +sc+'<div style="font-size:13px;font-weight:700;line-height:1.2">'+label+'</div>'+marker+'</div>';
   }
@@ -1932,7 +1926,7 @@ function renderSKRSpiel(el,state){
   var sep='<div style="color:var(--mut);font-size:10px;flex-shrink:0">›</div>';
   var trackHtml='<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px"><div style="display:flex;gap:2px;align-items:center;padding:4px 0;min-width:max-content">'
     +'<div style="min-width:22px;font-size:10px;color:var(--mut);font-weight:700;flex-shrink:0">S</div>'+sep
-    +SKR_TRACK.map(function(_,i){return fieldBox(i)+(i<N-1?sep:'');}).join('')
+    +track.map(function(_,i){return fieldBox(i)+(i<N-1?sep:'');}).join('')
     +sep+'<div style="min-width:22px;font-size:14px;flex-shrink:0">🏁</div>'
     +'</div></div>';
 

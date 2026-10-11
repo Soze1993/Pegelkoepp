@@ -2,44 +2,58 @@
 
 // ---------------------------------------------------------------------------
 // Seifenkistenrennen — Mannschaftsspiel (2 Teams)
-// Die Strecke hat 14 Felder mit festen Holzzahlen (keine 9).
-// Ein Wurf rückt das Team NUR vor, wenn er exakt die Holzzahl des nächsten
-// Feldes trifft. Sonst: kein Fortschritt.
-// Abkürzungen: bestimmte Felder schicken das Team weiter nach vorne.
-// Erstes Team hinter Feld 14 gewinnt.
+// Strecke: 8–15 Felder, bei jedem Spiel zufällig generiert.
+// Jedes Feld hat 1 Holzzahl (normale Felder) oder 2 Holzzahlen (Abkürzungsfelder).
+// Nur der exakte Treffer rückt vor. Abkürzungsfelder: Treffer → zusätzlicher Sprung.
+// 2 Abkürzungen pro Strecke, zufällig platziert.
 // ---------------------------------------------------------------------------
 
-const TRACK = [
-  { values: [2] },                  // 0
-  { values: [6] },                  // 1
-  { values: [3] },                  // 2
-  { values: [3], shortcutTo: 6 },  // 3 → ⚡ Abkürzung zu Position 6
-  { values: [6] },                  // 4
-  { values: [1] },                  // 5
-  { values: [5] },                  // 6
-  { values: [4] },                  // 7
-  { values: [7], shortcutTo: 11 }, // 8 → ⚡ Abkürzung zu Position 11
-  { values: [5] },                  // 9
-  { values: [2] },                  // 10
-  { values: [5, 8] },              // 11
-  { values: [4] },                  // 12
-  { values: [7] },                  // 13 → Position 14 = ZIEL
-];
+const VALS = [1,2,3,4,5,6,7,8];
+
+function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+function generateTrack(numFields) {
+  // Place 2 shortcuts at ~25% and ~55% of track, each jumping 2-4 extra fields
+  var pos1 = Math.floor(numFields * 0.2 + Math.random() * Math.floor(numFields * 0.1));
+  var pos2 = Math.floor(numFields * 0.48 + Math.random() * Math.floor(numFields * 0.12));
+  if (pos2 <= pos1 + 2) pos2 = pos1 + 3;
+
+  var jump1 = 2 + Math.floor(Math.random() * 3);
+  var jump2 = 2 + Math.floor(Math.random() * 3);
+  var sc1to = Math.min(pos1 + 1 + jump1, numFields - 1);
+  var sc2to = Math.min(pos2 + 1 + jump2, numFields - 1);
+
+  var track = [];
+  for (var i = 0; i < numFields; i++) {
+    if (i === pos1) {
+      var v1 = rnd(VALS), v2;
+      do { v2 = rnd(VALS); } while (v2 === v1);
+      track.push({ values: [v1, v2], shortcutTo: sc1to });
+    } else if (i === pos2) {
+      var w1 = rnd(VALS), w2;
+      do { w2 = rnd(VALS); } while (w2 === w1);
+      track.push({ values: [w1, w2], shortcutTo: sc2to });
+    } else {
+      track.push({ values: [rnd(VALS)] });
+    }
+  }
+  return track;
+}
 
 module.exports = {
   id: 'seifenkistenrennen',
   name: 'Seifenkistenrennen',
-  TRACK,
 
-  initState(players) {
+  initState(players, config) {
+    var numFields = 12;
+    if (config && config.numFields) {
+      numFields = Math.max(8, Math.min(15, parseInt(config.numFields) || 12));
+    }
     return {
-      tA: players.filter(p => p.role === 'A').map(p => ({
-        id: p.id, name: p.name, emoji: p.emoji, pudel: 0
-      })),
-      tB: players.filter(p => p.role === 'B').map(p => ({
-        id: p.id, name: p.name, emoji: p.emoji, pudel: 0
-      })),
-      posA: 0,   // Felder erfolgreich passiert (0 = Start, 14 = Ziel)
+      track: generateTrack(numFields),
+      tA: players.filter(function(p){ return p.role === 'A'; }).map(function(p){ return {id:p.id,name:p.name,emoji:p.emoji,pudel:0}; }),
+      tB: players.filter(function(p){ return p.role === 'B'; }).map(function(p){ return {id:p.id,name:p.name,emoji:p.emoji,pudel:0}; }),
+      posA: 0,
       posB: 0,
       aktTeam: 'A',
       iA: 0,
@@ -50,36 +64,34 @@ module.exports = {
   },
 
   applyThrow(state, playerId, value, meta) {
-    const s = JSON.parse(JSON.stringify(state));
+    var s = JSON.parse(JSON.stringify(state));
     if (s.done) return s;
 
-    const team    = s.aktTeam;
-    const teamArr = team === 'A' ? s.tA : s.tB;
-    const idx     = team === 'A' ? s.iA  : s.iB;
-    const player  = teamArr[idx];
+    var team    = s.aktTeam;
+    var teamArr = team === 'A' ? s.tA : s.tB;
+    var idx     = team === 'A' ? s.iA  : s.iB;
+    var player  = teamArr[idx];
     if (!player || player.id !== playerId) return s;
 
     if (value === 0 && !(meta && meta.keinPudel)) player.pudel++;
 
-    const pos   = team === 'A' ? s.posA : s.posB;
-    const field = TRACK[pos];
+    var pos   = team === 'A' ? s.posA : s.posB;
+    var field = s.track[pos];
 
-    if (field && field.values.includes(value)) {
-      let newPos = pos + 1;
-      // Abkürzung: wenn das gerade überquerte Feld eine shortcutTo hat, direkt springen
+    if (field && field.values.indexOf(value) >= 0) {
+      var newPos = pos + 1;
       if (field.shortcutTo !== undefined && field.shortcutTo > newPos) {
         newPos = field.shortcutTo;
       }
       if (team === 'A') s.posA = newPos;
       else              s.posB = newPos;
 
-      if (newPos >= TRACK.length) {
+      if (newPos >= s.track.length) {
         s.done   = true;
         s.winner = team;
       }
     }
 
-    // Teams wechseln nach jedem Wurf
     if (!s.done) {
       if (team === 'A') { s.iA = (s.iA + 1) % s.tA.length; s.aktTeam = 'B'; }
       else              { s.iB = (s.iB + 1) % s.tB.length; s.aktTeam = 'A'; }
@@ -91,15 +103,13 @@ module.exports = {
   isFinished(state) { return state.done; },
 
   getFinalResults(state) {
-    const all = [
-      ...state.tA.map(p => ({ ...p, team: 'A' })),
-      ...state.tB.map(p => ({ ...p, team: 'B' })),
-    ];
-    return all.map(p => ({
+    var all = state.tA.map(function(p){ return {id:p.id,pudel:p.pudel,team:'A'}; })
+      .concat(state.tB.map(function(p){ return {id:p.id,pudel:p.pudel,team:'B'}; }));
+    return all.map(function(p){ return {
       playerId: p.id,
       score:    p.team === 'A' ? state.posA : state.posB,
       pudel:    p.pudel,
-      winner:   p.team === state.winner,
-    }));
+      winner:   p.team === state.winner
+    }; });
   }
 };
