@@ -1,13 +1,15 @@
 'use strict';
 
 // Mixed Partie — Mannschaftsspiel (2 Teams), 4 Runden
-// R1: 3 Würfe Volle pro Spieler, Summe → R1-Beitrag
-// R2: 4 Würfe Abräumen pro Spieler, Summe → R2-Beitrag
-// R3: Große Hausnummer — 2 Würfe (Zehner+Einer) pro Spieler, addiert
-//     Ablauf: A0-Zehner → B0-Zehner → A0-Einer → B0-Einer → A1-Zehner → …
-// R4: Kleine Hausnummer — wie R3, aber subtrahiert
-//     Pudel in R4 → Digit 9 (ungünstigste Stelle) — zählt NICHT als Pudel-Stat
-// Teamergebnis = sum(R1) + sum(R2) + sum(R3) − sum(R4)
+// R1: 3 Würfe Volle pro Spieler → Summe je Team
+// R2: 4 Würfe Abräumen pro Spieler → Summe je Team
+// R3: Große Hausnummer — IMMER genau 2 zweistellige Zahlen pro Team
+//     4 Slots: [Z1, E1, Z2, E2]. Slot 0→Player[0%N], Slot 1→Player[1%N], …
+//     Interleave: Team A füllt Slot X, dann Team B Slot X, dann nächster Slot.
+//     Ergebnis: (Z1*10+E1) + (Z2*10+E2) wird addiert
+// R4: Kleine Hausnummer — gleicher Aufbau, wird subtrahiert
+//     Pudel → Digit 9 (kein Pudel-Stat)
+// Teamergebnis = R1 + R2 + R3 − R4
 
 module.exports = {
   id: 'mixedPartie',
@@ -15,14 +17,20 @@ module.exports = {
 
   initState(players, config) {
     return {
-      tA: players.filter(p => p.role === 'A').map(p => ({id:p.id, name:p.name, emoji:p.emoji, pudel:0, r1:null, r2:null, r3:null, r4:null, zehner:null})),
-      tB: players.filter(p => p.role === 'B').map(p => ({id:p.id, name:p.name, emoji:p.emoji, pudel:0, r1:null, r2:null, r3:null, r4:null, zehner:null})),
+      tA: players.filter(p => p.role === 'A').map(p => ({id:p.id, name:p.name, emoji:p.emoji, pudel:0, r1:null, r2:null})),
+      tB: players.filter(p => p.role === 'B').map(p => ({id:p.id, name:p.name, emoji:p.emoji, pudel:0, r1:null, r2:null})),
       aktTeam: 'A',
       iA: 0,
       iB: 0,
       runde: 1,
       throwBuf: [],
       remaining: 9,
+      // R3/R4: je 4 Slots [Zehner1, Einer1, Zehner2, Einer2]
+      hnA3: [null, null, null, null],
+      hnB3: [null, null, null, null],
+      hnA4: [null, null, null, null],
+      hnB4: [null, null, null, null],
+      hnSlot: 0,  // 0-3, aktueller Slot in R3/R4
       done: false,
       winner: null
     };
@@ -34,11 +42,14 @@ module.exports = {
 
     const team    = s.aktTeam;
     const teamArr = team === 'A' ? s.tA : s.tB;
-    const idx     = team === 'A' ? s.iA  : s.iB;
-    const player  = teamArr[idx];
+
+    // Spieler ermitteln: R1/R2 per iA/iB, R3/R4 per hnSlot % teamSize
+    const idx    = s.runde >= 3 ? s.hnSlot % teamArr.length
+                                : (team === 'A' ? s.iA : s.iB);
+    const player = teamArr[idx];
     if (!player || player.id !== playerId) return s;
 
-    // Pudel-Statistik: R4 zählt nie (Pudel → Digit 9 ist Spielregel, kein Stat-Pudel)
+    // Pudel-Statistik: R4 zählt nie (Digit 9 = Spielregel)
     if (s.runde !== 4 && value === 0 && !(meta && meta.keinPudel)) player.pudel++;
 
     if (s.runde === 1) {
@@ -66,30 +77,16 @@ module.exports = {
     }
 
     if (s.runde === 3) {
-      // Teamweiser Wechsel nach JEDEM Einzelwurf (Zehner/Einer)
-      // Zehner wird pro Spieler gespeichert, damit B seinen Zehner werfen kann
-      // bevor A seinen Einer wirft
-      if (player.zehner === null) {
-        player.zehner = value; // Pudel → digit 0
-        _interleaveSwitch(s);
-        return s;
-      }
-      player.r3 = player.zehner * 10 + value;
-      player.zehner = null;
-      return _advance(s);
+      const hn = team === 'A' ? s.hnA3 : s.hnB3;
+      hn[s.hnSlot] = value;
+      return _advanceHN(s);
     }
 
     if (s.runde === 4) {
-      // Pudel → Digit 9 (ungünstigste Stelle beim Subtrahieren)
       const digit = (value === 0 && !(meta && meta.keinPudel)) ? 9 : value;
-      if (player.zehner === null) {
-        player.zehner = digit;
-        _interleaveSwitch(s);
-        return s;
-      }
-      player.r4 = player.zehner * 10 + digit;
-      player.zehner = null;
-      return _advance(s);
+      const hn = team === 'A' ? s.hnA4 : s.hnB4;
+      hn[s.hnSlot] = digit;
+      return _advanceHN(s);
     }
 
     return s;
@@ -98,7 +95,8 @@ module.exports = {
   isFinished(state) { return state.done; },
 
   getFinalResults(state) {
-    const sA = _teamTotal(state.tA), sB = _teamTotal(state.tB);
+    const sA = _teamTotal(state.tA, state.hnA3, state.hnA4);
+    const sB = _teamTotal(state.tB, state.hnB3, state.hnB4);
     return [
       ...state.tA.map(p => ({playerId:p.id, score:sA, pudel:p.pudel, winner:state.winner === 'A'})),
       ...state.tB.map(p => ({playerId:p.id, score:sB, pudel:p.pudel, winner:state.winner === 'B'})),
@@ -106,42 +104,50 @@ module.exports = {
   }
 };
 
-function _teamTotal(arr) {
-  return arr.reduce((sum, p) => sum + (p.r1||0) + (p.r2||0) + (p.r3||0) - (p.r4||0), 0);
+function _hnTotal(hn) {
+  return ((hn[0]||0)*10 + (hn[1]||0)) + ((hn[2]||0)*10 + (hn[3]||0));
 }
 
-// Wechselt das aktive Team nach einem Einzelwurf (für R3/R4 Zehner)
-// Falls das andere Team schon alle Spieler für diese Runde abgeschlossen hat, bleibt das aktuelle Team dran
-function _interleaveSwitch(s) {
-  const other    = s.aktTeam === 'A' ? 'B' : 'A';
-  const otherIdx = other === 'A' ? s.iA : s.iB;
-  const otherLen = other === 'A' ? s.tA.length : s.tB.length;
-  if (otherIdx < otherLen) s.aktTeam = other;
+function _teamTotal(arr, hn3, hn4) {
+  const r1 = arr.reduce((s, p) => s + (p.r1||0), 0);
+  const r2 = arr.reduce((s, p) => s + (p.r2||0), 0);
+  return r1 + r2 + _hnTotal(hn3) - _hnTotal(hn4);
 }
 
-// Spieler innerhalb der Runde weiterschieben (nach Abschluss eines kompletten Spieler-Turns)
-// Interleave: A0→B0→A1→B1 usw.
+// R1/R2: Interleave A0→B0→A1→B1 usw.
 function _advance(s) {
   if (s.aktTeam === 'A') s.iA++;
   else                   s.iB++;
-
   const aDone = s.iA >= s.tA.length;
   const bDone = s.iB >= s.tB.length;
-
   if (aDone && bDone) {
-    s.runde++;
-    s.aktTeam = 'A'; s.iA = 0; s.iB = 0; s.remaining = 9;
-    if (s.runde > 4) {
-      s.done = true;
-      const sA = _teamTotal(s.tA), sB = _teamTotal(s.tB);
-      s.winner = sA > sB ? 'A' : sB > sA ? 'B' : 'draw';
-    }
-  } else if (aDone) {
-    s.aktTeam = 'B';
-  } else if (bDone) {
-    s.aktTeam = 'A';
+    s.runde++; s.aktTeam = 'A'; s.iA = 0; s.iB = 0; s.remaining = 9;
+    if (s.runde > 4) _finish(s);
+  } else if (aDone) { s.aktTeam = 'B'; }
+  else if (bDone)   { s.aktTeam = 'A'; }
+  else              { s.aktTeam = s.aktTeam === 'A' ? 'B' : 'A'; }
+  return s;
+}
+
+// R3/R4: Team A füllt Slot → Team B füllt Slot → nächster Slot
+function _advanceHN(s) {
+  if (s.aktTeam === 'A') {
+    s.aktTeam = 'B'; // B füllt jetzt denselben Slot
   } else {
-    s.aktTeam = s.aktTeam === 'A' ? 'B' : 'A';
+    s.aktTeam = 'A';
+    s.hnSlot++;
+    if (s.hnSlot >= 4) {
+      s.hnSlot = 0;
+      s.runde++;
+      if (s.runde > 4) _finish(s);
+    }
   }
   return s;
+}
+
+function _finish(s) {
+  s.done = true;
+  const sA = _teamTotal(s.tA, s.hnA3, s.hnA4);
+  const sB = _teamTotal(s.tB, s.hnB3, s.hnB4);
+  s.winner = sA > sB ? 'A' : sB > sA ? 'B' : 'draw';
 }

@@ -2099,8 +2099,10 @@ function renderMPTV(state) {
   idleEl.style.display = 'none';
   gameEl.classList.add('active');
 
-  function teamTotal(arr) { return arr.reduce(function(s,p){return s+(p.r1||0)+(p.r2||0)+(p.r3||0)-(p.r4||0);},0); }
-  const sA = teamTotal(state.tA), sB = teamTotal(state.tB);
+  function hnTot(hn){return((hn[0]||0)*10+(hn[1]||0))+((hn[2]||0)*10+(hn[3]||0));}
+  function teamScore(arr,hn3,hn4){var r1=arr.reduce(function(s,p){return s+(p.r1||0);},0),r2=arr.reduce(function(s,p){return s+(p.r2||0);},0);return r1+r2+hnTot(hn3)-hnTot(hn4);}
+  const sA = teamScore(state.tA, state.hnA3, state.hnA4);
+  const sB = teamScore(state.tB, state.hnB3, state.hnB4);
 
   const wrap = document.createElement('div');
   wrap.style.cssText = 'padding:24px 40px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px';
@@ -2130,21 +2132,29 @@ function renderMPTV(state) {
   });
   wrap.appendChild(scoreRow);
 
-  // Scorecard table (rows=rounds, cols=teams)
-  function teamCellVal(arr, rKey) {
-    const allDone = arr.every(function(p){return p[rKey]!==null;});
-    const parts = arr.map(function(p){return p[rKey]!==null?p[rKey]:'–';}).join(' + ');
-    const tot = arr.reduce(function(s,p){return s+(p[rKey]||0);},0);
-    if (arr.length > 1 && allDone) return parts + ' = ' + tot;
+  // Scorecard table
+  function r12CellTV(arr, key) {
+    const allDone = arr.every(function(p){return p[key]!==null;});
+    const parts = arr.map(function(p){return p[key]!==null?p[key]:'–';}).join('+');
+    const tot = arr.reduce(function(s,p){return s+(p[key]||0);},0);
+    if (arr.length > 1 && allDone) return parts + '=' + tot;
     return parts;
+  }
+  function hnCellTV(hn) {
+    const z1=hn[0]!==null?hn[0]:'?', e1=hn[1]!==null?hn[1]:'?';
+    const z2=hn[2]!==null?hn[2]:'?', e2=hn[3]!==null?hn[3]:'?';
+    let txt = z1+''+e1+' + '+z2+''+e2;
+    if (hn[0]!==null&&hn[1]!==null&&hn[2]!==null&&hn[3]!==null)
+      txt += ' = '+((hn[0]*10+hn[1])+(hn[2]*10+hn[3]));
+    return txt;
   }
   const tableEl = document.createElement('table');
   tableEl.style.cssText = 'width:100%;border-collapse:collapse;font-size:17px';
   const rounds = [
-    {label:'Volle', sub:'3 Würfe', key:'r1', subCol:'var(--mut)'},
-    {label:'Abräumen', sub:'4 Würfe', key:'r2', subCol:'var(--mut)'},
-    {label:'Gr. HausNr.', sub:'+', key:'r3', subCol:'#4ade80'},
-    {label:'kl. HausNr.', sub:'−', key:'r4', subCol:'#f87171'}
+    {label:'Volle', sub:'3 Würfe', subCol:'var(--mut)', cellA:r12CellTV(state.tA,'r1'), cellB:r12CellTV(state.tB,'r1')},
+    {label:'Abräumen', sub:'4 Würfe', subCol:'var(--mut)', cellA:r12CellTV(state.tA,'r2'), cellB:r12CellTV(state.tB,'r2')},
+    {label:'Gr. HausNr.', sub:'+', subCol:'#4ade80', cellA:hnCellTV(state.hnA3), cellB:hnCellTV(state.hnB3)},
+    {label:'kl. HausNr.', sub:'−', subCol:'#f87171', cellA:hnCellTV(state.hnA4), cellB:hnCellTV(state.hnB4)}
   ];
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr>'
@@ -2159,8 +2169,8 @@ function renderMPTV(state) {
     const tr = document.createElement('tr');
     tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.06)'+(isAkt?';background:rgba(255,255,255,.05)':'');
     tr.innerHTML = '<td style="padding:10px 12px;color:var(--mut);font-size:15px">'+r.label+'<br><span style="font-size:12px;color:'+r.subCol+'">'+r.sub+'</span></td>'
-      +'<td style="text-align:right;padding:10px 12px;color:#60a5fa">'+teamCellVal(state.tA, r.key)+'</td>'
-      +'<td style="text-align:right;padding:10px 12px;color:#f87171">'+teamCellVal(state.tB, r.key)+'</td>';
+      +'<td style="text-align:right;padding:10px 12px;color:#60a5fa">'+r.cellA+'</td>'
+      +'<td style="text-align:right;padding:10px 12px;color:#f87171">'+r.cellB+'</td>';
     tbody.appendChild(tr);
   });
   const totRow = document.createElement('tr');
@@ -2175,15 +2185,15 @@ function renderMPTV(state) {
   // Current player indicator
   if (!state.done) {
     const aktArr = state.aktTeam === 'A' ? state.tA : state.tB;
-    const aktIdx = state.aktTeam === 'A' ? state.iA : state.iB;
+    const aktIdx = state.runde >= 3 ? state.hnSlot % aktArr.length : (state.aktTeam === 'A' ? state.iA : state.iB);
     const aktP = aktArr[aktIdx];
     if (aktP) {
       const col = state.aktTeam === 'A' ? '#60a5fa' : '#f87171';
+      const slotNames = ['Zehner (Zahl 1)','Einer (Zahl 1)','Zehner (Zahl 2)','Einer (Zahl 2)'];
       let throwInfo;
       if (state.runde === 1)      throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/3 — Volle';
       else if (state.runde === 2) throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining;
-      else if (state.runde === 3) throwInfo = aktP.zehner === null ? 'Zehner' : 'Einer (Zehner: '+aktP.zehner+')';
-      else                        throwInfo = aktP.zehner === null ? 'Zehner' : 'Einer (Zehner: '+aktP.zehner+')';
+      else throwInfo = (state.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[state.hnSlot];
       const cur = document.createElement('div');
       cur.style.cssText = 'text-align:center;padding:14px;border-radius:10px;border:2px solid '+col+';background:'+col+'22';
       cur.innerHTML = '<div style="font-size:36px">'+aktP.emoji+'</div>'

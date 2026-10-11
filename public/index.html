@@ -2092,48 +2092,34 @@ async function doSRWurf(){
 // ── Mixed Partie renderer ────────────────────────────────────────────────
 function renderMPSpiel(el,state){
   var sp=state;if(!sp||!sp.tA){el.innerHTML='';return;}
-  function teamTotal(arr){return arr.reduce(function(s,p){return s+(p.r1||0)+(p.r2||0)+(p.r3||0)-(p.r4||0);},0);}
-  var sA=teamTotal(sp.tA),sB=teamTotal(sp.tB);
-  var tColA='var(--blu)',tColB='var(--red)';
-  var aktCol=sp.aktTeam==='A'?tColA:tColB;
-  // Score header
+  function hnTot(hn){return((hn[0]||0)*10+(hn[1]||0))+((hn[2]||0)*10+(hn[3]||0));}
+  function teamScore(arr,hn3,hn4){var r1=arr.reduce(function(s,p){return s+(p.r1||0);},0),r2=arr.reduce(function(s,p){return s+(p.r2||0);},0);return r1+r2+hnTot(hn3)-hnTot(hn4);}
+  var sA=teamScore(sp.tA,sp.hnA3,sp.hnA4),sB=teamScore(sp.tB,sp.hnB3,sp.hnB4);
+  var tColA='var(--blu)',tColB='var(--red)',aktCol=sp.aktTeam==='A'?tColA:tColB;
   var hdr='<div style="display:flex;gap:8px;margin-bottom:10px">'
     +'<div style="flex:1;padding:10px;border-radius:8px;text-align:center;border:2px solid '+(sp.aktTeam==='A'&&!sp.done?tColA:'var(--brd)')+';background:'+(sp.aktTeam==='A'&&!sp.done?'var(--blu)11':'var(--card2)')+'"><div style="font-size:11px;font-weight:700;color:'+tColA+';text-transform:uppercase">Team A</div><div style="font-size:28px;font-weight:800;color:'+tColA+'">'+sA+'</div></div>'
     +'<div style="display:flex;align-items:center;padding:0 6px;font-size:14px;font-weight:700;color:var(--mut)">vs</div>'
     +'<div style="flex:1;padding:10px;border-radius:8px;text-align:center;border:2px solid '+(sp.aktTeam==='B'&&!sp.done?tColB:'var(--brd)')+';background:'+(sp.aktTeam==='B'&&!sp.done?'var(--red)11':'var(--card2)')+'"><div style="font-size:11px;font-weight:700;color:'+tColB+';text-transform:uppercase">Team B</div><div style="font-size:28px;font-weight:800;color:'+tColB+'">'+sB+'</div></div>'
     +'</div>';
-  // Scorecard: rows=rounds, cols=teams (matching screenshot layout)
-  function teamCell(arr,rKey){
-    var parts=arr.map(function(p){return p[rKey]!==null?p[rKey]:'–';}).join(' + ');
-    var allDone=arr.every(function(p){return p[rKey]!==null;});
-    var tot=arr.reduce(function(s,p){return s+(p[rKey]||0);},0);
-    if(arr.length>1&&allDone)parts+=' = '+tot;
-    return '<td style="text-align:right;font-size:13px">'+parts+'</td>';
-  }
+  function r12Cell(arr,key){var p=arr.map(function(x){return x[key]!==null?x[key]:'–';}).join('+');if(arr.length>1&&arr.every(function(x){return x[key]!==null;}))p+='='+arr.reduce(function(s,x){return s+(x[key]||0);},0);return'<td style="text-align:right;font-size:13px">'+p+'</td>';}
+  function hnCell(hn){var z1=hn[0]!==null?hn[0]:'?',e1=hn[1]!==null?hn[1]:'?',z2=hn[2]!==null?hn[2]:'?',e2=hn[3]!==null?hn[3]:'?';var txt=z1+''+e1+' + '+z2+''+e2;if(hn[0]!==null&&hn[1]!==null&&hn[2]!==null&&hn[3]!==null)txt+=' = '+((hn[0]*10+hn[1])+(hn[2]*10+hn[3]));return'<td style="text-align:right;font-size:13px">'+txt+'</td>';}
   var tbl='<div class="card" style="overflow-x:auto;margin-bottom:10px"><table class="stbl" style="width:100%">'
-    +'<thead><tr><th style="text-align:left;font-size:11px;color:var(--mut)">Runde</th><th style="text-align:right;color:'+tColA+'">Team A</th><th style="text-align:right;color:'+tColB+'">Team B</th></tr></thead>'
-    +'<tbody>'
-    +'<tr><td style="font-size:12px;color:var(--mut)">Volle<br><span style="font-size:10px;opacity:.6">3 Würfe</span></td>'+teamCell(sp.tA,'r1')+teamCell(sp.tB,'r1')+'</tr>'
-    +'<tr><td style="font-size:12px;color:var(--mut)">Abräumen<br><span style="font-size:10px;opacity:.6">4 Würfe</span></td>'+teamCell(sp.tA,'r2')+teamCell(sp.tB,'r2')+'</tr>'
-    +'<tr><td style="font-size:12px;color:var(--mut)">Gr. HausNr.<br><span style="font-size:10px;color:var(--grn)">+</span></td>'+teamCell(sp.tA,'r3')+teamCell(sp.tB,'r3')+'</tr>'
-    +'<tr><td style="font-size:12px;color:var(--mut)">kl. HausNr.<br><span style="font-size:10px;color:var(--red)">−</span></td>'+teamCell(sp.tA,'r4')+teamCell(sp.tB,'r4')+'</tr>'
+    +'<thead><tr><th style="text-align:left;font-size:11px;color:var(--mut)">Runde</th><th style="text-align:right;color:'+tColA+'">Team A</th><th style="text-align:right;color:'+tColB+'">Team B</th></tr></thead><tbody>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">Volle<br><span style="font-size:10px;opacity:.6">3 Würfe</span></td>'+r12Cell(sp.tA,'r1')+r12Cell(sp.tB,'r1')+'</tr>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">Abräumen<br><span style="font-size:10px;opacity:.6">4 Würfe</span></td>'+r12Cell(sp.tA,'r2')+r12Cell(sp.tB,'r2')+'</tr>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">Gr. HausNr.<br><span style="font-size:10px;color:var(--grn)">+</span></td>'+hnCell(sp.hnA3)+hnCell(sp.hnB3)+'</tr>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">kl. HausNr.<br><span style="font-size:10px;color:var(--red)">−</span></td>'+hnCell(sp.hnA4)+hnCell(sp.hnB4)+'</tr>'
     +'<tr style="border-top:1px solid var(--brd);font-weight:700"><td style="font-size:12px;color:var(--mut)">Gesamt</td><td style="text-align:right;color:'+tColA+'">'+sA+'</td><td style="text-align:right;color:'+tColB+'">'+sB+'</td></tr>'
     +'</tbody></table></div>';
-  if(sp.done){
-    var winText=sp.winner==='A'?'Team A gewinnt!':sp.winner==='B'?'Team B gewinnt!':'Unentschieden!';
-    var winCol=sp.winner==='A'?tColA:sp.winner==='B'?tColB:'var(--ac)';
-    el.innerHTML=hdr+tbl+'<div style="text-align:center;padding:14px 0 8px;font-family:var(--fh);font-size:26px;color:'+winCol+'">'+winText+'</div>'
-      +'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';
-    return;
-  }
+  if(sp.done){var winText=sp.winner==='A'?'Team A gewinnt!':sp.winner==='B'?'Team B gewinnt!':'Unentschieden!';var winCol=sp.winner==='A'?tColA:sp.winner==='B'?tColB:'var(--ac)';el.innerHTML=hdr+tbl+'<div style="text-align:center;padding:14px 0 8px;font-family:var(--fh);font-size:26px;color:'+winCol+'">'+winText+'</div><button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';return;}
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;
-  var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;
+  var aktIdx=sp.runde>=3?sp.hnSlot%aktArr.length:(sp.aktTeam==='A'?sp.iA:sp.iB);
   var aktP=aktArr[aktIdx];
+  var slotNames=['Zehner (Zahl 1)','Einer (Zahl 1)','Zehner (Zahl 2)','Einer (Zahl 2)'];
   var throwInfo;
   if(sp.runde===1)throwInfo='Wurf '+(sp.throwBuf.length+1)+'/3 — Volle';
   else if(sp.runde===2)throwInfo='Wurf '+(sp.throwBuf.length+1)+'/4 — Stehend: '+sp.remaining;
-  else if(sp.runde===3)throwInfo=aktP.zehner===null?'Große Hausnummer: Zehner':'Große Hausnummer: Einer (Zehner='+aktP.zehner+')';
-  else throwInfo=aktP.zehner===null?'Kleine Hausnummer: Zehner':'Kleine Hausnummer: Einer (Zehner='+aktP.zehner+')';
+  else throwInfo=(sp.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[sp.hnSlot];
   el.innerHTML=hdr+tbl
     +(aktP?'<div class="wi"><span style="font-size:11px">'+throwInfo+'</span><strong style="color:'+aktCol+'">'+aktP.emoji+' '+aktP.name+'</strong></div>':'')
     +'<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Umgeworfene Kegel</div>'
@@ -2146,7 +2132,7 @@ async function doMPWurf(){
   if(mpWurfVal===null){notify('Bitte Zahl wählen','var(--red)');return;}
   var sp=S.aktSpiel.state;
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;
-  var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;
+  var aktIdx=sp.runde>=3?sp.hnSlot%aktArr.length:(sp.aktTeam==='A'?sp.iA:sp.iB);
   var p=aktArr[aktIdx];if(!p)return;
   var meta=(selKeinPudel&&mpWurfVal===0)?{keinPudel:true}:undefined;
   var data=await submitThrow(p.id,0,mpWurfVal,meta);
