@@ -2068,9 +2068,9 @@ function renderSteigrohrTV(state) {
     var isAkt = !s.done && paar.idx === s.aktPaarIdx;
     var isOut = !paar.aktiv;
     var names = paar.spieler.map(function(p){ return p.emoji+' '+p.name; }).join('<br>');
-    hRow += '<th style="text-align:center;padding:10px 16px;font-size:19px;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+'background:'+(isAkt?farbe+'15':'transparent')+'">'
-      + 'Paar '+paar.paarNr+(isAkt?' 🎳':isOut?' ❌':'')+''
-      + '<div style="font-size:14px;font-weight:400;color:var(--mut);margin-top:2px">'+names+'</div>'
+    hRow += '<th style="text-align:center;padding:12px 16px;font-size:22px;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+';background:'+(isAkt?farbe+'15':'transparent')+'">'
+      + 'Paar '+paar.paarNr+(isAkt?' 🎳':isOut?' ❌':'')
+      + '<div style="font-size:20px;font-weight:600;color:'+(isOut?'var(--mut)':farbe)+';margin-top:6px;line-height:1.4">'+names+'</div>'
       + '</th>';
   });
   hRow += '</tr>';
@@ -2131,6 +2131,26 @@ function renderSteigrohrTV(state) {
 
   tableEl.appendChild(tbody);
   wrap.appendChild(tableEl);
+
+  // Current thrower indicator
+  if (!s.done) {
+    var aktPaar = s.paare[s.aktPaarIdx];
+    if (aktPaar && aktPaar.aktiv) {
+      var farbe = FARBEN[aktPaar.paarNr - 1] || '#fff';
+      var aktIdx = s.wuerfe ? s.wuerfe.length % aktPaar.spieler.length : 0;
+      var thrower = aktPaar.spieler[aktIdx];
+      var wurfNr = (s.wuerfe ? s.wuerfe.length : 0) + 1;
+      var cur = document.createElement('div');
+      cur.style.cssText = 'margin-top:20px;padding:16px 24px;border-radius:12px;border:2px solid '+farbe+';background:'+farbe+'15;display:flex;align-items:center;gap:20px';
+      cur.innerHTML = '<div style="font-size:52px">'+thrower.emoji+'</div>'
+        +'<div>'
+        +'<div style="font-size:32px;font-weight:800;color:'+farbe+';font-family:var(--fh)">'+thrower.name+'</div>'
+        +'<div style="font-size:20px;color:var(--mut);margin-top:2px">Paar '+aktPaar.paarNr+' · Runde '+s.runde+' · Wurf '+wurfNr+'/2</div>'
+        +'</div>';
+      wrap.appendChild(cur);
+    }
+  }
+
   gameEl.replaceChildren(wrap);
 }
 
