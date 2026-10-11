@@ -1726,6 +1726,13 @@ function renderSpielenTab() {
     undoBtn.onclick = submitUndo;
     undoDiv.appendChild(undoBtn);
     el.appendChild(undoDiv);
+    // Neue Spieltypen haben keine eigene cbBox — generisch nachhängen
+    var neuTypen=['geradeUngerade','henneferTreppe','fussball','seifenkistenrennen','mixedPartie','steigrohr'];
+    if(neuTypen.indexOf(S.aktSpiel.type_key)>=0){
+      var cbDiv=document.createElement('div');
+      cbDiv.innerHTML=cbBox('cb-team-end','teamAbbruch');
+      el.appendChild(cbDiv);
+    }
   }
   appendNaturkranzButton(el);
 }
@@ -2278,7 +2285,8 @@ async function doAnkerWurf() {
 }
 function endAnker(sp){}
 function ankerAbbruch() { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); }
-function kdaAbbruch() { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); }
+function kdaAbbruch()   { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); }
+function teamAbbruch()  { cancelAktSpiel().then(function(){ showTab('spiele'); renderAll(); }); }
 function ankerSelPts(v){ankerPts=v;if(v!==0)selKeinPudel=false;renderSpielenTab();}
 async function doAnkerAbschluss() {
   if (!S.aktSpiel) return;
