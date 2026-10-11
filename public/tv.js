@@ -1885,26 +1885,32 @@ function renderTeamTV(state) {
 // ── Seifenkistenrennen TV renderer ───────────────────────────────────────
 function renderSKRTV(state) {
   idleEl.style.display = 'none';
+  gameEl.classList.add('active');
   var track = state.track || [];
   var N = track.length;
   var posA = state.posA, posB = state.posB;
-  var nextA = posA < N ? track[posA].values.join('/') : null;
-  var nextB = posB < N ? track[posB].values.join('/') : null;
+  // "Braucht" zeigt nur erlaubte Werte (beide bei Abkürzungsfeld)
+  var nextA = posA < N ? track[posA].values.join(' / ') : null;
+  var nextB = posB < N ? track[posB].values.join(' / ') : null;
 
   function fieldBox(i) {
     var f = track[i];
     var isA = posA === i, isB = posB === i;
     var pastA = posA > i, pastB = posB > i;
-    var label = f.values.join('/');
+    var isSC = f.shortcutTo !== undefined;
+    // Normal value white, shortcut value amber
+    var label = isSC
+      ? '<span>'+f.values[0]+'</span><span style="font-size:11px;opacity:0.5">/</span><span style="color:#fbbf24;font-weight:900">'+f.values[1]+'</span>'
+      : String(f.values[0]);
     var border = (isA || isB) ? (isA && isB ? '#60a5fa' : isA ? '#60a5fa' : '#4ade80') : 'rgba(255,255,255,0.2)';
     var bg = pastA && pastB ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)';
     var op = pastA && pastB ? '0.3' : '1';
     var marker = isA && isB ? '<div style="font-size:14px;line-height:1">🔵🔴</div>'
-               : isA ? '<div style="font-size:14px">🔵</div>'
-               : isB ? '<div style="font-size:14px">🔴</div>' : '';
-    var sc = f.shortcutTo !== undefined ? '<div style="font-size:10px;color:#fbbf24;line-height:1">⚡</div>' : '';
-    return '<div style="min-width:52px;width:52px;border:2px solid '+border+';border-radius:8px;padding:5px 2px;text-align:center;background:'+bg+';opacity:'+op+';flex-shrink:0">'
-      + sc + '<div style="font-size:22px;font-weight:800;line-height:1.1">'+label+'</div>' + marker + '</div>';
+               : isA ? '<div style="font-size:16px">🔵</div>'
+               : isB ? '<div style="font-size:16px">🔴</div>' : '';
+    var arrow = isSC ? '<div style="font-size:11px;color:#fbbf24;line-height:1">⚡→'+(f.shortcutTo+1)+'</div>' : '';
+    return '<div style="min-width:56px;width:56px;border:2px solid '+border+';border-radius:8px;padding:5px 2px;text-align:center;background:'+bg+';opacity:'+op+';flex-shrink:0">'
+      + arrow + '<div style="font-size:22px;font-weight:800;line-height:1.1">'+label+'</div>' + marker + '</div>';
   }
 
   var sep = '<div style="color:rgba(255,255,255,0.4);font-size:14px;flex-shrink:0">›</div>';

@@ -80,7 +80,8 @@ module.exports = {
 
     if (field && field.values.indexOf(value) >= 0) {
       var newPos = pos + 1;
-      if (field.shortcutTo !== undefined && field.shortcutTo > newPos) {
+      // Abkürzung nur bei der zweiten Zahl (values[1])
+      if (field.shortcutTo !== undefined && field.values.length > 1 && value === field.values[1]) {
         newPos = field.shortcutTo;
       }
       if (team === 'A') s.posA = newPos;

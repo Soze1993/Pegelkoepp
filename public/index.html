@@ -1910,7 +1910,11 @@ function renderSKRSpiel(el,state){
     var f=track[i];
     var isNextA=posA===i,isNextB=posB===i;
     var pastA=posA>i,pastB=posB>i;
-    var label=f.values.join('/');
+    var isSC=f.shortcutTo!==undefined;
+    // Normal: values[0] weiß; Abkürzungszahl: values[1] gelb
+    var label=isSC
+      ?'<span>'+f.values[0]+'</span><span style="font-size:9px;color:var(--mut)">/</span><span style="color:#f59e0b;font-weight:900">'+f.values[1]+'</span>'
+      :'<span>'+f.values[0]+'</span>';
     var bdColor=isNextA&&isNextB?'var(--ac)':isNextA?'var(--ac)':isNextB?'var(--grn)':pastA||pastB?'transparent':'var(--brd)';
     var bg=pastA&&pastB?'var(--bg3)':pastA?'var(--ac)11':pastB?'var(--grn)11':'var(--bg2)';
     var op=pastA&&pastB?'0.35':'1';
@@ -1918,9 +1922,10 @@ function renderSKRSpiel(el,state){
     if(isNextA&&isNextB)marker='<div style="font-size:8px;line-height:1">🔵🔴</div>';
     else if(isNextA)marker='<div style="font-size:9px">🔵</div>';
     else if(isNextB)marker='<div style="font-size:9px">🔴</div>';
-    var sc=f.shortcutTo!==undefined?'<div style="font-size:7px;color:var(--ac);line-height:1">⚡</div>':'';
-    return '<div style="min-width:32px;width:32px;border:2px solid '+bdColor+';border-radius:6px;padding:3px 1px;text-align:center;background:'+bg+';opacity:'+op+';flex-shrink:0">'
-      +sc+'<div style="font-size:13px;font-weight:700;line-height:1.2">'+label+'</div>'+marker+'</div>';
+    // Pfeil zeigt Zielfeld (1-basiert für Spieler)
+    var arrow=isSC?'<div style="font-size:7px;color:#f59e0b;line-height:1">⚡→'+(f.shortcutTo+1)+'</div>':'';
+    return '<div style="min-width:36px;width:36px;border:2px solid '+bdColor+';border-radius:6px;padding:3px 1px;text-align:center;background:'+bg+';opacity:'+op+';flex-shrink:0">'
+      +arrow+'<div style="font-size:12px;font-weight:700;line-height:1.3">'+label+'</div>'+marker+'</div>';
   }
 
   var sep='<div style="color:var(--mut);font-size:10px;flex-shrink:0">›</div>';
