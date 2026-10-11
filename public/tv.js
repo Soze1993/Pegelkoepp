@@ -2105,39 +2105,14 @@ function renderMPTV(state) {
   const sB = teamScore(state.tB, state.hnB3, state.hnB4);
 
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:24px 40px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px';
+  wrap.style.cssText = 'padding:24px 48px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:20px';
 
-  // Round banner
-  if (!state.done) {
-    const rNames = ['','Volle (3×)','Abräumen (4×)','Große Hausnummer (+)','Kleine Hausnummer (−)'];
-    const rb = document.createElement('div');
-    rb.style.cssText = 'text-align:center;font-family:var(--fh);font-size:30px;color:var(--mut)';
-    rb.textContent = 'Runde ' + state.runde + '/4  —  ' + (rNames[state.runde] || '');
-    wrap.appendChild(rb);
-  }
-
-  // Team score cards
-  const scoreRow = document.createElement('div');
-  scoreRow.style.cssText = 'display:flex;gap:16px';
-  ['A','B'].forEach(function(team) {
-    const isAkt = state.aktTeam === team && !state.done;
-    const isWin = state.done && state.winner === team;
-    const col = team === 'A' ? '#60a5fa' : '#f87171';
-    const sc = team === 'A' ? sA : sB;
-    const card = document.createElement('div');
-    card.style.cssText = 'flex:1;border-radius:12px;border:3px solid '+(isAkt||isWin?col:'rgba(255,255,255,.15)')+';background:'+(isAkt||isWin?col+'22':'var(--bg2)')+';padding:14px;text-align:center';
-    card.innerHTML = '<div style="font-size:18px;font-weight:700;color:'+col+';text-transform:uppercase;letter-spacing:.06em">Team '+team+(isWin?' 🏆':'')+' </div>'
-      +'<div style="font-size:72px;font-weight:800;color:'+col+';font-family:var(--fh)">'+sc+'</div>';
-    scoreRow.appendChild(card);
-  });
-  wrap.appendChild(scoreRow);
-
-  // Scorecard table
+  // Helper functions
   function r12CellTV(arr, key) {
     const allDone = arr.every(function(p){return p[key]!==null;});
-    const parts = arr.map(function(p){return p[key]!==null?p[key]:'–';}).join('+');
+    const parts = arr.map(function(p){return p[key]!==null?p[key]:'–';}).join(' + ');
     const tot = arr.reduce(function(s,p){return s+(p[key]||0);},0);
-    if (arr.length > 1 && allDone) return parts + '=' + tot;
+    if (arr.length > 1 && allDone) return parts + ' = <b>' + tot + '</b>';
     return parts;
   }
   function hnCellTV(hn) {
@@ -2145,39 +2120,49 @@ function renderMPTV(state) {
     const z2=hn[2]!==null?hn[2]:'?', e2=hn[3]!==null?hn[3]:'?';
     let txt = z1+''+e1+' + '+z2+''+e2;
     if (hn[0]!==null&&hn[1]!==null&&hn[2]!==null&&hn[3]!==null)
-      txt += ' = '+((hn[0]*10+hn[1])+(hn[2]*10+hn[3]));
+      txt += ' = <b>'+((hn[0]*10+hn[1])+(hn[2]*10+hn[3]))+'</b>';
     return txt;
   }
+
+  // Single unified table
   const tableEl = document.createElement('table');
-  tableEl.style.cssText = 'width:100%;border-collapse:collapse;font-size:22px';
-  const rounds = [
-    {label:'Volle', sub:'3 Würfe', subCol:'var(--mut)', cellA:r12CellTV(state.tA,'r1'), cellB:r12CellTV(state.tB,'r1')},
-    {label:'Abräumen', sub:'4 Würfe', subCol:'var(--mut)', cellA:r12CellTV(state.tA,'r2'), cellB:r12CellTV(state.tB,'r2')},
-    {label:'Gr. HausNr.', sub:'+', subCol:'#4ade80', cellA:hnCellTV(state.hnA3), cellB:hnCellTV(state.hnB3)},
-    {label:'kl. HausNr.', sub:'−', subCol:'#f87171', cellA:hnCellTV(state.hnA4), cellB:hnCellTV(state.hnB4)}
-  ];
+  tableEl.style.cssText = 'width:100%;border-collapse:collapse';
+
+  // Header row: Runde | Team A | Team B
+  const aktColA = state.aktTeam==='A'&&!state.done ? '#60a5fa' : 'rgba(255,255,255,.15)';
+  const aktColB = state.aktTeam==='B'&&!state.done ? '#f87171' : 'rgba(255,255,255,.15)';
+  const winA = state.done && state.winner==='A', winB = state.done && state.winner==='B';
   const thead = document.createElement('thead');
-  thead.innerHTML = '<tr>'
-    +'<th style="text-align:left;padding:8px 16px;color:var(--mut);font-size:17px;border-bottom:1px solid rgba(255,255,255,.1)">Runde</th>'
-    +'<th style="text-align:right;padding:8px 16px;color:#60a5fa;font-size:17px;border-bottom:1px solid rgba(255,255,255,.1)">Team A</th>'
-    +'<th style="text-align:right;padding:8px 16px;color:#f87171;font-size:17px;border-bottom:1px solid rgba(255,255,255,.1)">Team B</th>'
+  thead.innerHTML = '<tr style="border-bottom:3px solid rgba(255,255,255,.2)">'
+    +'<th style="text-align:left;padding:12px 20px;font-size:20px;color:var(--mut);font-weight:600">Runde</th>'
+    +'<th style="text-align:center;padding:12px 20px;font-size:26px;font-weight:800;color:#60a5fa;background:'+(winA?'#60a5fa22':state.aktTeam==='A'&&!state.done?'#60a5fa11':'transparent')+';border-bottom:4px solid #60a5fa">Team A'+(winA?' 🏆':'')+'</th>'
+    +'<th style="text-align:center;padding:12px 20px;font-size:26px;font-weight:800;color:#f87171;background:'+(winB?'#f8717122':state.aktTeam==='B'&&!state.done?'#f8717111':'transparent')+';border-bottom:4px solid #f87171">Team B'+(winB?' 🏆':'')+'</th>'
     +'</tr>';
   tableEl.appendChild(thead);
+
   const tbody = document.createElement('tbody');
-  rounds.forEach(function(r, ri) {
-    const isAkt = !state.done && state.runde === ri + 1;
+  const rows = [
+    {label:'Volle', sub:'3 Würfe · addiert', subCol:'var(--mut)', ri:1, cellA:r12CellTV(state.tA,'r1'), cellB:r12CellTV(state.tB,'r1')},
+    {label:'Abräumen', sub:'4 Würfe · addiert', subCol:'var(--mut)', ri:2, cellA:r12CellTV(state.tA,'r2'), cellB:r12CellTV(state.tB,'r2')},
+    {label:'Gr. Hausnummer', sub:'+ addiert', subCol:'#4ade80', ri:3, cellA:hnCellTV(state.hnA3), cellB:hnCellTV(state.hnB3)},
+    {label:'kl. Hausnummer', sub:'− subtrahiert', subCol:'#f87171', ri:4, cellA:hnCellTV(state.hnA4), cellB:hnCellTV(state.hnB4)}
+  ];
+  rows.forEach(function(r) {
+    const isAkt = !state.done && state.runde === r.ri;
     const tr = document.createElement('tr');
-    tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.06)'+(isAkt?';background:rgba(255,255,255,.05)':'');
-    tr.innerHTML = '<td style="padding:12px 16px;color:var(--mut);font-size:19px">'+r.label+'<br><span style="font-size:14px;color:'+r.subCol+'">'+r.sub+'</span></td>'
-      +'<td style="text-align:right;padding:12px 16px;color:#60a5fa">'+r.cellA+'</td>'
-      +'<td style="text-align:right;padding:12px 16px;color:#f87171">'+r.cellB+'</td>';
+    tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.08)'+(isAkt?';background:rgba(255,255,255,.06)':'');
+    tr.innerHTML = '<td style="padding:16px 20px;font-size:22px;color:'+(isAkt?'#fff':'var(--mut)')+';font-weight:'+(isAkt?'700':'400')+'">'+r.label+'<br><span style="font-size:14px;color:'+r.subCol+';opacity:.8">'+r.sub+'</span>'+(isAkt?'<span style="margin-left:8px;font-size:13px;color:'+r.subCol+'">◀ aktiv</span>':'')+'</td>'
+      +'<td style="text-align:center;padding:16px 20px;font-size:24px;color:#60a5fa">'+r.cellA+'</td>'
+      +'<td style="text-align:center;padding:16px 20px;font-size:24px;color:#f87171">'+r.cellB+'</td>';
     tbody.appendChild(tr);
   });
+
+  // Gesamt row
   const totRow = document.createElement('tr');
-  totRow.style.cssText = 'border-top:2px solid rgba(255,255,255,.2);font-weight:700';
-  totRow.innerHTML = '<td style="padding:12px 16px;color:var(--mut);font-size:19px">Gesamt</td>'
-    +'<td style="text-align:right;padding:12px 16px;font-size:30px;color:#60a5fa">'+sA+'</td>'
-    +'<td style="text-align:right;padding:12px 16px;font-size:30px;color:#f87171">'+sB+'</td>';
+  totRow.style.cssText = 'border-top:3px solid rgba(255,255,255,.25)';
+  totRow.innerHTML = '<td style="padding:18px 20px;font-size:22px;font-weight:700;color:#fff">Gesamt</td>'
+    +'<td style="text-align:center;padding:18px 20px;font-size:52px;font-weight:800;color:#60a5fa;font-family:var(--fh)">'+sA+'</td>'
+    +'<td style="text-align:center;padding:18px 20px;font-size:52px;font-weight:800;color:#f87171;font-family:var(--fh)">'+sB+'</td>';
   tbody.appendChild(totRow);
   tableEl.appendChild(tbody);
   wrap.appendChild(tableEl);
@@ -2195,10 +2180,10 @@ function renderMPTV(state) {
       else if (state.runde === 2) throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining;
       else throwInfo = (state.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[state.hnSlot];
       const cur = document.createElement('div');
-      cur.style.cssText = 'text-align:center;padding:14px;border-radius:10px;border:2px solid '+col+';background:'+col+'22';
-      cur.innerHTML = '<div style="font-size:48px">'+aktP.emoji+'</div>'
-        +'<div style="font-size:32px;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
-        +'<div style="font-size:20px;color:var(--mut);margin-top:4px">'+throwInfo+'</div>';
+      cur.style.cssText = 'text-align:center;padding:14px 20px;border-radius:12px;border:2px solid '+col+';background:'+col+'15;display:flex;align-items:center;justify-content:center;gap:16px';
+      cur.innerHTML = '<div style="font-size:44px">'+aktP.emoji+'</div>'
+        +'<div><div style="font-size:28px;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
+        +'<div style="font-size:18px;color:var(--mut);margin-top:2px">'+throwInfo+'</div></div>';
       wrap.appendChild(cur);
     }
   }
