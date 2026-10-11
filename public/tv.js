@@ -1875,8 +1875,18 @@ function renderTeamTV(state) {
   wrap.appendChild(makeTeamCard('A', s.tA, scoreA, s.winner, s.aktTeam));
 
   var vsEl = document.createElement('div');
-  vsEl.style.cssText = 'font-family:var(--fh);font-size:56px;color:var(--mut);align-self:center';
-  vsEl.textContent = s.done ? (s.winner === 'draw' ? '=' : s.winner === 'A' ? '>' : '<') : ':';
+  vsEl.style.cssText = 'align-self:center;text-align:center;flex-shrink:0';
+  if (s.phase === 'elfmeter') {
+    var elfSvg = kegelSVGtv([4,6,7,8], 120, 150);
+    vsEl.innerHTML = '<div style="font-size:28px;font-weight:900;color:#fbbf24;margin-bottom:8px">⚽ ELFMETER!</div>'
+      + '<div style="font-size:20px;color:rgba(255,255,255,0.6);margin-bottom:10px">Team '+(s.elfmeterTeam)+' schiesst</div>'
+      + elfSvg;
+  } else {
+    vsEl.style.fontFamily = 'var(--fh)';
+    vsEl.style.fontSize = '56px';
+    vsEl.style.color = 'var(--mut)';
+    vsEl.textContent = s.done ? (s.winner === 'draw' ? '=' : s.winner === 'A' ? '>' : '<') : ':';
+  }
   wrap.appendChild(vsEl);
 
   wrap.appendChild(makeTeamCard('B', s.tB, scoreB, s.winner, s.aktTeam));

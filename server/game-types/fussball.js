@@ -87,21 +87,18 @@ module.exports = {
     // Regular throw (value > 0 or keinPudel-0)
     s.remaining -= value;
 
+    // Advance player within throwing team (cycles regardless of outcome)
+    if (team === 'A') s.iA = (s.iA + 1) % s.tA.length;
+    else              s.iB = (s.iB + 1) % s.tB.length;
+
     if (s.remaining <= 0) {
-      // Tor! Clear all pins
+      // Tor! All pins cleared — goal for this team, reset, switch teams
       if (team === 'A') s.toreA++;
       else              s.toreB++;
       s.remaining = 9;
-      // Switch teams (die andere Mannschaft erhält ein neues Bild)
-      s.aktTeam = team === 'A' ? 'B' : 'A';
-    } else {
-      // Pins remain (Aus) — other team tries
       s.aktTeam = team === 'A' ? 'B' : 'A';
     }
-
-    // Advance player in throwing team
-    if (team === 'A') s.iA = (s.iA + 1) % s.tA.length;
-    else              s.iB = (s.iB + 1) % s.tB.length;
+    // else: partial hit — same team continues (aktTeam unchanged)
 
     return _checkWin(s);
   },
