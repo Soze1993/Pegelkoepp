@@ -1769,7 +1769,7 @@ function togTeam(id,team,gameKey,aId,bId,el){
   // Second click on same team = deselect only
   if(wasInOwn)return;
   // Add to selected team and highlight
-  if(team==='A'){a.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}
+  if(team==='A'){a.push(id);el.style.borderColor='var(--blu)';el.style.background='var(--blu)22';el.style.color='var(--blu)';}
   else{b.push(id);el.style.borderColor='var(--red)';el.style.background='var(--red)22';el.style.color='var(--red)';}
 }
 async function startTeamSpiel(typeKey,aArr,bArr,configObj,modalId,label){
@@ -1795,12 +1795,13 @@ function renderGUSpiel(el,state){
   var ruleB=sp.stechen?'Ungerade':(sp.runde===1?'Ungerade':'Gerade');
   function teamBlock(team,arr,score,rule){
     var isAkt=sp.aktTeam===team&&!sp.done;
+    var tc=team==='A'?'var(--blu)':'var(--red)';
     var idx=team==='A'?sp.iA:sp.iB;
     var stechenScore=sp.stechen?(team==='A'?sp.stechenWurfA:sp.stechenWurfB):null;
-    return '<div class="card" style="'+(isAkt?'border:2px solid var(--ac)':'')+';flex:1;min-width:140px">'
-      +'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:2px">Team '+team+(isAkt?' 🎳':'')+'<span style="float:right;font-size:13px;font-weight:700;color:var(--ac)">'+score+'</span></div>'
-      +'<div style="font-size:12px;color:'+(isAkt?'var(--ac)':'var(--mut)')+';margin-bottom:6px;font-weight:600">'+rule+(stechenScore!==null?' → '+stechenScore:'')+'</div>'
-      +arr.map(function(p,i){var isC=isAkt&&i===idx;return '<div style="padding:3px 0;'+(isC?'color:var(--ac);font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')
+    return '<div class="card" style="'+(isAkt?'border:2px solid '+tc:'')+';flex:1;min-width:140px">'
+      +'<div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:2px">Team '+team+(isAkt?' 🎳':'')+'<span style="float:right;font-size:13px;font-weight:700;color:'+tc+'">'+score+'</span></div>'
+      +'<div style="font-size:12px;color:'+(isAkt?tc:'var(--mut)')+';margin-bottom:6px;font-weight:600">'+rule+(stechenScore!==null?' → '+stechenScore:'')+'</div>'
+      +arr.map(function(p,i){var isC=isAkt&&i===idx;return '<div style="padding:3px 0;'+(isC?'color:'+tc+';font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')
       +'</div>';
   }
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;var aktSp=aktArr[aktIdx];
@@ -1826,8 +1827,9 @@ function renderTeamSpiel(el,state){
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;var aktSp=aktArr[aktIdx];
   function teamBlock(team,arr,score){
     var isAkt=sp.aktTeam===team&&!sp.done;var idx=team==='A'?sp.iA:sp.iB;
-    return '<div class="card" style="'+(isAkt?'border:2px solid var(--ac)':'')+';flex:1;min-width:140px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:6px">Team '+team+(isAkt?' 🎳':'')+' <span style="float:right;font-size:13px;font-weight:700;color:var(--ac)">'+score+'</span></div>'
-      +arr.map(function(p,i){var isC=isAkt&&i===idx;return '<div style="padding:3px 0;'+(isC?'color:var(--ac);font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')+'</div>';
+    var tc=team==='A'?'var(--blu)':'var(--red)';
+    return '<div class="card" style="'+(isAkt?'border:2px solid '+tc:'')+'flex:1;min-width:140px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:6px">Team '+team+(isAkt?' 🎳':'')+' <span style="float:right;font-size:13px;font-weight:700;color:'+tc+'">'+score+'</span></div>'
+      +arr.map(function(p,i){var isC=isAkt&&i===idx;return '<div style="padding:3px 0;'+(isC?'color:'+tc+';font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')+'</div>';
   }
   var scoreA=sp.scoreA!==undefined?sp.scoreA:sp.toreA!==undefined?sp.toreA:sp.posA;
   var scoreB=sp.scoreB!==undefined?sp.scoreB:sp.toreB!==undefined?sp.toreB:sp.posB;
@@ -1864,27 +1866,26 @@ function renderHTSpiel(el,state){
   var chainInfo=sp.chainThrows.length>0?'Kette: '+sp.chainThrows.join(', ')+' ('+sp.chainThrows.reduce(function(a,b){return a+b;},0)+' Kegel, '+sp.chainThrows.length+' Würfe)':'Neue Kette';
   function teamBlock(team,arr){
     var isAkt=sp.aktTeam===team&&!sp.done;
-    var tc=team==='A'?'var(--ac)':'var(--red)';
+    var tc=team==='A'?'var(--blu)':'var(--red)';
     var score=team==='A'?sp.scoreA:sp.scoreB;
     return '<div class="card" style="'+(isAkt?'border:2px solid '+tc+';':'')+';flex:1;min-width:140px"><div style="font-size:11px;color:var(--mut);text-transform:uppercase;margin-bottom:4px">Team '+team+(isAkt?' 🎳':'')+' <span style="float:right;font-size:14px;font-weight:700;color:'+tc+'">'+score+'</span></div>'
       +arr.map(function(p,i){var isC=isAkt&&i===(sp.chainIdx%arr.length);return '<div style="padding:2px 0;'+(isC?'color:'+tc+';font-weight:700':'')+'">'+(isC?'▶ ':'')+p.emoji+' '+p.name+'</div>';}).join('')
       +'</div>';
   }
   // Rundentabelle
-  var maxR=Math.max(sp.rndA.length,sp.rndB.length,sp.aktRunde-1+(sp.aktTeam==='A'?0:1));
   var rows='';
   for(var r=0;r<sp.totalRunden;r++){
     var vA=sp.rndA[r]!==undefined?sp.rndA[r]:'—';
     var vB=sp.rndB[r]!==undefined?sp.rndB[r]:'—';
     var aktR=r===(sp.aktRunde-1)&&!sp.done;
-    rows+='<tr style="'+(aktR?'background:var(--ac)11':'')+'"><td style="padding:3px 6px;color:var(--mut)">R'+(r+1)+'</td>'
-      +'<td style="text-align:right;padding:3px 6px;font-weight:'+(aktR&&sp.aktTeam==='A'?'700':'400')+';color:'+(aktR&&sp.aktTeam==='A'?'var(--ac)':'var(--txt)')+'">'+vA+'</td>'
+    rows+='<tr style="'+(aktR?'background:var(--blu)11':'')+'"><td style="padding:3px 6px;color:var(--mut)">R'+(r+1)+'</td>'
+      +'<td style="text-align:right;padding:3px 6px;font-weight:'+(aktR&&sp.aktTeam==='A'?'700':'400')+';color:'+(aktR&&sp.aktTeam==='A'?'var(--blu)':'var(--txt)')+'">'+vA+'</td>'
       +'<td style="text-align:right;padding:3px 6px;font-weight:'+(aktR&&sp.aktTeam==='B'?'700':'400')+';color:'+(aktR&&sp.aktTeam==='B'?'var(--red)':'var(--txt)')+'">'+vB+'</td></tr>';
   }
   var tbl='<div class="card" style="padding:6px;overflow-x:auto;margin-bottom:8px"><table style="width:100%;border-collapse:collapse;font-size:12px">'
-    +'<thead><tr><th style="text-align:left;padding:3px 6px;color:var(--mut);font-weight:600">Runde</th><th style="text-align:right;padding:3px 6px;color:var(--ac)">Team A</th><th style="text-align:right;padding:3px 6px;color:var(--red)">Team B</th></tr></thead>'
+    +'<thead><tr><th style="text-align:left;padding:3px 6px;color:var(--mut);font-weight:600">Runde</th><th style="text-align:right;padding:3px 6px;color:var(--blu)">Team A</th><th style="text-align:right;padding:3px 6px;color:var(--red)">Team B</th></tr></thead>'
     +'<tbody>'+rows+'</tbody>'
-    +'<tfoot><tr style="border-top:1px solid var(--brd)"><td style="padding:4px 6px;font-weight:700">Gesamt</td><td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--ac)">'+sp.scoreA+'</td><td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--red)">'+sp.scoreB+'</td></tr></tfoot>'
+    +'<tfoot><tr style="border-top:1px solid var(--brd)"><td style="padding:4px 6px;font-weight:700">Gesamt</td><td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--blu)">'+sp.scoreA+'</td><td style="text-align:right;padding:4px 6px;font-weight:700;color:var(--red)">'+sp.scoreB+'</td></tr></tfoot>'
     +'</table></div>';
   var html='<div style="display:flex;gap:10px;margin-bottom:8px">'+teamBlock('A',sp.tA)+teamBlock('B',sp.tB)+'</div>'+tbl;
   if(sp.done){
@@ -1933,8 +1934,8 @@ function renderSKRSpiel(el,state){
     var label=isSC
       ?'<span>'+f.values[0]+'</span><span style="font-size:9px;color:var(--mut)">/</span><span style="color:#f59e0b;font-weight:900">'+f.values[1]+'</span>'
       :'<span>'+f.values[0]+'</span>';
-    var bdColor=isNextA&&isNextB?'var(--ac)':isNextA?'var(--ac)':isNextB?'var(--red)':pastA||pastB?'transparent':'var(--brd)';
-    var bg=pastA&&pastB?'var(--bg3)':pastA?'var(--ac)11':pastB?'var(--red)22':'var(--bg2)';
+    var bdColor=isNextA&&isNextB?'var(--blu)':isNextA?'var(--blu)':isNextB?'var(--red)':pastA||pastB?'transparent':'var(--brd)';
+    var bg=pastA&&pastB?'var(--bg3)':pastA?'var(--blu)11':pastB?'var(--red)22':'var(--bg2)';
     var op=pastA&&pastB?'0.35':'1';
     var marker='';
     if(isNextA&&isNextB)marker='<div style="font-size:8px;line-height:1">🔵🔴</div>';
@@ -1954,10 +1955,10 @@ function renderSKRSpiel(el,state){
     +'</div></div>';
 
   var statusHtml='<div style="display:flex;gap:8px;margin-bottom:8px">'
-    +'<div class="card" style="flex:1;border:2px solid var(--ac);padding:8px">'
+    +'<div class="card" style="flex:1;border:2px solid var(--blu);padding:8px">'
     +'<div style="font-size:11px;color:var(--mut)">🔵 Team A</div>'
     +'<div style="font-size:20px;font-weight:700">'+posA+' <span style="font-size:11px;color:var(--mut)">/ '+N+'</span></div>'
-    +(nextValA?'<div style="font-size:12px;color:var(--ac)">Braucht: <strong>'+nextValA+'</strong></div>':'<div style="font-size:12px;color:var(--ac)">🏁 Ziel!</div>')
+    +(nextValA?'<div style="font-size:12px;color:var(--blu)">Braucht: <strong>'+nextValA+'</strong></div>':'<div style="font-size:12px;color:var(--blu)">🏁 Ziel!</div>')
     +'</div>'
     +'<div class="card" style="flex:1;border:2px solid var(--red);padding:8px">'
     +'<div style="font-size:11px;color:var(--mut)">🔴 Team B</div>'
