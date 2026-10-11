@@ -51,21 +51,21 @@ module.exports = {
     if (!player || player.id !== playerId) return s;
 
     if (s.phase === 'elfmeter') {
-      // This throw is the elfmeter attempt by elfmeterTeam
-      if (value > 0) {
+      // Gasse = Tor; Pudel = kein Gegenelfmeter; alles andere = kein Tor
+      if (meta && meta.gasse) {
         if (s.elfmeterTeam === 'A') s.toreA++;
         else                        s.toreB++;
-      } else {
-        player.pudel++; // missed elfmeter
+      } else if (value === 0 && !(meta && meta.keinPudel)) {
+        player.pudel++; // Pudel beim Elfmeter zählt als Pudel, aber KEIN Gegenelfmeter
       }
-      // After elfmeter: reset, back to normal, switch to team that caused the pudel
+      // Elfmeter-Team darf danach auf die Vollen
+      const em = s.elfmeterTeam;
       s.phase = 'normal';
       s.elfmeterTeam = null;
       s.remaining = 9;
-      // aktTeam stays as is (it was already the elfmeter team — switch to other)
-      s.aktTeam = team === 'A' ? 'B' : 'A';
-      s.iA = (s.iA + (team === 'A' ? 1 : 0)) % s.tA.length;
-      s.iB = (s.iB + (team === 'B' ? 1 : 0)) % s.tB.length;
+      s.aktTeam = em; // Elfmeter-Team ist dran
+      if (team === 'A') s.iA = (s.iA + 1) % s.tA.length;
+      else              s.iB = (s.iB + 1) % s.tB.length;
       return _checkWin(s);
     }
 

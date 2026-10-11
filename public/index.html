@@ -1858,6 +1858,13 @@ async function doTeamWurf(){
   S.aktSpiel.state=data.state;
   teamWurfVal=null;teamWurfKeinPudel=false;selKeinPudel=false;renderSpielenTab();
 }
+async function doFBGasse(){
+  var sp=S.aktSpiel.state;var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;
+  var pid=aktArr[(sp.aktTeam==='A'?sp.iA:sp.iB)%aktArr.length].id;
+  var data=await submitThrow(pid,0,0,{gasse:true,keinPudel:true});
+  if(!data)return;
+  S.aktSpiel.state=data.state;teamWurfVal=null;selKeinPudel=false;renderSpielenTab();
+}
 
 // ── Hennefer Treppe renderer ─────────────────────────────────────────────
 function renderHTSpiel(el,state){
@@ -1908,9 +1915,17 @@ function renderFBSpiel(el,state){
   var teamRoster='<div style="display:flex;gap:10px;margin-bottom:10px">'+
     ['A','B'].map(function(t){var arr=t==='A'?sp.tA:sp.tB;var tc2=t==='A'?'var(--blu)':'var(--red)';var isAkt=sp.aktTeam===t&&!sp.done;var idx=t==='A'?sp.iA:sp.iB;return '<div style="flex:1;font-size:12px">'+(isAkt?'<strong>':'')+'Team '+t+(isAkt?' 🎳':'')+':'+arr.map(function(p,i){return (i===idx&&isAkt?' <strong style="color:'+tc2+'">▶'+p.emoji+p.name+'</strong>':' '+p.emoji+p.name);}).join(',')+(isAkt?'</strong>':'')+'</div>';}).join('')+'</div>';
   if(sp.done){var wc=sp.winner==='A'?'var(--blu)':'var(--red)';el.innerHTML='<div style="text-align:center;padding:14px 0;font-family:var(--fh);font-size:26px;color:'+wc+'">Team '+(sp.winner)+' gewinnt!</div>'+scoreHtml+teamRoster+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';return;}
-  var phase='';if(sp.phase==='elfmeter')phase='⚡ Elfmeter! Team '+(sp.elfmeterTeam)+' schießt – Restpins: 4';else phase='Restpins: '+sp.remaining;
+  if(sp.phase==='elfmeter'){
+    el.innerHTML=scoreHtml+teamRoster+
+      '<div style="text-align:center;font-size:13px;color:var(--mut);margin-bottom:8px">⚡ Elfmeter! Team '+sp.elfmeterTeam+' schießt – Kegel: 4,6,7,8</div>'+
+      (aktSp?'<div class="wi"><span>Elfmeter</span><strong>'+aktSp.emoji+' '+aktSp.name+'</strong></div>':'')+
+      '<button onclick="doFBGasse()" style="width:100%;padding:16px;margin-bottom:8px;font-size:20px;font-weight:900;background:#fbbf24;color:#0f0f14;border:none;border-radius:10px;cursor:pointer">⚽ GASSE! → Tor</button>'+
+      '<div style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:6px">Kein Tor — Ergebnis eintragen:</div>'+
+      kgrid(teamWurfVal,'teamWurfSel')+'<button class="btn bp" style="width:100%;margin-top:4px" onclick="doTeamWurf()">Kein Tor bestätigen</button>';
+    return;
+  }
   el.innerHTML=scoreHtml+teamRoster+
-    '<div style="text-align:center;font-size:13px;color:var(--mut);margin-bottom:8px">'+phase+'</div>'+
+    '<div style="text-align:center;font-size:13px;color:var(--mut);margin-bottom:8px">Restpins: '+sp.remaining+'</div>'+
     (aktSp?'<div class="wi"><span>Nächster Schuss</span><strong>'+aktSp.emoji+' '+aktSp.name+'</strong></div>':'')+
     '<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Kegel (0=Pudel/kein Tor)</div>'+
     kgrid(teamWurfVal,'teamWurfSel')+'<button class="btn bp" style="width:100%;margin-top:4px" onclick="doTeamWurf()">Wurf bestätigen</button>';
