@@ -2047,49 +2047,90 @@ function renderSteigrohrTV(state) {
   gameEl.classList.add('active');
 
   var s = state;
+  var FARBEN = ['#60a5fa', '#4ade80', '#fbbf24', '#c084fc'];
+
+  // How many rounds to show (at least current runde)
+  var maxRunden = s.runde;
+  s.paare.forEach(function(p) { if (p.runden.length > maxRunden) maxRunden = p.runden.length; });
+
   var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:grid;grid-template-columns:repeat(' + Math.min(s.paare.length, 4) + ',1fr);gap:24px;padding:40px;height:100%;box-sizing:border-box;align-items:start';
+  wrap.style.cssText = 'padding:28px 48px;width:100%;box-sizing:border-box';
 
-  var FARBEN = ['var(--ac)', '#4caf7d', '#e88c00', '#c84bc8'];
+  var tableEl = document.createElement('table');
+  tableEl.style.cssText = 'width:100%;border-collapse:collapse';
 
+  // Header: Runde | Paar 1 | Paar 2 | …
+  var thead = document.createElement('thead');
+  var hRow = '<tr style="border-bottom:3px solid rgba(255,255,255,.2)">'
+    + '<th style="text-align:left;padding:10px 20px;font-size:19px;color:var(--mut);font-weight:600">Runde</th>';
   s.paare.forEach(function(paar) {
+    var farbe = FARBEN[paar.paarNr - 1] || '#fff';
     var isAkt = !s.done && paar.idx === s.aktPaarIdx;
     var isOut = !paar.aktiv;
-    var farbe = FARBEN[paar.paarNr - 1] || 'var(--ac)';
+    var names = paar.spieler.map(function(p){ return p.emoji+' '+p.name; }).join('<br>');
+    hRow += '<th style="text-align:center;padding:10px 16px;font-size:19px;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+'background:'+(isAkt?farbe+'15':'transparent')+'">'
+      + 'Paar '+paar.paarNr+(isAkt?' 🎳':isOut?' ❌':'')+''
+      + '<div style="font-size:14px;font-weight:400;color:var(--mut);margin-top:2px">'+names+'</div>'
+      + '</th>';
+  });
+  hRow += '</tr>';
+  thead.innerHTML = hRow;
+  tableEl.appendChild(thead);
 
-    var card = document.createElement('div');
-    card.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding:28px 16px;border-radius:16px;background:' + (isAkt ? farbe + '22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? farbe : isOut ? 'transparent' : 'var(--brd)') + ';opacity:' + (isOut ? '.4' : '1');
+  var tbody = document.createElement('tbody');
 
-    var paarLabel = document.createElement('div');
-    paarLabel.style.cssText = 'font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:' + (isAkt ? farbe : 'var(--mut)');
-    paarLabel.textContent = 'Paar ' + paar.paarNr + (isAkt ? ' 🎳' : isOut ? ' ❌' : '');
-    card.appendChild(paarLabel);
+  // One row per round
+  for (var ri = 0; ri < maxRunden; ri++) {
+    var rNr = ri + 1;
+    var isAktRunde = !s.done && rNr === s.runde;
+    var tr = document.createElement('tr');
+    tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.07)'+(isAktRunde?';background:rgba(255,255,255,.05)':'');
 
-    // Big total score
-    var scoreEl = document.createElement('div');
-    scoreEl.style.cssText = 'font-family:var(--fh);font-size:80px;line-height:1;color:' + (isOut ? 'var(--mut)' : farbe) + ';margin:8px 0';
-    scoreEl.textContent = String(paar.gesamt);
-    card.appendChild(scoreEl);
+    var rundeLabel = 'Runde ' + rNr + (isAktRunde ? '<span style="margin-left:8px;font-size:13px;color:var(--ac)">◀ aktiv</span>' : '');
+    tr.innerHTML = '<td style="padding:14px 20px;font-size:21px;color:'+(isAktRunde?'#fff':'var(--mut)')+';font-weight:'+(isAktRunde?'700':'400')+'">'+rundeLabel+'</td>';
 
-    // Round history
-    var rndEl = document.createElement('div');
-    rndEl.style.cssText = 'font-size:16px;color:var(--mut);margin-bottom:10px';
-    rndEl.textContent = paar.runden.map(function(r, i) { return 'R' + (i + 1) + ':' + r; }).join('  ') || '–';
-    card.appendChild(rndEl);
-
-    // Player names — large
-    paar.spieler.forEach(function(p, i) {
-      var row = document.createElement('div');
-      var aktIdx = s.wuerfe ? s.wuerfe.length % paar.spieler.length : 0;
-      var isThrowing = isAkt && i === aktIdx;
-      row.style.cssText = 'font-size:26px;padding:3px 0;' + (isThrowing ? 'color:' + farbe + ';font-weight:800' : '');
-      row.textContent = (isThrowing ? '▶ ' : '') + p.emoji + ' ' + p.name;
-      card.appendChild(row);
+    s.paare.forEach(function(paar) {
+      var farbe = FARBEN[paar.paarNr - 1] || '#fff';
+      var isOut = !paar.aktiv;
+      var isAkt = !s.done && paar.idx === s.aktPaarIdx;
+      var val = paar.runden[ri];
+      var cell;
+      if (val !== undefined) {
+        // Completed round for this pair
+        var prevVal = ri > 0 ? paar.runden[ri - 1] : -1;
+        var increased = val > prevVal;
+        cell = '<td style="text-align:center;padding:14px 16px;font-size:28px;font-weight:700;color:'+(isOut&&ri===paar.runden.length-1?'#ef4444':farbe)+'">'+val+'</td>';
+      } else if (isAktRunde && isAkt) {
+        // Currently throwing in this round
+        var wurfInfo = s.wuerfe && s.wuerfe.length > 0 ? s.wuerfe.join('+')+'…' : '…';
+        cell = '<td style="text-align:center;padding:14px 16px;font-size:22px;color:'+farbe+';font-weight:700">'+wurfInfo+'</td>';
+      } else if (isAktRunde && !isOut) {
+        // Waiting to throw this round
+        cell = '<td style="text-align:center;padding:14px 16px;font-size:22px;color:rgba(255,255,255,.25)">–</td>';
+      } else {
+        // Eliminated or future round
+        cell = '<td style="text-align:center;padding:14px 16px;font-size:22px;color:rgba(255,255,255,.15)">'+(isOut?'❌':'')+'</td>';
+      }
+      tr.innerHTML += cell;
     });
 
-    wrap.appendChild(card);
-  });
+    tbody.appendChild(tr);
+  }
 
+  // Gesamt row
+  var totRow = document.createElement('tr');
+  totRow.style.cssText = 'border-top:3px solid rgba(255,255,255,.25)';
+  totRow.innerHTML = '<td style="padding:16px 20px;font-size:21px;font-weight:700;color:#fff">Gesamt</td>';
+  s.paare.forEach(function(paar) {
+    var farbe = FARBEN[paar.paarNr - 1] || '#fff';
+    var isOut = !paar.aktiv;
+    var isWin = s.done && paar.idx === s.winner;
+    totRow.innerHTML += '<td style="text-align:center;padding:16px 16px;font-size:46px;font-weight:800;color:'+farbe+';font-family:var(--fh);opacity:'+(isOut?.5:1)+'">'+(isWin?'🏆 ':'')+paar.gesamt+'</td>';
+  });
+  tbody.appendChild(totRow);
+
+  tableEl.appendChild(tbody);
+  wrap.appendChild(tableEl);
   gameEl.replaceChildren(wrap);
 }
 
