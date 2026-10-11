@@ -1820,7 +1820,8 @@ function renderTeamTV(state) {
     var isAkt = !s.done && aktTeam === team;
     var rule = guRule(team);
     var div = document.createElement('div');
-    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? 'var(--ac)22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? 'var(--ac)' : isWin ? '#4caf7d' : 'var(--brd)') + ';gap:8px';
+    var tCol = team === 'B' ? 'var(--red)' : 'var(--ac)';
+    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? tCol+'22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? tCol : isWin ? tCol : 'var(--brd)') + ';gap:8px';
 
     // Team label
     var nameLine = document.createElement('div');
@@ -1831,14 +1832,14 @@ function renderTeamTV(state) {
     // GU rule badge
     if (rule) {
       var ruleBadge = document.createElement('div');
-      ruleBadge.style.cssText = 'font-size:26px;font-weight:800;padding:4px 18px;border-radius:10px;background:' + (isAkt ? 'var(--ac)' : 'var(--bg3)') + ';color:' + (isAkt ? '#fff' : 'var(--mut)');
+      ruleBadge.style.cssText = 'font-size:26px;font-weight:800;padding:4px 18px;border-radius:10px;background:' + (isAkt ? tCol : 'var(--bg3)') + ';color:' + (isAkt ? '#fff' : 'var(--mut)');
       ruleBadge.textContent = rule;
       div.appendChild(ruleBadge);
     }
 
     // Big score
     var scoreLine = document.createElement('div');
-    scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + (isWin ? '#4caf7d' : 'var(--ac)') + ';line-height:1';
+    scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + (isWin ? tCol : 'var(--ac)') + ';line-height:1';
     scoreLine.textContent = String(score);
     div.appendChild(scoreLine);
 
@@ -1854,7 +1855,7 @@ function renderTeamTV(state) {
     players.forEach(function(p, i) {
       var row = document.createElement('div');
       var isActive = isAkt && i === aktIdx;
-      row.style.cssText = 'padding:4px 8px;border-radius:8px;font-size:28px;' + (isActive ? 'color:var(--ac);font-weight:800;background:var(--ac)11' : 'color:var(--txt)');
+      row.style.cssText = 'padding:4px 8px;border-radius:8px;font-size:28px;' + (isActive ? 'color:'+tCol+';font-weight:800;background:'+tCol+'11' : 'color:var(--txt)');
       row.textContent = (isActive ? '▶ ' : '   ') + p.emoji + ' ' + p.name;
       roster.appendChild(row);
     });
@@ -1902,7 +1903,7 @@ function renderSKRTV(state) {
     var label = isSC
       ? '<span>'+f.values[0]+'</span><span style="font-size:14px;opacity:0.5">/</span><span style="color:#fbbf24;font-weight:900">'+f.values[1]+'</span>'
       : String(f.values[0]);
-    var border = (isA || isB) ? (isA && isB ? '#60a5fa' : isA ? '#60a5fa' : '#4ade80') : 'rgba(255,255,255,0.2)';
+    var border = (isA || isB) ? (isA && isB ? '#60a5fa' : isA ? '#60a5fa' : '#f87171') : 'rgba(255,255,255,0.2)';
     var bg = pastA && pastB ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)';
     var op = pastA && pastB ? '0.3' : '1';
     var marker = isA && isB ? '<div style="font-size:18px;line-height:1">🔵🔴</div>'
@@ -1942,7 +1943,7 @@ function renderSKRTV(state) {
     + trackHtml
     + '<div style="display:flex;gap:16px;flex:1">'
     + teamCard('A', posA, nextA, '#60a5fa')
-    + teamCard('B', posB, nextB, '#4ade80')
+    + teamCard('B', posB, nextB, '#f87171')
     + '</div>';
 
   if (state.done) {

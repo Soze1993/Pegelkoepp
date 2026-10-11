@@ -1770,7 +1770,7 @@ function togTeam(id,team,gameKey,aId,bId,el){
   if(wasInOwn)return;
   // Add to selected team and highlight
   if(team==='A'){a.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}
-  else{b.push(id);el.style.borderColor='var(--grn)';el.style.background='var(--grn)22';el.style.color='var(--grn)';}
+  else{b.push(id);el.style.borderColor='var(--red)';el.style.background='var(--red)22';el.style.color='var(--red)';}
 }
 async function startTeamSpiel(typeKey,aArr,bArr,configObj,modalId,label){
   if(aArr.length<1||bArr.length<1){notify('Mind. 1 Spieler pro Team','var(--red)');return;}
@@ -1847,8 +1847,9 @@ var teamWurfVal=null,teamWurfKeinPudel=false;
 function teamWurfSel(n){teamWurfVal=n;teamWurfKeinPudel=selKeinPudel;renderSpielenTab();}
 async function doTeamWurf(){
   if(teamWurfVal===null){notify('Bitte Zahl wählen','var(--red)');return;}
-  var sp=S.aktSpiel.state;var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;
-  var pid=aktArr[aktIdx].id;
+  var sp=S.aktSpiel.state;var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;
+  var aktIdx=sp.aktTeam==='A'?(sp.iA!==undefined?sp.iA:sp.chainIdx||0):(sp.iB!==undefined?sp.iB:sp.chainIdx||0);
+  var pid=aktArr[aktIdx%aktArr.length].id;
   var meta=teamWurfKeinPudel&&teamWurfVal===0?{keinPudel:true}:undefined;
   var data=await submitThrow(pid,0,teamWurfVal,meta);
   if(!data)return;
@@ -1884,7 +1885,7 @@ function renderHTSpiel(el,state){
 function renderFBSpiel(el,state){
   var sp=state;if(!sp){el.innerHTML='';return;}
   var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;var aktSp=aktArr[aktIdx];
-  function teamScore(team,tore){return '<div class="card" style="flex:1;min-width:100px;text-align:center"><div style="font-size:11px;color:var(--mut);text-transform:uppercase">Team '+team+'</div><div style="font-family:var(--fh);font-size:48px;color:var(--ac)">'+tore+'</div>'+(sp.winner===team?'<div style="font-size:12px;color:var(--grn)">🏆 Sieg!</div>':'')+'</div>';}
+  function teamScore(team,tore){var tc=team==='A'?'var(--ac)':'var(--red)';return '<div class="card" style="flex:1;min-width:100px;text-align:center"><div style="font-size:11px;color:var(--mut);text-transform:uppercase">Team '+team+'</div><div style="font-family:var(--fh);font-size:48px;color:'+tc+'">'+tore+'</div>'+(sp.winner===team?'<div style="font-size:12px;color:'+tc+'">🏆 Sieg!</div>':'')+'</div>';}
   var scoreHtml='<div style="display:flex;gap:10px;margin-bottom:10px">'+teamScore('A',sp.toreA)+teamScore('B',sp.toreB)+'</div>';
   var teamRoster='<div style="display:flex;gap:10px;margin-bottom:10px">'+
     ['A','B'].map(function(t){var arr=t==='A'?sp.tA:sp.tB;var isAkt=sp.aktTeam===t&&!sp.done;var idx=t==='A'?sp.iA:sp.iB;return '<div style="flex:1;font-size:12px">'+(isAkt?'<strong>':'')+'Team '+t+(isAkt?' 🎳':'')+':'+arr.map(function(p,i){return (i===idx&&isAkt?' <strong style="color:var(--ac)">▶'+p.emoji+p.name+'</strong>':' '+p.emoji+p.name);}).join(',')+(isAkt?'</strong>':'')+'</div>';}).join('')+'</div>';
@@ -1915,8 +1916,8 @@ function renderSKRSpiel(el,state){
     var label=isSC
       ?'<span>'+f.values[0]+'</span><span style="font-size:9px;color:var(--mut)">/</span><span style="color:#f59e0b;font-weight:900">'+f.values[1]+'</span>'
       :'<span>'+f.values[0]+'</span>';
-    var bdColor=isNextA&&isNextB?'var(--ac)':isNextA?'var(--ac)':isNextB?'var(--grn)':pastA||pastB?'transparent':'var(--brd)';
-    var bg=pastA&&pastB?'var(--bg3)':pastA?'var(--ac)11':pastB?'var(--grn)11':'var(--bg2)';
+    var bdColor=isNextA&&isNextB?'var(--ac)':isNextA?'var(--ac)':isNextB?'var(--red)':pastA||pastB?'transparent':'var(--brd)';
+    var bg=pastA&&pastB?'var(--bg3)':pastA?'var(--ac)11':pastB?'var(--red)22':'var(--bg2)';
     var op=pastA&&pastB?'0.35':'1';
     var marker='';
     if(isNextA&&isNextB)marker='<div style="font-size:8px;line-height:1">🔵🔴</div>';
@@ -1941,10 +1942,10 @@ function renderSKRSpiel(el,state){
     +'<div style="font-size:20px;font-weight:700">'+posA+' <span style="font-size:11px;color:var(--mut)">/ '+N+'</span></div>'
     +(nextValA?'<div style="font-size:12px;color:var(--ac)">Braucht: <strong>'+nextValA+'</strong></div>':'<div style="font-size:12px;color:var(--ac)">🏁 Ziel!</div>')
     +'</div>'
-    +'<div class="card" style="flex:1;border:2px solid var(--grn);padding:8px">'
+    +'<div class="card" style="flex:1;border:2px solid var(--red);padding:8px">'
     +'<div style="font-size:11px;color:var(--mut)">🔴 Team B</div>'
     +'<div style="font-size:20px;font-weight:700">'+posB+' <span style="font-size:11px;color:var(--mut)">/ '+N+'</span></div>'
-    +(nextValB?'<div style="font-size:12px;color:var(--grn)">Braucht: <strong>'+nextValB+'</strong></div>':'<div style="font-size:12px;color:var(--grn)">🏁 Ziel!</div>')
+    +(nextValB?'<div style="font-size:12px;color:var(--red)">Braucht: <strong>'+nextValB+'</strong></div>':'<div style="font-size:12px;color:var(--red)">🏁 Ziel!</div>')
     +'</div></div>';
 
   if(sp.done){
