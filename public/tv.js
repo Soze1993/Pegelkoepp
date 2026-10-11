@@ -179,7 +179,7 @@ function renderGame(state) {
   if (currentTypeKey === 'geradeUngerade' || currentTypeKey === 'fussball') { renderTeamTV(state); return; }
   if (currentTypeKey === 'henneferTreppe') { renderHTTV(state); return; }
   if (currentTypeKey === 'seifenkistenrennen') { renderSKRTV(state); return; }
-  if (currentTypeKey === 'mixedPartie') { renderGenericScoreTV(state); return; }
+  if (currentTypeKey === 'mixedPartie') { renderMPTV(state); return; }
   if (currentTypeKey === 'steigrohr') { renderSteigrohrTV(state); return; }
   if (!state || !state.players) return;
   idleEl.style.display = 'none';
@@ -2094,6 +2094,108 @@ function renderSteigrohrTV(state) {
 }
 
 // ── Generic ranked score table (Mixed Partie, fallback) ─────────────────
+function renderMPTV(state) {
+  if (!state || !state.tA) return;
+  idleEl.style.display = 'none';
+  gameEl.classList.add('active');
+
+  function teamTotal(arr) { return arr.reduce(function(s,p){return s+(p.r1||0)+(p.r2||0)+(p.r3||0)-(p.r4||0);},0); }
+  const sA = teamTotal(state.tA), sB = teamTotal(state.tB);
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:24px 40px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:14px';
+
+  // Round banner
+  if (!state.done) {
+    const rNames = ['','Volle (3×)','Abräumen (4×)','Große Hausnummer (+)','Kleine Hausnummer (−)'];
+    const rb = document.createElement('div');
+    rb.style.cssText = 'text-align:center;font-family:var(--fh);font-size:22px;color:var(--mut)';
+    rb.textContent = 'Runde ' + state.runde + '/4  —  ' + (rNames[state.runde] || '');
+    wrap.appendChild(rb);
+  }
+
+  // Team score cards
+  const scoreRow = document.createElement('div');
+  scoreRow.style.cssText = 'display:flex;gap:16px';
+  ['A','B'].forEach(function(team) {
+    const isAkt = state.aktTeam === team && !state.done;
+    const isWin = state.done && state.winner === team;
+    const col = team === 'A' ? '#60a5fa' : '#f87171';
+    const sc = team === 'A' ? sA : sB;
+    const card = document.createElement('div');
+    card.style.cssText = 'flex:1;border-radius:12px;border:3px solid '+(isAkt||isWin?col:'rgba(255,255,255,.15)')+';background:'+(isAkt||isWin?col+'22':'var(--bg2)')+';padding:14px;text-align:center';
+    card.innerHTML = '<div style="font-size:13px;font-weight:700;color:'+col+';text-transform:uppercase;letter-spacing:.06em">Team '+team+(isWin?' 🏆':'')+' </div>'
+      +'<div style="font-size:52px;font-weight:800;color:'+col+';font-family:var(--fh)">'+sc+'</div>';
+    scoreRow.appendChild(card);
+  });
+  wrap.appendChild(scoreRow);
+
+  // Scorecard table (rows=rounds, cols=teams)
+  function teamCellVal(arr, rKey) {
+    const allDone = arr.every(function(p){return p[rKey]!==null;});
+    const parts = arr.map(function(p){return p[rKey]!==null?p[rKey]:'–';}).join(' + ');
+    const tot = arr.reduce(function(s,p){return s+(p[rKey]||0);},0);
+    if (arr.length > 1 && allDone) return parts + ' = ' + tot;
+    return parts;
+  }
+  const tableEl = document.createElement('table');
+  tableEl.style.cssText = 'width:100%;border-collapse:collapse;font-size:17px';
+  const rounds = [
+    {label:'Volle', sub:'3 Würfe', key:'r1', subCol:'var(--mut)'},
+    {label:'Abräumen', sub:'4 Würfe', key:'r2', subCol:'var(--mut)'},
+    {label:'Gr. HausNr.', sub:'+', key:'r3', subCol:'#4ade80'},
+    {label:'kl. HausNr.', sub:'−', key:'r4', subCol:'#f87171'}
+  ];
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr>'
+    +'<th style="text-align:left;padding:8px 12px;color:var(--mut);font-size:13px;border-bottom:1px solid rgba(255,255,255,.1)">Runde</th>'
+    +'<th style="text-align:right;padding:8px 12px;color:#60a5fa;font-size:13px;border-bottom:1px solid rgba(255,255,255,.1)">Team A</th>'
+    +'<th style="text-align:right;padding:8px 12px;color:#f87171;font-size:13px;border-bottom:1px solid rgba(255,255,255,.1)">Team B</th>'
+    +'</tr>';
+  tableEl.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  rounds.forEach(function(r, ri) {
+    const isAkt = !state.done && state.runde === ri + 1;
+    const tr = document.createElement('tr');
+    tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.06)'+(isAkt?';background:rgba(255,255,255,.05)':'');
+    tr.innerHTML = '<td style="padding:10px 12px;color:var(--mut);font-size:15px">'+r.label+'<br><span style="font-size:12px;color:'+r.subCol+'">'+r.sub+'</span></td>'
+      +'<td style="text-align:right;padding:10px 12px;color:#60a5fa">'+teamCellVal(state.tA, r.key)+'</td>'
+      +'<td style="text-align:right;padding:10px 12px;color:#f87171">'+teamCellVal(state.tB, r.key)+'</td>';
+    tbody.appendChild(tr);
+  });
+  const totRow = document.createElement('tr');
+  totRow.style.cssText = 'border-top:2px solid rgba(255,255,255,.2);font-weight:700';
+  totRow.innerHTML = '<td style="padding:10px 12px;color:var(--mut);font-size:15px">Gesamt</td>'
+    +'<td style="text-align:right;padding:10px 12px;font-size:22px;color:#60a5fa">'+sA+'</td>'
+    +'<td style="text-align:right;padding:10px 12px;font-size:22px;color:#f87171">'+sB+'</td>';
+  tbody.appendChild(totRow);
+  tableEl.appendChild(tbody);
+  wrap.appendChild(tableEl);
+
+  // Current player indicator
+  if (!state.done) {
+    const aktArr = state.aktTeam === 'A' ? state.tA : state.tB;
+    const aktIdx = state.aktTeam === 'A' ? state.iA : state.iB;
+    const aktP = aktArr[aktIdx];
+    if (aktP) {
+      const col = state.aktTeam === 'A' ? '#60a5fa' : '#f87171';
+      let throwInfo;
+      if (state.runde === 1)      throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/3 — Volle';
+      else if (state.runde === 2) throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining;
+      else if (state.runde === 3) throwInfo = state.zehner === null ? 'Zehner' : 'Einer (Zehner: '+state.zehner+')';
+      else                        throwInfo = state.zehner === null ? 'Zehner' : 'Einer (Zehner: '+state.zehner+')';
+      const cur = document.createElement('div');
+      cur.style.cssText = 'text-align:center;padding:14px;border-radius:10px;border:2px solid '+col+';background:'+col+'22';
+      cur.innerHTML = '<div style="font-size:36px">'+aktP.emoji+'</div>'
+        +'<div style="font-size:24px;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
+        +'<div style="font-size:16px;color:var(--mut);margin-top:4px">'+throwInfo+'</div>';
+      wrap.appendChild(cur);
+    }
+  }
+
+  gameEl.replaceChildren(wrap);
+}
+
 function renderGenericScoreTV(state) {
   if (!state || !state.players) return;
   idleEl.style.display = 'none';

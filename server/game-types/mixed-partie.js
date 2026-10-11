@@ -1,119 +1,121 @@
 'use strict';
 
-// ---------------------------------------------------------------------------
-// Mixed Partie — Einzelspiel
-// 4 Runden mit unterschiedlichen Aufgaben:
-//   R1 (Volle):         1 Wurf pro Spieler, Summe zählt
-//   R2 (Abräumen):      1 Wurf pro Spieler, Summe zählt
-//   R3 (Hohe Zahlen):   3 Würfe pro Spieler (H/Z/E-Slots), bildet 3-stellige Zahl → addieren
-//                       Pudel = Stelle 0; meta.kranz → Stelle 8
-//   R4 (Niedrige Zahl): 3 Würfe pro Spieler (H/Z/E-Slots), bildet 3-stellige Zahl → subtrahieren
-//                       Pudel = Stelle 9
-// Gesamtscore = R1 + R2 + R3-Zahl − R4-Zahl
-// Höchste Zahl gewinnt.
-// ---------------------------------------------------------------------------
-
-function hn(slots) {
-  if (slots.h === null || slots.z === null || slots.e === null) return null;
-  return slots.h * 100 + slots.z * 10 + slots.e;
-}
+// Mixed Partie — Mannschaftsspiel (2 Teams), 4 Runden
+// R1: 3 Würfe Volle pro Spieler, Summe aller Spieler → Teambeitrag R1
+// R2: 4 Würfe Abräumen pro Spieler, Summe aller Spieler → Teambeitrag R2
+// R3: Große Hausnummer — 2 Würfe (Zehner + Einer) = 2-stellige Zahl, addiert
+// R4: Kleine Hausnummer — 2 Würfe (Zehner + Einer) = 2-stellige Zahl, subtrahiert
+// Teamergebnis = sum(R1) + sum(R2) + sum(R3) − sum(R4). Höchste Zahl gewinnt.
 
 module.exports = {
   id: 'mixedPartie',
   name: 'Mixed Partie',
 
-  initState(players) {
+  initState(players, config) {
     return {
-      players: players.map(p => ({
-        id: p.id, name: p.name, emoji: p.emoji,
-        r1: null,
-        r2: null,
-        r3: { h: null, z: null, e: null },
-        r4: { h: null, z: null, e: null },
-        pudel: 0
-      })),
-      aktSpIdx: 0,
-      runde: 1,   // 1, 2, 3, or 4
-      done: false
+      tA: players.filter(p => p.role === 'A').map(p => ({id:p.id, name:p.name, emoji:p.emoji, pudel:0, r1:null, r2:null, r3:null, r4:null})),
+      tB: players.filter(p => p.role === 'B').map(p => ({id:p.id, name:p.name, emoji:p.emoji, pudel:0, r1:null, r2:null, r3:null, r4:null})),
+      aktTeam: 'A',
+      iA: 0,
+      iB: 0,
+      runde: 1,
+      throwBuf: [],
+      remaining: 9,
+      zehner: null,
+      done: false,
+      winner: null
     };
   },
 
-  // meta for R3/R4: { slot: 'h'|'z'|'e', kranz: true (R3 only) }
-  applyThrow(state, playerId, value, meta = {}) {
+  applyThrow(state, playerId, value, meta) {
     const s = JSON.parse(JSON.stringify(state));
     if (s.done) return s;
 
-    const p = s.players[s.aktSpIdx];
-    if (!p || p.id !== playerId) return s;
+    const team    = s.aktTeam;
+    const teamArr = team === 'A' ? s.tA : s.tB;
+    const idx     = team === 'A' ? s.iA  : s.iB;
+    const player  = teamArr[idx];
+    if (!player || player.id !== playerId) return s;
 
-    const n = s.players.length;
+    if (value === 0 && !(meta && meta.keinPudel)) player.pudel++;
 
     if (s.runde === 1) {
-      if (value === 0 && !meta.keinPudel) p.pudel++;
-      p.r1 = value;
-      s.aktSpIdx = (s.aktSpIdx + 1) % n;
-      if (s.aktSpIdx === 0) s.runde = 2;
+      s.throwBuf.push(value);
+      if (s.throwBuf.length >= 3) {
+        player.r1 = s.throwBuf.reduce((a, b) => a + b, 0);
+        s.throwBuf = [];
+        return _advance(s);
+      }
       return s;
     }
 
     if (s.runde === 2) {
-      if (value === 0 && !meta.keinPudel) p.pudel++;
-      p.r2 = value;
-      s.aktSpIdx = (s.aktSpIdx + 1) % n;
-      if (s.aktSpIdx === 0) s.runde = 3;
+      const hit = Math.min(value, s.remaining);
+      s.remaining -= hit;
+      s.throwBuf.push(hit);
+      if (s.remaining <= 0) s.remaining = 9;
+      if (s.throwBuf.length >= 4) {
+        player.r2 = s.throwBuf.reduce((a, b) => a + b, 0);
+        s.throwBuf = [];
+        s.remaining = 9;
+        return _advance(s);
+      }
       return s;
     }
 
     if (s.runde === 3) {
-      if (!meta.slot) return s; // slot required
-      let digit = value;
-      if (meta.kranz) {
-        digit = 8; // Kranz → 8
-      } else if (value === 0 && !meta.keinPudel) {
-        p.pudel++;
-        digit = 0; // Pudel → 0
-      }
-      p.r3[meta.slot] = digit;
-      s.aktSpIdx = (s.aktSpIdx + 1) % n;
-      if (s.aktSpIdx === 0) {
-        // Check if all players have all 3 R3 slots filled
-        const allR3 = s.players.every(x => x.r3.h !== null && x.r3.z !== null && x.r3.e !== null);
-        if (allR3) s.runde = 4;
-      }
-      return s;
+      if (s.zehner === null) { s.zehner = value; return s; }
+      player.r3 = s.zehner * 10 + value;
+      s.zehner = null;
+      return _advance(s);
     }
 
     if (s.runde === 4) {
-      if (!meta.slot) return s; // slot required
-      let digit = value;
-      if (value === 0 && !meta.keinPudel) {
-        p.pudel++;
-        digit = 9; // Pudel in R4 → 9 (worst for subtraction)
-      }
-      p.r4[meta.slot] = digit;
-      s.aktSpIdx = (s.aktSpIdx + 1) % n;
-      if (s.aktSpIdx === 0) {
-        const allR4 = s.players.every(x => x.r4.h !== null && x.r4.z !== null && x.r4.e !== null);
-        if (allR4) s.done = true;
-      }
-      return s;
+      if (s.zehner === null) { s.zehner = value; return s; }
+      player.r4 = s.zehner * 10 + value;
+      s.zehner = null;
+      return _advance(s);
     }
 
     return s;
   },
 
-  isFinished(state) {
-    return state.done;
-  },
+  isFinished(state) { return state.done; },
 
   getFinalResults(state) {
-    const scores = state.players.map(p => {
-      const r3 = hn(p.r3);
-      const r4 = hn(p.r4);
-      const score = (p.r1 || 0) + (p.r2 || 0) + (r3 !== null ? r3 : 0) - (r4 !== null ? r4 : 0);
-      return { playerId: p.id, score, pudel: p.pudel };
-    });
-    const best = Math.max(...scores.map(x => x.score));
-    return scores.map(x => ({ ...x, winner: x.score === best }));
+    const sA = _teamTotal(state.tA), sB = _teamTotal(state.tB);
+    return [
+      ...state.tA.map(p => ({playerId:p.id, score:sA, pudel:p.pudel, winner:state.winner === 'A'})),
+      ...state.tB.map(p => ({playerId:p.id, score:sB, pudel:p.pudel, winner:state.winner === 'B'})),
+    ];
   }
 };
+
+function _teamTotal(arr) {
+  return arr.reduce((sum, p) => sum + (p.r1||0) + (p.r2||0) + (p.r3||0) - (p.r4||0), 0);
+}
+
+function _advance(s) {
+  const team    = s.aktTeam;
+  const teamArr = team === 'A' ? s.tA : s.tB;
+  const idx     = team === 'A' ? s.iA  : s.iB;
+  const next    = idx + 1;
+
+  if (next < teamArr.length) {
+    if (team === 'A') s.iA = next;
+    else              s.iB = next;
+  } else {
+    if (team === 'A') {
+      s.aktTeam = 'B'; s.iB = 0;
+    } else {
+      s.runde++;
+      s.aktTeam = 'A'; s.iA = 0; s.iB = 0; s.remaining = 9;
+      if (s.runde > 4) {
+        s.done = true;
+        const sA = _teamTotal(s.tA), sB = _teamTotal(s.tB);
+        s.winner = sA > sB ? 'A' : sB > sA ? 'B' : 'draw';
+      }
+    }
+  }
+  return s;
+}

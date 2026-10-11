@@ -340,6 +340,19 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
   </div>
 </div></div>
 
+<!-- Mixed Partie -->
+<div class="mo" id="m-mp"><div class="md">
+  <h2>🎲 Mixed Partie</h2>
+  <div class="fg"><label>Datum</label><input type="date" id="m-mp-datum"></div>
+  <div class="fg"><label>Team A</label><div id="m-mp-a" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div></div>
+  <div class="fg"><label>Team B</label><div id="m-mp-b" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div></div>
+  <div style="font-size:12px;color:var(--mut);margin-top:-6px">R1: 3×Volle · R2: 4×Abräumen · R3: +Große Hausnummer · R4: −Kleine Hausnummer</div>
+  <div style="display:flex;gap:10px;margin-top:18px">
+    <button class="btn bp" style="flex:1" onclick="startMP()">Starten</button>
+    <button class="btn bg" onclick="closeM('m-mp')">Abbrechen</button>
+  </div>
+</div></div>
+
 <!-- Steigrohr -->
 <div class="mo" id="m-sr"><div class="md">
   <h2>🪠 Steigrohr</h2>
@@ -389,7 +402,7 @@ label{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;l
 var socket = null;
 var EMOJIS=['🎳','🎯','⚡','🦁','🔥','💪','🐆','🌟','🧊','🎸','🏆','🎲','🃏','🥇','🎪'];
 var selEmo='🎳',selSTEmo='🎯',genTyp=null,genSel=[],hausWurf=null,hausSlot=null,selK=null,ankerPts=null,vgSel=null,fjSel=null,bkK=null,bkSel=[];
-var guA=[],guB=[],htA=[],htB=[],fbA=[],fbB=[],skrA=[],skrB=[];
+var guA=[],guB=[],htA=[],htB=[],fbA=[],fbB=[],skrA=[],skrB=[],mpA=[],mpB=[];
 var srAnzahlPaare=2,srZuordnung={}; // playerId → paarNr (1-based)
 var selKeinPudel=false;
 
@@ -413,7 +426,7 @@ var S={
     {id:'henneferTreppe',bi:true,icon:'🪜',name:'Hennefer Treppe',desc:'2 Teams, 10 Runden Abraeumen. Reihum je 1 Wurf bis Fehlwurf. Punkte = Kegel x Wuerfe. Team mit meisten Punkten gewinnt.',mode:'teams'},
     {id:'fussball',bi:true,icon:'⚽',name:'Fußball',desc:'2 Teams, Abraeumen. Alle Kegel geraeumt = Tor. Pudel = Elfmeter. Sieg: mind. 5 Tore und 2 Tore Vorsprung.',mode:'teams'},
     {id:'seifenkistenrennen',bi:true,icon:'🚗',name:'Seifenkistenrennen',desc:'2 Teams auf 14 Feldern. Jedes Feld hat eine Holzzahl — nur der exakte Treffer rückt ein Feld vor. Zwei Abkürzungen möglich. Erstes Team am Ziel gewinnt.',mode:'teams'},
-    {id:'mixedPartie',bi:true,icon:'🎲',name:'Mixed Partie',desc:'4 Runden: Volle, Abraeumen, Grosse Hausnummer (+), Kleine Hausnummer (-). Gesamtergebnis: R1+R2+R3-R4.',mode:'multi'},
+    {id:'mixedPartie',bi:true,icon:'🎲',name:'Mixed Partie',desc:'4 Runden: Volle (3×), Abräumen (4×), Grosse Hausnummer (+), Kleine Hausnummer (-). Teamergebnis: R1+R2+R3-R4.',mode:'teams'},
     {id:'steigrohr',bi:true,icon:'🪠',name:'Steigrohr',desc:'Paare (2 Spieler) werfen je 2 Wuerfe. Jede Runde muss besser als die vorherige sein. Wer nicht steigert scheidet aus. Pudel=5, Kranz=12.',mode:'paare'}
   ],
   aktSpiel:null,
@@ -423,7 +436,7 @@ var S={
 function today(){return new Date().toISOString().slice(0,10);}
 function notify(msg,col){var n=document.getElementById('notif');n.textContent=msg;n.style.background=col||'var(--grn)';n.classList.add('show');setTimeout(function(){n.classList.remove('show');},2400);}
 function showTab(id){document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('active');});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});var pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('active');var map={spiele:0,spielen:1,bib:2,spieler:3,stats:4};var tabs=document.querySelectorAll('.tab');if(map[id]!==undefined&&tabs[map[id]])tabs[map[id]].classList.add('active');renderAll();}
-function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-gu'){document.getElementById('m-gu-datum').value=today();renderTeamWahl('m-gu-a','m-gu-b','gu');}if(id==='m-ht'){document.getElementById('m-ht-datum').value=today();renderTeamWahl('m-ht-a','m-ht-b','ht');}if(id==='m-fb'){document.getElementById('m-fb-datum').value=today();renderTeamWahl('m-fb-a','m-fb-b','fb');}if(id==='m-skr'){document.getElementById('m-skr-datum').value=today();renderTeamWahl('m-skr-a','m-skr-b','skr');}if(id==='m-sr'){document.getElementById('m-sr-datum').value=today();srAnzahlPaare=2;renderSRWahl();}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
+function openM(id){document.getElementById(id).classList.add('open');if(id==='m-neu-sp')renderSpEmo();if(id==='m-st'){selSTEmo='🎯';renderSTEmo();}if(id==='m-vg'){document.getElementById('m-vg-datum').value=today();renderVGWahl();}if(id==='m-fj'){document.getElementById('m-fj-datum').value=today();renderFJWahl();}if(id==='m-anker'){document.getElementById('m-anker-datum').value=today();renderAnkerWahl();}if(id==='m-kda'){document.getElementById('m-kda-datum').value=today();renderKDAWahl();}if(id==='m-bk'){document.getElementById('m-bk-datum').value=today();renderBKWahl();}if(id==='m-gu'){document.getElementById('m-gu-datum').value=today();renderTeamWahl('m-gu-a','m-gu-b','gu');}if(id==='m-ht'){document.getElementById('m-ht-datum').value=today();renderTeamWahl('m-ht-a','m-ht-b','ht');}if(id==='m-fb'){document.getElementById('m-fb-datum').value=today();renderTeamWahl('m-fb-a','m-fb-b','fb');}if(id==='m-skr'){document.getElementById('m-skr-datum').value=today();renderTeamWahl('m-skr-a','m-skr-b','skr');}if(id==='m-mp'){document.getElementById('m-mp-datum').value=today();renderTeamWahl('m-mp-a','m-mp-b','mp');}if(id==='m-sr'){document.getElementById('m-sr-datum').value=today();srAnzahlPaare=2;renderSRWahl();}if(id==='m-start-abend'){var inp=document.getElementById('m-abend-name');if(inp)inp.value='';}if(id==='m-neu-typ'){var tn=document.getElementById('m-typ-name');var td=document.getElementById('m-typ-desc');if(tn)tn.value='';if(td)td.value='';}}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function updSp(id,opts){return;}
 
@@ -896,14 +909,12 @@ function getWinnerName(state, type_key) {
     var wp = state.paare[state.winner];
     return wp ? wp.spieler.map(function(p){return p.name;}).join(' & ') : 'Unbekannt';
   }
-  // Mixed Partie — highest scorer
+  // Mixed Partie — Team A vs Team B
   if (type_key === 'mixedPartie') {
-    if (!state.players || !state.players.length) return 'Unbekannt';
-    var best = state.players.slice().sort(function(a,b){
-      function sc(p){var r3=p.r3.h!==null&&p.r3.z!==null&&p.r3.e!==null?p.r3.h*100+p.r3.z*10+p.r3.e:0;var r4=p.r4.h!==null&&p.r4.z!==null&&p.r4.e!==null?p.r4.h*100+p.r4.z*10+p.r4.e:0;return(p.r1||0)+(p.r2||0)+r3-r4;}
-      return sc(b)-sc(a);
-    });
-    return best[0].name || 'Unbekannt';
+    if (!state.tA || !state.tB) return 'Unbekannt';
+    function mpSc(arr){return arr.reduce(function(s,p){return s+(p.r1||0)+(p.r2||0)+(p.r3||0)-(p.r4||0);},0);}
+    var sA=mpSc(state.tA),sB=mpSc(state.tB);
+    if(sA>sB)return 'Team A';if(sB>sA)return 'Team B';return 'Unentschieden';
   }
   // dreiVollen, plusMinus, grosseHaus, kleineHaus, anker — all have state.players sorted by score
   if (state.players && state.players.length) {
@@ -1360,7 +1371,7 @@ async function renderBib(){
 }
 
 // Spiel starten
-function startTyp(id){var st=S.typen.find(function(s){return s.id===id;});if(!st)return;if(id==='viergewinnt'){openM('m-vg');return;}if(id==='fuchsjagd'){openM('m-fj');return;}if(id==='anker'){openM('m-anker');return;}if(id==='kda'){openM('m-kda');return;}if(id==='bilderkegel'){openM('m-bk');return;}if(id==='geradeUngerade'){openM('m-gu');return;}if(id==='henneferTreppe'){openM('m-ht');return;}if(id==='fussball'){openM('m-fb');return;}if(id==='seifenkistenrennen'){openM('m-skr');return;}if(id==='steigrohr'){openM('m-sr');return;}genTyp=st;genSel=[];document.getElementById('m-gen-title').textContent=st.icon+' '+st.name;document.getElementById('m-gen-datum').value=today();document.getElementById('m-gen-extra').innerHTML='';document.getElementById('m-gen-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togGen('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');openM('m-spiel-gen');}
+function startTyp(id){var st=S.typen.find(function(s){return s.id===id;});if(!st)return;if(id==='viergewinnt'){openM('m-vg');return;}if(id==='fuchsjagd'){openM('m-fj');return;}if(id==='anker'){openM('m-anker');return;}if(id==='kda'){openM('m-kda');return;}if(id==='bilderkegel'){openM('m-bk');return;}if(id==='geradeUngerade'){openM('m-gu');return;}if(id==='henneferTreppe'){openM('m-ht');return;}if(id==='fussball'){openM('m-fb');return;}if(id==='seifenkistenrennen'){openM('m-skr');return;}if(id==='mixedPartie'){openM('m-mp');return;}if(id==='steigrohr'){openM('m-sr');return;}genTyp=st;genSel=[];document.getElementById('m-gen-title').textContent=st.icon+' '+st.name;document.getElementById('m-gen-datum').value=today();document.getElementById('m-gen-extra').innerHTML='';document.getElementById('m-gen-wahl').innerHTML=S.spieler.filter(function(s){return !s.archived;}).map(function(s){return'<div onclick="togGen('+s.id+',this)" style="padding:6px 12px;border-radius:20px;border:2px solid var(--brd);background:var(--bg3);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s">'+s.emoji+' '+s.name+'</div>';}).join('');openM('m-spiel-gen');}
 function togGen(id,el){if(genSel.indexOf(id)>=0){genSel=genSel.filter(function(x){return x!==id;});el.style.borderColor='var(--brd)';el.style.background='var(--bg3)';el.style.color='var(--txt)';}else{genSel.push(id);el.style.borderColor='var(--ac)';el.style.background='var(--ac)22';el.style.color='var(--ac)';}}
 function makeGP(id){var s=S.spieler.find(function(x){return x.id===id;});return{id:s.id,name:s.name,emoji:s.emoji,wuerfe:[],pudel:0,slots:{h:null,z:null,e:null}};}
 async function startGenSpiel() {
@@ -1746,7 +1757,7 @@ async function startBK(){if(bkSel.length<2){notify('Mind. 2 Spieler','var(--red)
 
 // ── Team-game shared helpers ──────────────────────────────────────────────
 // gameKey → [arrA, arrB] — splice in place so startTeamSpiel always reads live refs
-function _teamArrs(k){return k==='gu'?[guA,guB]:k==='ht'?[htA,htB]:k==='fb'?[fbA,fbB]:[skrA,skrB];}
+function _teamArrs(k){return k==='gu'?[guA,guB]:k==='ht'?[htA,htB]:k==='fb'?[fbA,fbB]:k==='mp'?[mpA,mpB]:[skrA,skrB];}
 function renderTeamWahl(aId,bId,gameKey){
   var arrs=_teamArrs(gameKey);arrs[0].length=0;arrs[1].length=0;
   var spieler=S.spieler.filter(function(s){return !s.archived;});
@@ -1786,6 +1797,7 @@ async function startGU(){var d=document.getElementById('m-gu-datum').value;await
 async function startHT(){var r=parseInt(document.getElementById('m-ht-runden').value)||10;var d=document.getElementById('m-ht-datum').value;await startTeamSpiel('henneferTreppe',htA,htB,{date:d,config:{totalRunden:r}},'m-ht','🪜 Hennefer Treppe');}
 async function startFB(){var t=parseInt(document.getElementById('m-fb-tore').value)||5;var d=document.getElementById('m-fb-datum').value;await startTeamSpiel('fussball',fbA,fbB,{date:d,config:{targetGoals:t}},'m-fb','⚽ Fußball');}
 async function startSKR(){var n=Math.max(8,Math.min(15,parseInt(document.getElementById('m-skr-felder').value)||12));var d=document.getElementById('m-skr-datum').value;await startTeamSpiel('seifenkistenrennen',skrA,skrB,{date:d,config:{numFields:n}},'m-skr','🚗 Seifenkistenrennen');}
+async function startMP(){var d=document.getElementById('m-mp-datum').value;await startTeamSpiel('mixedPartie',mpA,mpB,{date:d},'m-mp','🎲 Mixed Partie');}
 
 // ── Gerade & Ungerade renderer ───────────────────────────────────────────
 function renderGUSpiel(el,state){
@@ -2079,41 +2091,69 @@ async function doSRWurf(){
 
 // ── Mixed Partie renderer ────────────────────────────────────────────────
 function renderMPSpiel(el,state){
-  var sp=state;if(!sp){el.innerHTML='';return;}
-  var p=sp.players[sp.aktSpIdx];
-  var rNames=['','Volle','Abräumen','Hohe Zahl (+)','Niedrige Zahl (−)'];
-  var slots=['h','z','e'],sNames=['H','Z','E'];
-  function fmtR34(r){return r.h!==null||r.z!==null||r.e!==null?[r.h,r.z,r.e].map(function(v){return v!==null?v:'-';}).join('')+' (='+(r.h!==null&&r.z!==null&&r.e!==null?r.h*100+r.z*10+r.e:'?')+')':'–';}
-  var rows=sp.players.map(function(pl){
-    var r3=pl.r3.h!==null&&pl.r3.z!==null&&pl.r3.e!==null?pl.r3.h*100+pl.r3.z*10+pl.r3.e:null;
-    var r4=pl.r4.h!==null&&pl.r4.z!==null&&pl.r4.e!==null?pl.r4.h*100+pl.r4.z*10+pl.r4.e:null;
-    var ges=sp.done?(pl.r1||0)+(pl.r2||0)+(r3||0)-(r4||0):null;
-    return '<tr><td>'+pl.emoji+' '+pl.name+'</td><td style="text-align:right">'+(pl.r1!==null?pl.r1:'–')+'</td><td style="text-align:right">'+(pl.r2!==null?pl.r2:'–')+'</td><td style="text-align:right">'+fmtR34(pl.r3)+'</td><td style="text-align:right">'+fmtR34(pl.r4)+'</td><td style="text-align:right;font-weight:700">'+(ges!==null?ges:'–')+'</td></tr>';
-  }).join('');
-  var tbl='<div class="card" style="overflow-x:auto"><table class="stbl"><thead><tr><th>Spieler</th><th style="text-align:right">V</th><th style="text-align:right">A</th><th style="text-align:right">H+</th><th style="text-align:right">H−</th><th style="text-align:right">Ges</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
-  if(sp.done){
-    var res=sp.players.slice().sort(function(a,b){var ga=(a.r1||0)+(a.r2||0)+(a.r3.h*100+a.r3.z*10+a.r3.e||0)-(a.r4.h*100+a.r4.z*10+a.r4.e||0),gb=(b.r1||0)+(b.r2||0)+(b.r3.h*100+b.r3.z*10+b.r3.e||0)-(b.r4.h*100+b.r4.z*10+b.r4.e||0);return gb-ga;});
-    el.innerHTML='<div style="text-align:center;padding:14px 0 8px;font-family:var(--fh);font-size:26px;color:var(--ac)">'+res[0].emoji+' '+res[0].name+' gewinnt!</div>'+tbl+'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';return;
+  var sp=state;if(!sp||!sp.tA){el.innerHTML='';return;}
+  function teamTotal(arr){return arr.reduce(function(s,p){return s+(p.r1||0)+(p.r2||0)+(p.r3||0)-(p.r4||0);},0);}
+  var sA=teamTotal(sp.tA),sB=teamTotal(sp.tB);
+  var tColA='var(--blu)',tColB='var(--red)';
+  var aktCol=sp.aktTeam==='A'?tColA:tColB;
+  // Score header
+  var hdr='<div style="display:flex;gap:8px;margin-bottom:10px">'
+    +'<div style="flex:1;padding:10px;border-radius:8px;text-align:center;border:2px solid '+(sp.aktTeam==='A'&&!sp.done?tColA:'var(--brd)')+';background:'+(sp.aktTeam==='A'&&!sp.done?'var(--blu)11':'var(--card2)')+'"><div style="font-size:11px;font-weight:700;color:'+tColA+';text-transform:uppercase">Team A</div><div style="font-size:28px;font-weight:800;color:'+tColA+'">'+sA+'</div></div>'
+    +'<div style="display:flex;align-items:center;padding:0 6px;font-size:14px;font-weight:700;color:var(--mut)">vs</div>'
+    +'<div style="flex:1;padding:10px;border-radius:8px;text-align:center;border:2px solid '+(sp.aktTeam==='B'&&!sp.done?tColB:'var(--brd)')+';background:'+(sp.aktTeam==='B'&&!sp.done?'var(--red)11':'var(--card2)')+'"><div style="font-size:11px;font-weight:700;color:'+tColB+';text-transform:uppercase">Team B</div><div style="font-size:28px;font-weight:800;color:'+tColB+'">'+sB+'</div></div>'
+    +'</div>';
+  // Scorecard: rows=rounds, cols=teams (matching screenshot layout)
+  function teamCell(arr,rKey){
+    var parts=arr.map(function(p){return p[rKey]!==null?p[rKey]:'–';}).join(' + ');
+    var allDone=arr.every(function(p){return p[rKey]!==null;});
+    var tot=arr.reduce(function(s,p){return s+(p[rKey]||0);},0);
+    if(arr.length>1&&allDone)parts+=' = '+tot;
+    return '<td style="text-align:right;font-size:13px">'+parts+'</td>';
   }
-  var slotNeeded=sp.runde>=3?(slots.find(function(sl){return p&&p['r'+(sp.runde===3?'3':'4')][sl]===null;})||null):null;
-  el.innerHTML=tbl
-    +'<div style="text-align:center;font-size:12px;color:var(--mut);margin:8px 0 4px">Runde '+sp.runde+'/4 – '+rNames[sp.runde]+(slotNeeded?' (Slot '+slotNeeded.toUpperCase()+')':'')+' </div>'
-    +(p?'<div class="wi"><span>Wurf</span><strong>'+p.emoji+' '+p.name+'</strong></div>':'')+
-    (sp.runde>=3?'<div style="font-size:12px;color:var(--mut);margin-bottom:4px;text-align:center">Slot H/Z/E – bitte Kegel wählen</div><div style="display:flex;gap:8px;margin-bottom:6px">'+slots.map(function(sl,i){var done2=p&&p['r'+(sp.runde===3?'3':'4')][sl]!==null;return '<button class="btn '+(slotNeeded===sl?'bp':'bg')+'" style="flex:1;opacity:'+(done2?'.4':'1')+'" onclick="mpSetSlot(\''+sl+'\')" '+(done2?'disabled':'')+'>'+sNames[i]+'</button>';}).join('')+'</div>':'')
-    +'<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Umgeworfene Kegel</div>'+
-    kgrid(null,'mpWurfSel')+'<button class="btn bp" style="width:100%;margin-top:4px" onclick="doMPWurf()">Wurf bestätigen</button>';
+  var tbl='<div class="card" style="overflow-x:auto;margin-bottom:10px"><table class="stbl" style="width:100%">'
+    +'<thead><tr><th style="text-align:left;font-size:11px;color:var(--mut)">Runde</th><th style="text-align:right;color:'+tColA+'">Team A</th><th style="text-align:right;color:'+tColB+'">Team B</th></tr></thead>'
+    +'<tbody>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">Volle<br><span style="font-size:10px;opacity:.6">3 Würfe</span></td>'+teamCell(sp.tA,'r1')+teamCell(sp.tB,'r1')+'</tr>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">Abräumen<br><span style="font-size:10px;opacity:.6">4 Würfe</span></td>'+teamCell(sp.tA,'r2')+teamCell(sp.tB,'r2')+'</tr>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">Gr. HausNr.<br><span style="font-size:10px;color:var(--grn)">+</span></td>'+teamCell(sp.tA,'r3')+teamCell(sp.tB,'r3')+'</tr>'
+    +'<tr><td style="font-size:12px;color:var(--mut)">kl. HausNr.<br><span style="font-size:10px;color:var(--red)">−</span></td>'+teamCell(sp.tA,'r4')+teamCell(sp.tB,'r4')+'</tr>'
+    +'<tr style="border-top:1px solid var(--brd);font-weight:700"><td style="font-size:12px;color:var(--mut)">Gesamt</td><td style="text-align:right;color:'+tColA+'">'+sA+'</td><td style="text-align:right;color:'+tColB+'">'+sB+'</td></tr>'
+    +'</tbody></table></div>';
+  if(sp.done){
+    var winText=sp.winner==='A'?'Team A gewinnt!':sp.winner==='B'?'Team B gewinnt!':'Unentschieden!';
+    var winCol=sp.winner==='A'?tColA:sp.winner==='B'?tColB:'var(--ac)';
+    el.innerHTML=hdr+tbl+'<div style="text-align:center;padding:14px 0 8px;font-family:var(--fh);font-size:26px;color:'+winCol+'">'+winText+'</div>'
+      +'<button class="btn bg" style="width:100%;margin-top:8px" onclick="S.aktSpiel=null;showTab(\'spiele\')">Zurück</button>';
+    return;
+  }
+  var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;
+  var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;
+  var aktP=aktArr[aktIdx];
+  var throwInfo;
+  if(sp.runde===1)throwInfo='Wurf '+(sp.throwBuf.length+1)+'/3 — Volle';
+  else if(sp.runde===2)throwInfo='Wurf '+(sp.throwBuf.length+1)+'/4 — Stehend: '+sp.remaining;
+  else if(sp.runde===3)throwInfo=sp.zehner===null?'Große Hausnummer: Zehner':'Große Hausnummer: Einer (Zehner='+sp.zehner+')';
+  else throwInfo=sp.zehner===null?'Kleine Hausnummer: Zehner':'Kleine Hausnummer: Einer (Zehner='+sp.zehner+')';
+  el.innerHTML=hdr+tbl
+    +(aktP?'<div class="wi"><span style="font-size:11px">'+throwInfo+'</span><strong style="color:'+aktCol+'">'+aktP.emoji+' '+aktP.name+'</strong></div>':'')
+    +'<div style="font-size:13px;color:var(--mut);margin-bottom:4px;text-align:center">Umgeworfene Kegel</div>'
+    +kgrid(mpWurfVal,'mpWurfSel')
+    +'<button class="btn bp" style="width:100%;margin-top:4px;background:'+aktCol+';border-color:'+aktCol+'" onclick="doMPWurf()">Wurf bestätigen</button>';
 }
-var mpWurfVal=null,mpSlot=null;
+var mpWurfVal=null;
 function mpWurfSel(n){mpWurfVal=n;renderSpielenTab();}
-function mpSetSlot(sl){mpSlot=sl;renderSpielenTab();}
 async function doMPWurf(){
   if(mpWurfVal===null){notify('Bitte Zahl wählen','var(--red)');return;}
-  var sp=S.aktSpiel.state;var p=sp.players[sp.aktSpIdx];
-  var meta=undefined;if(sp.runde>=3){if(!mpSlot){notify('Bitte Slot wählen (H/Z/E)','var(--red)');return;}meta={slot:mpSlot};}
+  var sp=S.aktSpiel.state;
+  var aktArr=sp.aktTeam==='A'?sp.tA:sp.tB;
+  var aktIdx=sp.aktTeam==='A'?sp.iA:sp.iB;
+  var p=aktArr[aktIdx];if(!p)return;
+  var meta=(selKeinPudel&&mpWurfVal===0)?{keinPudel:true}:undefined;
   var data=await submitThrow(p.id,0,mpWurfVal,meta);
   if(!data)return;
   S.aktSpiel.state=data.state;
-  mpWurfVal=null;mpSlot=null;selKeinPudel=false;renderSpielenTab();
+  mpWurfVal=null;selKeinPudel=false;
+  if(data.finished){handleGameFinished(data.state);}else{renderSpielenTab();}
 }
 
 function bkSelK(n){bkK=n;renderSpielenTab();}
