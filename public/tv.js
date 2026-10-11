@@ -1820,7 +1820,7 @@ function renderTeamTV(state) {
     var isAkt = !s.done && aktTeam === team;
     var rule = guRule(team);
     var div = document.createElement('div');
-    var tCol = team === 'B' ? 'var(--red)' : 'var(--ac)';
+    var tCol = team === 'B' ? 'var(--red)' : '#60a5fa';
     div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? tCol+'22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? tCol : isWin ? tCol : 'var(--brd)') + ';gap:8px';
 
     // Team label
@@ -1839,7 +1839,7 @@ function renderTeamTV(state) {
 
     // Big score
     var scoreLine = document.createElement('div');
-    scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + (isWin ? tCol : 'var(--ac)') + ';line-height:1';
+    scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + tCol + ';line-height:1';
     scoreLine.textContent = String(score);
     div.appendChild(scoreLine);
 
