@@ -2092,10 +2092,10 @@ function renderSteigrohrTV(state) {
     var farbe = FARBEN[paar.paarNr - 1] || '#fff';
     var isAkt = !s.done && paar.idx === s.aktPaarIdx;
     var isOut = !paar.aktiv;
-    var names = paar.spieler.map(function(p){ return '<div style="display:flex;align-items:center;gap:.4vw;justify-content:center">'+tvAvHtml(p,1.8)+p.name+'</div>'; }).join('');
-    hRow += '<th style="text-align:center;padding:.7vw 1vw;font-size:1.3vw;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+';background:'+(isAkt?farbe+'15':'transparent')+'">'
+    var names = paar.spieler.map(function(p){ return '<div style="display:flex;align-items:center;gap:.5vw;justify-content:center">'+tvAvHtml(p,2.4)+p.name+'</div>'; }).join('');
+    hRow += '<th style="text-align:center;padding:.7vw 1vw;font-size:1.5vw;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+';background:'+(isAkt?farbe+'15':'transparent')+'">'
       + 'Paar '+paar.paarNr+(isAkt?' 🎳':isOut?' ❌':'')
-      + '<div style="font-size:1.15vw;font-weight:600;color:'+(isOut?'var(--mut)':farbe)+';margin-top:.3vw;line-height:1.4">'+names+'</div>'
+      + '<div style="font-size:1.5vw;font-weight:600;color:'+(isOut?'var(--mut)':farbe)+';margin-top:.4vw;line-height:1.6">'+names+'</div>'
       + '</th>';
   });
   hRow += '</tr>';
