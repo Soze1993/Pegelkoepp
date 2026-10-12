@@ -2053,105 +2053,82 @@ function renderSteigrohrTV(state) {
   var maxRunden = s.runde;
   s.paare.forEach(function(p) { if (p.runden.length > maxRunden) maxRunden = p.runden.length; });
 
-  var wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:28px 48px;width:100%;box-sizing:border-box';
-
-  var tableEl = document.createElement('table');
-  tableEl.style.cssText = 'width:100%;border-collapse:collapse';
-
-  // Header: Runde | Paar 1 | Paar 2 | …
-  var thead = document.createElement('thead');
+  // Header row HTML
   var hRow = '<tr style="border-bottom:3px solid rgba(255,255,255,.2)">'
-    + '<th style="text-align:left;padding:10px 20px;font-size:19px;color:var(--mut);font-weight:600">Runde</th>';
+    + '<th style="text-align:left;padding:.6vw 1.2vw;font-size:1.1vw;color:var(--mut);font-weight:600">Runde</th>';
   s.paare.forEach(function(paar) {
     var farbe = FARBEN[paar.paarNr - 1] || '#fff';
     var isAkt = !s.done && paar.idx === s.aktPaarIdx;
     var isOut = !paar.aktiv;
     var names = paar.spieler.map(function(p){ return p.emoji+' '+p.name; }).join('<br>');
-    hRow += '<th style="text-align:center;padding:12px 16px;font-size:22px;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+';background:'+(isAkt?farbe+'15':'transparent')+'">'
+    hRow += '<th style="text-align:center;padding:.7vw 1vw;font-size:1.3vw;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+';background:'+(isAkt?farbe+'15':'transparent')+'">'
       + 'Paar '+paar.paarNr+(isAkt?' 🎳':isOut?' ❌':'')
-      + '<div style="font-size:20px;font-weight:600;color:'+(isOut?'var(--mut)':farbe)+';margin-top:6px;line-height:1.4">'+names+'</div>'
+      + '<div style="font-size:1.15vw;font-weight:600;color:'+(isOut?'var(--mut)':farbe)+';margin-top:.3vw;line-height:1.4">'+names+'</div>'
       + '</th>';
   });
   hRow += '</tr>';
-  thead.innerHTML = hRow;
-  tableEl.appendChild(thead);
 
-  var tbody = document.createElement('tbody');
-
-  // One row per round
+  // Round rows HTML
+  var tblRows = '';
   for (var ri = 0; ri < maxRunden; ri++) {
     var rNr = ri + 1;
     var isAktRunde = !s.done && rNr === s.runde;
-    var tr = document.createElement('tr');
-    tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.07)'+(isAktRunde?';background:rgba(255,255,255,.05)':'');
-
-    var rundeLabel = 'Runde ' + rNr + (isAktRunde ? '<span style="margin-left:8px;font-size:13px;color:var(--ac)">◀ aktiv</span>' : '');
-    tr.innerHTML = '<td style="padding:14px 20px;font-size:21px;color:'+(isAktRunde?'#fff':'var(--mut)')+';font-weight:'+(isAktRunde?'700':'400')+'">'+rundeLabel+'</td>';
-
+    var rowHtml = '<tr style="border-bottom:1px solid rgba(255,255,255,.07)'+(isAktRunde?';background:rgba(255,255,255,.05)':'')+'">'
+      +'<td style="padding:.7vw 1.2vw;font-size:1.2vw;color:'+(isAktRunde?'#fff':'var(--mut)')+';font-weight:'+(isAktRunde?700:400)+'">Runde '+rNr+(isAktRunde?'<span style="margin-left:.5vw;font-size:.75vw;color:var(--ac)">◀</span>':'')+'</td>';
     s.paare.forEach(function(paar) {
       var farbe = FARBEN[paar.paarNr - 1] || '#fff';
       var isOut = !paar.aktiv;
-      var isAkt = !s.done && paar.idx === s.aktPaarIdx;
+      var isAktP = !s.done && paar.idx === s.aktPaarIdx;
       var val = paar.runden[ri];
-      var cell;
       if (val !== undefined) {
-        // Completed round for this pair
-        var prevVal = ri > 0 ? paar.runden[ri - 1] : -1;
-        var increased = val > prevVal;
-        cell = '<td style="text-align:center;padding:14px 16px;font-size:28px;font-weight:700;color:'+(isOut&&ri===paar.runden.length-1?'#ef4444':farbe)+'">'+val+'</td>';
-      } else if (isAktRunde && isAkt) {
-        // Currently throwing in this round
+        rowHtml += '<td style="text-align:center;padding:.7vw 1vw;font-size:1.6vw;font-weight:700;color:'+(isOut&&ri===paar.runden.length-1?'#ef4444':farbe)+'">'+val+'</td>';
+      } else if (isAktRunde && isAktP) {
         var wurfInfo = s.wuerfe && s.wuerfe.length > 0 ? s.wuerfe.join('+')+'…' : '…';
-        cell = '<td style="text-align:center;padding:14px 16px;font-size:22px;color:'+farbe+';font-weight:700">'+wurfInfo+'</td>';
+        rowHtml += '<td style="text-align:center;padding:.7vw 1vw;font-size:1.3vw;color:'+farbe+';font-weight:700">'+wurfInfo+'</td>';
       } else if (isAktRunde && !isOut) {
-        // Waiting to throw this round
-        cell = '<td style="text-align:center;padding:14px 16px;font-size:22px;color:rgba(255,255,255,.25)">–</td>';
+        rowHtml += '<td style="text-align:center;padding:.7vw 1vw;font-size:1.3vw;color:rgba(255,255,255,.25)">–</td>';
       } else {
-        // Eliminated or future round
-        cell = '<td style="text-align:center;padding:14px 16px;font-size:22px;color:rgba(255,255,255,.15)">'+(isOut?'❌':'')+'</td>';
+        rowHtml += '<td style="text-align:center;padding:.7vw 1vw;font-size:1.3vw;color:rgba(255,255,255,.15)">'+(isOut?'❌':'')+'</td>';
       }
-      tr.innerHTML += cell;
     });
-
-    tbody.appendChild(tr);
+    rowHtml += '</tr>';
+    tblRows += rowHtml;
   }
 
   // Gesamt row
-  var totRow = document.createElement('tr');
-  totRow.style.cssText = 'border-top:3px solid rgba(255,255,255,.25)';
-  totRow.innerHTML = '<td style="padding:16px 20px;font-size:21px;font-weight:700;color:#fff">Gesamt</td>';
+  var gesamtCells = '<td style="padding:.8vw 1.2vw;font-size:1.2vw;font-weight:700;color:#fff">Gesamt</td>';
   s.paare.forEach(function(paar) {
     var farbe = FARBEN[paar.paarNr - 1] || '#fff';
     var isOut = !paar.aktiv;
     var isWin = s.done && paar.idx === s.winner;
-    totRow.innerHTML += '<td style="text-align:center;padding:16px 16px;font-size:46px;font-weight:800;color:'+farbe+';font-family:var(--fh);opacity:'+(isOut?.5:1)+'">'+(isWin?'🏆 ':'')+paar.gesamt+'</td>';
+    gesamtCells += '<td style="text-align:center;padding:.8vw 1vw;font-size:2.6vw;font-weight:800;color:'+farbe+';font-family:var(--fh);opacity:'+(isOut?.5:1)+'">'+(isWin?'🏆 ':'')+paar.gesamt+'</td>';
   });
-  tbody.appendChild(totRow);
 
-  tableEl.appendChild(tbody);
-  wrap.appendChild(tableEl);
-
-  // Current thrower indicator
+  // Current thrower
+  var throwerHtml = '';
   if (!s.done) {
     var aktPaar = s.paare[s.aktPaarIdx];
     if (aktPaar && aktPaar.aktiv) {
-      var farbe = FARBEN[aktPaar.paarNr - 1] || '#fff';
-      var aktIdx = s.wuerfe ? s.wuerfe.length % aktPaar.spieler.length : 0;
-      var thrower = aktPaar.spieler[aktIdx];
+      var tFarbe = FARBEN[aktPaar.paarNr - 1] || '#fff';
+      var tIdx = s.wuerfe ? s.wuerfe.length % aktPaar.spieler.length : 0;
+      var thrower = aktPaar.spieler[tIdx];
       var wurfNr = (s.wuerfe ? s.wuerfe.length : 0) + 1;
-      var cur = document.createElement('div');
-      cur.style.cssText = 'margin-top:20px;padding:16px 24px;border-radius:12px;border:2px solid '+farbe+';background:'+farbe+'15;display:flex;align-items:center;gap:20px';
-      cur.innerHTML = '<div style="font-size:52px">'+thrower.emoji+'</div>'
-        +'<div>'
-        +'<div style="font-size:32px;font-weight:800;color:'+farbe+';font-family:var(--fh)">'+thrower.name+'</div>'
-        +'<div style="font-size:20px;color:var(--mut);margin-top:2px">Paar '+aktPaar.paarNr+' · Runde '+s.runde+' · Wurf '+wurfNr+'/2</div>'
+      throwerHtml = '<div style="margin-top:.8vw;padding:.7vw 1.5vw;border-radius:.6vw;border:2px solid '+tFarbe+';background:'+tFarbe+'15;display:flex;align-items:center;gap:1.2vw">'
+        +'<div style="font-size:2.8vw">'+thrower.emoji+'</div>'
+        +'<div><div style="font-size:1.8vw;font-weight:800;color:'+tFarbe+';font-family:var(--fh)">'+thrower.name+'</div>'
+        +'<div style="font-size:1.1vw;color:var(--mut);margin-top:.2vw">Paar '+aktPaar.paarNr+' · Runde '+s.runde+' · Wurf '+wurfNr+'/2</div></div>'
         +'</div>';
-      wrap.appendChild(cur);
     }
   }
 
-  gameEl.replaceChildren(wrap);
+  gameEl.innerHTML = '<div style="padding:1.2vw 2vw;width:100%;box-sizing:border-box;max-height:calc(100vh - 4vw);overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead>'+hRow+'</thead>'
+    +'<tbody>'+tblRows
+    +'<tr style="border-top:3px solid rgba(255,255,255,.25)">'+gesamtCells+'</tr>'
+    +'</tbody></table>'
+    +throwerHtml
+    +'</div>';
 }
 
 // ── Generic ranked score table (Mixed Partie, fallback) ─────────────────
@@ -2162,94 +2139,79 @@ function renderMPTV(state) {
 
   function hnTot(hn){return((hn[0]||0)*10+(hn[1]||0))+((hn[2]||0)*10+(hn[3]||0));}
   function teamScore(arr,hn3,hn4){var r1=arr.reduce(function(s,p){return s+(p.r1||0);},0),r2=arr.reduce(function(s,p){return s+(p.r2||0);},0);return r1+r2+hnTot(hn3)-hnTot(hn4);}
-  const sA = teamScore(state.tA, state.hnA3, state.hnA4);
-  const sB = teamScore(state.tB, state.hnB3, state.hnB4);
+  var sA = teamScore(state.tA, state.hnA3, state.hnA4);
+  var sB = teamScore(state.tB, state.hnB3, state.hnB4);
 
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:24px 48px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:20px';
-
-  // Helper functions
-  function r12CellTV(arr, key) {
-    const allDone = arr.every(function(p){return p[key]!==null;});
-    const parts = arr.map(function(p){return p[key]!==null?p[key]:'–';}).join(' + ');
-    const tot = arr.reduce(function(s,p){return s+(p[key]||0);},0);
-    if (arr.length > 1 && allDone) return parts + ' = <b>' + tot + '</b>';
+  function r12Cell(arr, key) {
+    var allDone = arr.every(function(p){return p[key]!==null;});
+    var parts = arr.map(function(p){return p[key]!==null?p[key]:'–';}).join('+');
+    var tot = arr.reduce(function(s,p){return s+(p[key]||0);},0);
+    if (arr.length > 1 && allDone) return parts+'=<b>'+tot+'</b>';
     return parts;
   }
-  function hnCellTV(hn) {
-    const z1=hn[0]!==null?hn[0]:'?', e1=hn[1]!==null?hn[1]:'?';
-    const z2=hn[2]!==null?hn[2]:'?', e2=hn[3]!==null?hn[3]:'?';
-    let txt = z1+''+e1+' + '+z2+''+e2;
+  function hnCell(hn) {
+    var z1=hn[0]!==null?hn[0]:'?', e1=hn[1]!==null?hn[1]:'?';
+    var z2=hn[2]!==null?hn[2]:'?', e2=hn[3]!==null?hn[3]:'?';
+    var txt=z1+''+e1+' + '+z2+''+e2;
     if (hn[0]!==null&&hn[1]!==null&&hn[2]!==null&&hn[3]!==null)
-      txt += ' = <b>'+((hn[0]*10+hn[1])+(hn[2]*10+hn[3]))+'</b>';
+      txt+=' = <b>'+((hn[0]*10+hn[1])+(hn[2]*10+hn[3]))+'</b>';
     return txt;
   }
 
-  // Single unified table
-  const tableEl = document.createElement('table');
-  tableEl.style.cssText = 'width:100%;border-collapse:collapse';
-
-  // Header row: Runde | Team A | Team B
-  const aktColA = state.aktTeam==='A'&&!state.done ? '#60a5fa' : 'rgba(255,255,255,.15)';
-  const aktColB = state.aktTeam==='B'&&!state.done ? '#f87171' : 'rgba(255,255,255,.15)';
-  const winA = state.done && state.winner==='A', winB = state.done && state.winner==='B';
-  const thead = document.createElement('thead');
-  thead.innerHTML = '<tr style="border-bottom:3px solid rgba(255,255,255,.2)">'
-    +'<th style="text-align:left;padding:12px 20px;font-size:20px;color:var(--mut);font-weight:600">Runde</th>'
-    +'<th style="text-align:center;padding:12px 20px;font-size:26px;font-weight:800;color:#60a5fa;background:'+(winA?'#60a5fa22':state.aktTeam==='A'&&!state.done?'#60a5fa11':'transparent')+';border-bottom:4px solid #60a5fa">Team A'+(winA?' 🏆':'')+'</th>'
-    +'<th style="text-align:center;padding:12px 20px;font-size:26px;font-weight:800;color:#f87171;background:'+(winB?'#f8717122':state.aktTeam==='B'&&!state.done?'#f8717111':'transparent')+';border-bottom:4px solid #f87171">Team B'+(winB?' 🏆':'')+'</th>'
-    +'</tr>';
-  tableEl.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
-  const rows = [
-    {label:'Volle', sub:'3 Würfe · addiert', subCol:'var(--mut)', ri:1, cellA:r12CellTV(state.tA,'r1'), cellB:r12CellTV(state.tB,'r1')},
-    {label:'Abräumen', sub:'4 Würfe · addiert', subCol:'var(--mut)', ri:2, cellA:r12CellTV(state.tA,'r2'), cellB:r12CellTV(state.tB,'r2')},
-    {label:'Gr. Hausnummer', sub:'+ addiert', subCol:'#4ade80', ri:3, cellA:hnCellTV(state.hnA3), cellB:hnCellTV(state.hnB3)},
-    {label:'kl. Hausnummer', sub:'− subtrahiert', subCol:'#f87171', ri:4, cellA:hnCellTV(state.hnA4), cellB:hnCellTV(state.hnB4)}
+  var winA = state.done && state.winner==='A', winB = state.done && state.winner==='B';
+  var rows = [
+    {label:'Volle', sub:'3 Würfe', subCol:'var(--mut)', ri:1, cA:r12Cell(state.tA,'r1'), cB:r12Cell(state.tB,'r1')},
+    {label:'Abräumen', sub:'4 Würfe', subCol:'var(--mut)', ri:2, cA:r12Cell(state.tA,'r2'), cB:r12Cell(state.tB,'r2')},
+    {label:'Gr. Hausnummer', sub:'+ addiert', subCol:'#4ade80', ri:3, cA:hnCell(state.hnA3), cB:hnCell(state.hnB3)},
+    {label:'kl. Hausnummer', sub:'− subtrahiert', subCol:'#f87171', ri:4, cA:hnCell(state.hnA4), cB:hnCell(state.hnB4)}
   ];
-  rows.forEach(function(r) {
-    const isAkt = !state.done && state.runde === r.ri;
-    const tr = document.createElement('tr');
-    tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,.08)'+(isAkt?';background:rgba(255,255,255,.06)':'');
-    tr.innerHTML = '<td style="padding:16px 20px;font-size:22px;color:'+(isAkt?'#fff':'var(--mut)')+';font-weight:'+(isAkt?'700':'400')+'">'+r.label+'<br><span style="font-size:14px;color:'+r.subCol+';opacity:.8">'+r.sub+'</span>'+(isAkt?'<span style="margin-left:8px;font-size:13px;color:'+r.subCol+'">◀ aktiv</span>':'')+'</td>'
-      +'<td style="text-align:center;padding:16px 20px;font-size:24px;color:#60a5fa">'+r.cellA+'</td>'
-      +'<td style="text-align:center;padding:16px 20px;font-size:24px;color:#f87171">'+r.cellB+'</td>';
-    tbody.appendChild(tr);
-  });
 
-  // Gesamt row
-  const totRow = document.createElement('tr');
-  totRow.style.cssText = 'border-top:3px solid rgba(255,255,255,.25)';
-  totRow.innerHTML = '<td style="padding:18px 20px;font-size:22px;font-weight:700;color:#fff">Gesamt</td>'
-    +'<td style="text-align:center;padding:18px 20px;font-size:52px;font-weight:800;color:#60a5fa;font-family:var(--fh)">'+sA+'</td>'
-    +'<td style="text-align:center;padding:18px 20px;font-size:52px;font-weight:800;color:#f87171;font-family:var(--fh)">'+sB+'</td>';
-  tbody.appendChild(totRow);
-  tableEl.appendChild(tbody);
-  wrap.appendChild(tableEl);
+  var tblRows = rows.map(function(r) {
+    var isAkt = !state.done && state.runde === r.ri;
+    return '<tr style="border-bottom:1px solid rgba(255,255,255,.08)'+(isAkt?';background:rgba(255,255,255,.06)':'')+'">'
+      +'<td style="padding:.7vw 1.2vw;font-size:1.2vw;color:'+(isAkt?'#fff':'var(--mut)')+';font-weight:'+(isAkt?700:400)+'">'+r.label
+      +(isAkt?'<span style="margin-left:.5vw;font-size:.75vw;color:'+r.subCol+'">◀</span>':'')
+      +'<br><span style="font-size:.75vw;color:'+r.subCol+';opacity:.8">'+r.sub+'</span></td>'
+      +'<td style="text-align:center;padding:.7vw 1.2vw;font-size:1.35vw;color:#60a5fa">'+r.cA+'</td>'
+      +'<td style="text-align:center;padding:.7vw 1.2vw;font-size:1.35vw;color:#f87171">'+r.cB+'</td>'
+      +'</tr>';
+  }).join('');
 
-  // Current player indicator
+  var aktPlayer = '';
   if (!state.done) {
-    const aktArr = state.aktTeam === 'A' ? state.tA : state.tB;
-    const aktIdx = state.runde >= 3 ? state.hnSlot % aktArr.length : (state.aktTeam === 'A' ? state.iA : state.iB);
-    const aktP = aktArr[aktIdx];
+    var aktArr = state.aktTeam==='A' ? state.tA : state.tB;
+    var aktIdx = state.runde>=3 ? state.hnSlot%aktArr.length : (state.aktTeam==='A'?state.iA:state.iB);
+    var aktP = aktArr[aktIdx];
     if (aktP) {
-      const col = state.aktTeam === 'A' ? '#60a5fa' : '#f87171';
-      const slotNames = ['Zehner (Zahl 1)','Einer (Zahl 1)','Zehner (Zahl 2)','Einer (Zahl 2)'];
-      let throwInfo;
-      if (state.runde === 1)      throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/3 — Volle';
-      else if (state.runde === 2) throwInfo = 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining;
-      else throwInfo = (state.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[state.hnSlot];
-      const cur = document.createElement('div');
-      cur.style.cssText = 'text-align:center;padding:14px 20px;border-radius:12px;border:2px solid '+col+';background:'+col+'15;display:flex;align-items:center;justify-content:center;gap:16px';
-      cur.innerHTML = '<div style="font-size:44px">'+aktP.emoji+'</div>'
-        +'<div><div style="font-size:28px;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
-        +'<div style="font-size:18px;color:var(--mut);margin-top:2px">'+throwInfo+'</div></div>';
-      wrap.appendChild(cur);
+      var col = state.aktTeam==='A' ? '#60a5fa' : '#f87171';
+      var slotNames = ['Zehner (Zahl 1)','Einer (Zahl 1)','Zehner (Zahl 2)','Einer (Zahl 2)'];
+      var throwInfo = state.runde===1 ? 'Wurf '+(state.throwBuf.length+1)+'/3 — Volle'
+        : state.runde===2 ? 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining
+        : (state.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[state.hnSlot];
+      aktPlayer = '<div style="margin-top:.8vw;padding:.7vw 1.2vw;border-radius:.6vw;border:2px solid '+col+';background:'+col+'15;display:flex;align-items:center;gap:1vw">'
+        +'<div style="font-size:2.4vw">'+aktP.emoji+'</div>'
+        +'<div><div style="font-size:1.6vw;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
+        +'<div style="font-size:1vw;color:var(--mut);margin-top:.2vw">'+throwInfo+'</div></div>'
+        +'</div>';
     }
   }
 
-  gameEl.replaceChildren(wrap);
+  gameEl.innerHTML = '<div style="padding:1.2vw 2vw;width:100%;box-sizing:border-box;max-height:calc(100vh - 4vw);overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="border-bottom:3px solid rgba(255,255,255,.2)">'
+    +'<th style="text-align:left;padding:.6vw 1.2vw;font-size:1.1vw;color:var(--mut);font-weight:600">Runde</th>'
+    +'<th style="text-align:center;padding:.8vw 1.2vw;font-size:1.5vw;font-weight:800;color:#60a5fa;border-bottom:3px solid #60a5fa;background:'+(winA?'#60a5fa22':state.aktTeam==='A'&&!state.done?'#60a5fa11':'transparent')+'">Team A'+(winA?' 🏆':'')+'</th>'
+    +'<th style="text-align:center;padding:.8vw 1.2vw;font-size:1.5vw;font-weight:800;color:#f87171;border-bottom:3px solid #f87171;background:'+(winB?'#f8717122':state.aktTeam==='B'&&!state.done?'#f8717111':'transparent')+'">Team B'+(winB?' 🏆':'')+'</th>'
+    +'</tr></thead>'
+    +'<tbody>'+tblRows
+    +'<tr style="border-top:3px solid rgba(255,255,255,.25)">'
+    +'<td style="padding:.8vw 1.2vw;font-size:1.2vw;font-weight:700;color:#fff">Gesamt</td>'
+    +'<td style="text-align:center;padding:.8vw 1.2vw;font-size:2.8vw;font-weight:800;color:#60a5fa;font-family:var(--fh)">'+sA+'</td>'
+    +'<td style="text-align:center;padding:.8vw 1.2vw;font-size:2.8vw;font-weight:800;color:#f87171;font-family:var(--fh)">'+sB+'</td>'
+    +'</tr>'
+    +'</tbody></table>'
+    + aktPlayer
+    +'</div>';
 }
 
 function renderGenericScoreTV(state) {
