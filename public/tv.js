@@ -2201,11 +2201,11 @@ function renderMPTV(state) {
   var tblRows = rows.map(function(r) {
     var isAkt = !state.done && state.runde === r.ri;
     return '<tr style="border-bottom:1px solid rgba(255,255,255,.08)'+(isAkt?';background:rgba(255,255,255,.06)':'')+'">'
-      +'<td style="padding:.7vw 1.2vw;font-size:1.2vw;color:'+(isAkt?'#fff':'var(--mut)')+';font-weight:'+(isAkt?700:400)+'">'+r.label
-      +(isAkt?'<span style="margin-left:.5vw;font-size:.75vw;color:'+r.subCol+'">◀</span>':'')
-      +'<br><span style="font-size:.75vw;color:'+r.subCol+';opacity:.8">'+r.sub+'</span></td>'
-      +'<td style="text-align:center;padding:.7vw 1.2vw;font-size:1.35vw;color:#60a5fa">'+r.cA+'</td>'
-      +'<td style="text-align:center;padding:.7vw 1.2vw;font-size:1.35vw;color:#f87171">'+r.cB+'</td>'
+      +'<td style="padding:1.2vw 1.5vw;font-size:1.8vw;color:'+(isAkt?'#fff':'var(--mut)')+';font-weight:'+(isAkt?700:400)+'">'+r.label
+      +(isAkt?'<span style="margin-left:.5vw;font-size:1.1vw;color:'+r.subCol+'">◀</span>':'')
+      +'<br><span style="font-size:1.1vw;color:'+r.subCol+';opacity:.8">'+r.sub+'</span></td>'
+      +'<td style="text-align:center;padding:1.2vw 1.5vw;font-size:2vw;color:#60a5fa">'+r.cA+'</td>'
+      +'<td style="text-align:center;padding:1.2vw 1.5vw;font-size:2vw;color:#f87171">'+r.cB+'</td>'
       +'</tr>';
   }).join('');
 
@@ -2220,26 +2220,26 @@ function renderMPTV(state) {
       var throwInfo = state.runde===1 ? 'Wurf '+(state.throwBuf.length+1)+'/3 — Volle'
         : state.runde===2 ? 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining
         : (state.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[state.hnSlot];
-      aktPlayer = '<div style="margin-top:.8vw;padding:.7vw 1.2vw;border-radius:.6vw;border:2px solid '+col+';background:'+col+'15;display:flex;align-items:center;gap:1vw">'
-        +tvAvHtml(aktP,3.2)
-        +'<div><div style="font-size:1.6vw;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
-        +'<div style="font-size:1vw;color:var(--mut);margin-top:.2vw">'+throwInfo+'</div></div>'
+      aktPlayer = '<div style="margin-top:1.2vw;padding:1vw 1.5vw;border-radius:.6vw;border:2px solid '+col+';background:'+col+'15;display:flex;align-items:center;gap:1.2vw">'
+        +tvAvHtml(aktP,4)
+        +'<div><div style="font-size:2.2vw;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
+        +'<div style="font-size:1.4vw;color:var(--mut);margin-top:.3vw">'+throwInfo+'</div></div>'
         +'</div>';
     }
   }
 
-  gameEl.innerHTML = '<div style="padding:1.2vw 2vw;width:100%;box-sizing:border-box;max-height:calc(100vh - 4vw);overflow:hidden">'
+  gameEl.innerHTML = '<div style="padding:1.2vw 2vw;width:100%;box-sizing:border-box;height:calc(100vh - 4vw);display:flex;flex-direction:column;overflow:hidden">'
     +'<table style="width:100%;border-collapse:collapse">'
     +'<thead><tr style="border-bottom:3px solid rgba(255,255,255,.2)">'
-    +'<th style="text-align:left;padding:.6vw 1.2vw;font-size:1.1vw;color:var(--mut);font-weight:600">Runde</th>'
-    +'<th style="text-align:center;padding:.8vw 1.2vw;font-size:1.5vw;font-weight:800;color:#60a5fa;border-bottom:3px solid #60a5fa;background:'+(winA?'#60a5fa22':state.aktTeam==='A'&&!state.done?'#60a5fa11':'transparent')+'">Team A'+(winA?' 🏆':'')+'</th>'
-    +'<th style="text-align:center;padding:.8vw 1.2vw;font-size:1.5vw;font-weight:800;color:#f87171;border-bottom:3px solid #f87171;background:'+(winB?'#f8717122':state.aktTeam==='B'&&!state.done?'#f8717111':'transparent')+'">Team B'+(winB?' 🏆':'')+'</th>'
+    +'<th style="text-align:left;padding:.8vw 1.5vw;font-size:1.6vw;color:var(--mut);font-weight:600">Runde</th>'
+    +'<th style="text-align:center;padding:1vw 1.5vw;font-size:2.2vw;font-weight:800;color:#60a5fa;border-bottom:3px solid #60a5fa;background:'+(winA?'#60a5fa22':state.aktTeam==='A'&&!state.done?'#60a5fa11':'transparent')+'">Team A'+(winA?' 🏆':'')+'</th>'
+    +'<th style="text-align:center;padding:1vw 1.5vw;font-size:2.2vw;font-weight:800;color:#f87171;border-bottom:3px solid #f87171;background:'+(winB?'#f8717122':state.aktTeam==='B'&&!state.done?'#f8717111':'transparent')+'">Team B'+(winB?' 🏆':'')+'</th>'
     +'</tr></thead>'
     +'<tbody>'+tblRows
     +'<tr style="border-top:3px solid rgba(255,255,255,.25)">'
-    +'<td style="padding:.8vw 1.2vw;font-size:1.2vw;font-weight:700;color:#fff">Gesamt</td>'
-    +'<td style="text-align:center;padding:.8vw 1.2vw;font-size:2.8vw;font-weight:800;color:#60a5fa;font-family:var(--fh)">'+sA+'</td>'
-    +'<td style="text-align:center;padding:.8vw 1.2vw;font-size:2.8vw;font-weight:800;color:#f87171;font-family:var(--fh)">'+sB+'</td>'
+    +'<td style="padding:1.2vw 1.5vw;font-size:1.8vw;font-weight:700;color:#fff">Gesamt</td>'
+    +'<td style="text-align:center;padding:1.2vw 1.5vw;font-size:3.8vw;font-weight:800;color:#60a5fa;font-family:var(--fh)">'+sA+'</td>'
+    +'<td style="text-align:center;padding:1.2vw 1.5vw;font-size:3.8vw;font-weight:800;color:#f87171;font-family:var(--fh)">'+sB+'</td>'
     +'</tr>'
     +'</tbody></table>'
     + aktPlayer
