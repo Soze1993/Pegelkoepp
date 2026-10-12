@@ -2042,30 +2042,31 @@ function renderSKRTV(state) {
     var arr = team === 'A' ? state.tA : state.tB;
     var idx = team === 'A' ? state.iA : state.iB;
     var players = arr.map(function(p,i){
-      return '<span style="display:inline-flex;align-items:center;gap:.4vw;color:'+(i===idx&&!state.done?col:'rgba(255,255,255,0.7)')+(i===idx&&!state.done?';font-weight:800':'')+'">'+(i===idx&&!state.done?'▶ ':'')+tvAvHtml(p,1.8)+p.name+'</span>';
-    }).join('  ');
+      var isAkt = i===idx&&!state.done;
+      return '<div style="display:flex;align-items:center;gap:.6vw;font-size:2.2vw;'+(isAkt?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.8)')+'">'+(isAkt?'▶ ':'')+tvAvHtml(p,2.8)+p.name+'</div>';
+    }).join('');
     var needsLine = next
-      ? '<div style="font-size:20px;margin-top:6px">Braucht: <strong style="color:'+col+'">'+next+'</strong></div>'
-      : '<div style="font-size:20px;color:'+col+'">🏁 Ziel!</div>';
-    return '<div style="flex:1;background:rgba(255,255,255,0.07);border:2px solid '+col+';border-radius:12px;padding:16px 20px">'
-      + '<div style="font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:6px">'+(team==='A'?'🔵':'🔴')+' Team '+team+'</div>'
-      + '<div style="font-size:56px;font-weight:900;line-height:1;color:'+col+'">'+pos+'<span style="font-size:22px;color:rgba(255,255,255,0.4);">/'+N+'</span></div>'
+      ? '<div style="font-size:2vw;margin-top:.5vw">Braucht: <strong style="color:'+col+'">'+next+'</strong></div>'
+      : '<div style="font-size:2vw;color:'+col+'">🏁 Ziel!</div>';
+    return '<div style="flex:1;background:rgba(255,255,255,0.07);border:2px solid '+col+';border-radius:.8vw;padding:1.2vw 1.5vw">'
+      + '<div style="font-size:1.5vw;color:rgba(255,255,255,0.5);margin-bottom:.4vw">'+(team==='A'?'🔵':'🔴')+' Team '+team+'</div>'
+      + '<div style="font-size:5vw;font-weight:900;line-height:1;color:'+col+'">'+pos+'<span style="font-size:1.8vw;color:rgba(255,255,255,0.4);">/'+N+'</span></div>'
       + needsLine
-      + '<div style="font-size:16px;margin-top:8px;color:rgba(255,255,255,0.6)">'+players+'</div>'
+      + '<div style="margin-top:.8vw">'+players+'</div>'
       + '</div>';
   }
 
-  var html = '<div style="padding:20px 30px;height:100%;display:flex;flex-direction:column;box-sizing:border-box">'
-    + '<div style="font-size:28px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:4px">🚗 Seifenkistenrennen</div>'
+  var html = '<div style="padding:1.5vw 2vw;height:calc(100vh - 4vw);display:flex;flex-direction:column;box-sizing:border-box;overflow:hidden">'
+    + '<div style="font-size:2vw;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:.5vw">🚗 Seifenkistenrennen</div>'
     + trackHtml
-    + '<div style="display:flex;gap:16px;flex:1">'
+    + '<div style="display:flex;gap:1.2vw;flex:1">'
     + teamCard('A', posA, nextA, '#60a5fa')
     + teamCard('B', posB, nextB, '#f87171')
     + '</div>';
 
   if (state.done) {
     var w = state.winner === 'A' ? '🔵 Team A' : '🔴 Team B';
-    html += '<div style="text-align:center;font-size:48px;font-weight:900;color:#fbbf24;padding:12px 0">🏁 '+w+' gewinnt!</div>';
+    html += '<div style="text-align:center;font-size:3.5vw;font-weight:900;color:#fbbf24;padding:.8vw 0">🏁 '+w+' gewinnt!</div>';
   }
   html += '</div>';
   gameEl.innerHTML = html;
