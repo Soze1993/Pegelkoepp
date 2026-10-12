@@ -1820,42 +1820,38 @@ function renderTeamTV(state) {
     var isAkt = !s.done && aktTeam === team;
     var rule = guRule(team);
     var div = document.createElement('div');
-    var tCol = team === 'B' ? 'var(--red)' : '#60a5fa';
-    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 20px;border-radius:16px;background:' + (isAkt ? tCol+'22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? tCol : isWin ? tCol : 'var(--brd)') + ';gap:8px';
+    var tCol = team === 'B' ? '#f87171' : '#60a5fa';
+    div.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;padding:2vw 1.5vw;border-radius:1vw;background:' + (isAkt ? tCol+'22' : 'var(--bg2)') + ';border:3px solid ' + (isAkt ? tCol : isWin ? tCol : 'var(--brd)') + ';gap:.4vw';
 
-    // Team label
     var nameLine = document.createElement('div');
-    nameLine.style.cssText = 'font-size:28px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;font-weight:700';
+    nameLine.style.cssText = 'font-size:1.5vw;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;font-weight:700';
     nameLine.textContent = 'Team ' + team + (isAkt ? ' 🎳' : '');
     div.appendChild(nameLine);
 
-    // GU rule badge
     if (rule) {
       var ruleBadge = document.createElement('div');
-      ruleBadge.style.cssText = 'font-size:26px;font-weight:800;padding:4px 18px;border-radius:10px;background:' + (isAkt ? tCol : 'var(--bg3)') + ';color:' + (isAkt ? '#fff' : 'var(--mut)');
+      ruleBadge.style.cssText = 'font-size:1.4vw;font-weight:800;padding:.2vw 1vw;border-radius:.5vw;background:' + (isAkt ? tCol : 'var(--bg3)') + ';color:' + (isAkt ? '#fff' : 'var(--mut)');
       ruleBadge.textContent = rule;
       div.appendChild(ruleBadge);
     }
 
-    // Big score
     var scoreLine = document.createElement('div');
-    scoreLine.style.cssText = 'font-family:var(--fh);font-size:96px;color:' + tCol + ';line-height:1';
+    scoreLine.style.cssText = 'font-family:var(--fh);font-size:5vw;color:' + tCol + ';line-height:1';
     scoreLine.textContent = String(score);
     div.appendChild(scoreLine);
 
     var lblLine = document.createElement('div');
-    lblLine.style.cssText = 'font-size:18px;color:var(--mut)';
+    lblLine.style.cssText = 'font-size:.95vw;color:var(--mut)';
     lblLine.textContent = label;
     div.appendChild(lblLine);
 
-    // Player roster — bigger names
     var roster = document.createElement('div');
-    roster.style.cssText = 'width:100%;margin-top:12px';
+    roster.style.cssText = 'width:100%;margin-top:.6vw';
     var aktIdx = team === 'A' ? s.iA : s.iB;
     players.forEach(function(p, i) {
       var row = document.createElement('div');
       var isActive = isAkt && i === aktIdx;
-      row.style.cssText = 'padding:4px 8px;border-radius:8px;font-size:28px;' + (isActive ? 'color:'+tCol+';font-weight:800;background:'+tCol+'11' : 'color:var(--txt)');
+      row.style.cssText = 'padding:.2vw .4vw;border-radius:.4vw;font-size:1.5vw;' + (isActive ? 'color:'+tCol+';font-weight:800;background:'+tCol+'11' : 'color:var(--txt)');
       row.textContent = (isActive ? '▶ ' : '   ') + p.emoji + ' ' + p.name;
       roster.appendChild(row);
     });
@@ -1863,7 +1859,7 @@ function renderTeamTV(state) {
 
     if (isWin) {
       var wl = document.createElement('div');
-      wl.style.cssText = 'font-size:48px;margin-top:8px';
+      wl.style.cssText = 'font-size:2.5vw;margin-top:.4vw';
       wl.textContent = '🏆';
       div.appendChild(wl);
     }
@@ -1871,26 +1867,27 @@ function renderTeamTV(state) {
   }
 
   var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;gap:40px;padding:40px;height:100%;box-sizing:border-box;align-items:center;justify-content:center';
+  wrap.style.cssText = 'display:flex;gap:2vw;padding:2vw;max-height:calc(100vh - 4vw);box-sizing:border-box;align-items:center;justify-content:center;overflow:hidden';
   wrap.appendChild(makeTeamCard('A', s.tA, scoreA, s.winner, s.aktTeam));
 
   var vsEl = document.createElement('div');
   vsEl.style.cssText = 'align-self:center;text-align:center;flex-shrink:0';
   if (s.phase === 'elfmeter') {
     var elfSvg = kegelSVGtv([4,6,7,8], 120, 150);
-    vsEl.innerHTML = '<div style="font-size:28px;font-weight:900;color:#fbbf24;margin-bottom:8px">⚽ ELFMETER!</div>'
-      + '<div style="font-size:20px;color:rgba(255,255,255,0.6);margin-bottom:10px">Team '+(s.elfmeterTeam)+' schiesst</div>'
+    vsEl.innerHTML = '<div style="font-size:1.5vw;font-weight:900;color:#fbbf24;margin-bottom:.4vw">⚽ ELFMETER!</div>'
+      + '<div style="font-size:1.1vw;color:rgba(255,255,255,0.6);margin-bottom:.5vw">Team '+(s.elfmeterTeam)+' schiesst</div>'
       + elfSvg;
   } else {
     vsEl.style.fontFamily = 'var(--fh)';
-    vsEl.style.fontSize = '56px';
+    vsEl.style.fontSize = '3vw';
     vsEl.style.color = 'var(--mut)';
     vsEl.textContent = s.done ? (s.winner === 'draw' ? '=' : s.winner === 'A' ? '>' : '<') : ':';
   }
   wrap.appendChild(vsEl);
 
   wrap.appendChild(makeTeamCard('B', s.tB, scoreB, s.winner, s.aktTeam));
-  gameEl.replaceChildren(wrap);
+  gameEl.innerHTML = '';
+  gameEl.appendChild(wrap);
 }
 
 // ── Hennefer Treppe TV renderer ──────────────────────────────────────────
@@ -1915,12 +1912,12 @@ function renderHTTV(state) {
     var arr = team === 'A' ? s.tA : s.tB;
     var roster = arr.map(function(p, i) {
       var isC = isAkt && i === (s.chainIdx % arr.length);
-      return '<div style="font-size:22px;padding:2px 0;'+(isC?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.6)')+'">'+(isC?'▶ ':'   ')+p.emoji+' '+p.name+'</div>';
+      return '<div style="font-size:1.8vw;padding:.15vw 0;'+(isC?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.6)')+'">'+(isC?'▶ ':'   ')+p.emoji+' '+p.name+'</div>';
     }).join('');
-    return '<div style="flex:1;text-align:center;border:3px solid '+(isAkt?col:'rgba(255,255,255,0.15)')+';border-radius:16px;padding:24px 16px;background:'+(isAkt?col+'22':'rgba(255,255,255,0.05)')+';">'
-      + '<div style="font-size:22px;color:'+col+';font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Team '+team+(isAkt?' 🎳':'')+'</div>'
-      + '<div style="font-family:var(--fh);font-size:80px;color:'+col+';line-height:1">'+score+'</div>'
-      + '<div style="font-size:16px;color:rgba(255,255,255,0.4);margin-bottom:12px">Punkte</div>'
+    return '<div style="flex:1;text-align:center;border:3px solid '+(isAkt?col:'rgba(255,255,255,0.15)')+';border-radius:1vw;padding:1.2vw 1vw;background:'+(isAkt?col+'22':'rgba(255,255,255,0.05)')+';">'
+      + '<div style="font-size:1.7vw;color:'+col+';font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3vw">Team '+team+(isAkt?' 🎳':'')+'</div>'
+      + '<div style="font-family:var(--fh);font-size:5.5vw;color:'+col+';line-height:1">'+score+'</div>'
+      + '<div style="font-size:1vw;color:rgba(255,255,255,0.4);margin-bottom:.6vw">Punkte</div>'
       + roster
       + '</div>';
   }
@@ -1931,39 +1928,40 @@ function renderHTTV(state) {
     var vA = s.rndA[r] !== undefined ? String(s.rndA[r]) : '—';
     var vB = s.rndB[r] !== undefined ? String(s.rndB[r]) : '—';
     var isAktR = r === (s.aktRunde - 1) && !s.done;
-    var rowBg = isAktR ? 'background:rgba(255,255,255,0.08)' : '';
-    tblRows += '<tr style="'+rowBg+'">'
-      + '<td style="padding:5px 10px;color:rgba(255,255,255,0.5);font-size:18px">R'+(r+1)+'</td>'
-      + '<td style="text-align:right;padding:5px 14px;font-size:20px;font-weight:'+(isAktR&&s.aktTeam==='A'?'900':'400')+';color:'+(isAktR&&s.aktTeam==='A'?'#60a5fa':'rgba(255,255,255,0.85)')+'">'+vA+'</td>'
-      + '<td style="text-align:right;padding:5px 14px;font-size:20px;font-weight:'+(isAktR&&s.aktTeam==='B'?'900':'400')+';color:'+(isAktR&&s.aktTeam==='B'?'#f87171':'rgba(255,255,255,0.85)')+'">'+vB+'</td>'
+    tblRows += '<tr style="'+(isAktR?'background:rgba(255,255,255,0.08)':'')+'">'
+      + '<td style="padding:.4vw .8vw;color:rgba(255,255,255,0.5);font-size:1.5vw">R'+(r+1)+'</td>'
+      + '<td style="text-align:right;padding:.4vw 1vw;font-size:1.7vw;font-weight:'+(isAktR&&s.aktTeam==='A'?900:400)+';color:'+(isAktR&&s.aktTeam==='A'?'#60a5fa':'rgba(255,255,255,0.85)')+'">'+vA+'</td>'
+      + '<td style="text-align:right;padding:.4vw 1vw;font-size:1.7vw;font-weight:'+(isAktR&&s.aktTeam==='B'?900:400)+';color:'+(isAktR&&s.aktTeam==='B'?'#f87171':'rgba(255,255,255,0.85)')+'">'+vB+'</td>'
       + '</tr>';
   }
   var tbl = '<table style="width:100%;border-collapse:collapse">'
-    + '<thead><tr>'
-    + '<th style="text-align:left;padding:6px 10px;font-size:16px;color:rgba(255,255,255,0.4);font-weight:600">Runde</th>'
-    + '<th style="text-align:right;padding:6px 14px;font-size:18px;color:#60a5fa;font-weight:700">Team A</th>'
-    + '<th style="text-align:right;padding:6px 14px;font-size:18px;color:#f87171;font-weight:700">Team B</th>'
+    + '<thead><tr style="border-bottom:2px solid rgba(255,255,255,.15)">'
+    + '<th style="text-align:left;padding:.4vw .8vw;font-size:1.3vw;color:rgba(255,255,255,0.4);font-weight:600">Runde</th>'
+    + '<th style="text-align:right;padding:.4vw 1vw;font-size:1.5vw;color:#60a5fa;font-weight:700">Team A</th>'
+    + '<th style="text-align:right;padding:.4vw 1vw;font-size:1.5vw;color:#f87171;font-weight:700">Team B</th>'
     + '</tr></thead>'
     + '<tbody>'+tblRows+'</tbody>'
     + '<tfoot><tr style="border-top:2px solid rgba(255,255,255,0.15)">'
-    + '<td style="padding:7px 10px;font-size:18px;font-weight:700;color:rgba(255,255,255,0.7)">Gesamt</td>'
-    + '<td style="text-align:right;padding:7px 14px;font-size:22px;font-weight:900;color:#60a5fa">'+s.scoreA+'</td>'
-    + '<td style="text-align:right;padding:7px 14px;font-size:22px;font-weight:900;color:#f87171">'+s.scoreB+'</td>'
+    + '<td style="padding:.5vw .8vw;font-size:1.5vw;font-weight:700;color:rgba(255,255,255,0.7)">Gesamt</td>'
+    + '<td style="text-align:right;padding:.5vw 1vw;font-size:2vw;font-weight:900;color:#60a5fa">'+s.scoreA+'</td>'
+    + '<td style="text-align:right;padding:.5vw 1vw;font-size:2vw;font-weight:900;color:#f87171">'+s.scoreB+'</td>'
     + '</tr></tfoot></table>';
 
-  var html = '<div style="padding:20px 30px;height:100%;display:flex;flex-direction:column;box-sizing:border-box;gap:16px">'
-    + '<div style="font-size:24px;font-weight:700;color:rgba(255,255,255,0.4)">🪜 Hennefer Treppe &middot; Runde '+s.aktRunde+'/'+s.totalRunden+'</div>'
-    + '<div style="display:flex;gap:16px">'
+  // height:calc(...) statt height:100% — #game hat kein explizites height,
+  // daher würde height:100% auf 0 auflösen und flex:1 die Tabelle verstecken
+  var html = '<div style="padding:1.2vw 2vw;height:calc(100vh - 4vw);display:flex;flex-direction:column;box-sizing:border-box;gap:1vw;overflow:hidden">'
+    + '<div style="font-size:1.6vw;font-weight:700;color:rgba(255,255,255,0.4)">🪜 Hennefer Treppe &middot; Runde '+s.aktRunde+'/'+s.totalRunden+'</div>'
+    + '<div style="display:flex;gap:1vw">'
     + scoreCard('A') + scoreCard('B')
     + '</div>'
-    + '<div style="flex:1;overflow:hidden;background:rgba(255,255,255,0.04);border-radius:12px;padding:8px 4px">'+tbl+'</div>';
+    + '<div style="flex:1;overflow:hidden;background:rgba(255,255,255,0.04);border-radius:.8vw;padding:.5vw .3vw">'+tbl+'</div>';
 
   if (!s.done) {
-    html += '<div style="font-size:18px;color:rgba(255,255,255,0.5);text-align:center">'+chainInfo+' &middot; Restpins: '+s.remaining+'</div>';
+    html += '<div style="font-size:1.3vw;color:rgba(255,255,255,0.5);text-align:center">'+chainInfo+' &middot; Restpins: '+s.remaining+'</div>';
   } else {
     var wCol = s.winner === 'A' ? '#60a5fa' : s.winner === 'B' ? '#f87171' : '#fbbf24';
     var wTxt = s.winner === 'draw' ? 'Unentschieden!' : '🏆 Team ' + s.winner + ' gewinnt!';
-    html += '<div style="text-align:center;font-size:48px;font-weight:900;color:'+wCol+'">'+wTxt+'</div>';
+    html += '<div style="text-align:center;font-size:3.5vw;font-weight:900;color:'+wCol+'">'+wTxt+'</div>';
   }
   html += '</div>';
   gameEl.innerHTML = html;
