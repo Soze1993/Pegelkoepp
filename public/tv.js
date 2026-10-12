@@ -35,6 +35,19 @@ var GAME_NAMES = {
   'steigrohr': 'Steigrohr'
 };
 
+// Inline avatar: round photo (falls back to emoji) for HTML-string renderers
+function tvAvHtml(p, sz) {
+  var id = p && p.id ? parseInt(p.id, 10) : 0;
+  var emoji = p && p.emoji ? p.emoji : '🎳';
+  var em = (sz * 0.55).toFixed(2);
+  var img = id > 0
+    ? '<img src="/uploads/profiles/'+id+'.jpg" alt="" onerror="this.style.display=\'none\'" style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover">'
+    : '';
+  return '<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;'
+    +'width:'+sz+'vw;height:'+sz+'vw;flex-shrink:0;border-radius:50%;background:var(--bg3);overflow:hidden;font-size:'+em+'vw;vertical-align:middle">'
+    +emoji+img+'</span>';
+}
+
 function kegelSVGtv(activePins, w, h) {
   var px = {1:[40,88],2:[24,68],3:[56,68],4:[8,48],5:[40,48],6:[72,48],7:[24,28],8:[56,28],9:[40,8]};
   var circles = '';
@@ -1851,8 +1864,29 @@ function renderTeamTV(state) {
     players.forEach(function(p, i) {
       var row = document.createElement('div');
       var isActive = isAkt && i === aktIdx;
-      row.style.cssText = 'padding:.2vw .4vw;border-radius:.4vw;font-size:1.5vw;' + (isActive ? 'color:'+tCol+';font-weight:800;background:'+tCol+'11' : 'color:var(--txt)');
-      row.textContent = (isActive ? '▶ ' : '   ') + p.emoji + ' ' + p.name;
+      row.style.cssText = 'padding:.2vw .4vw;border-radius:.4vw;font-size:1.5vw;display:flex;align-items:center;gap:.5vw;' + (isActive ? 'color:'+tCol+';font-weight:800;background:'+tCol+'11' : 'color:var(--txt)');
+      // arrow
+      var arr = document.createElement('span');
+      arr.textContent = isActive ? '▶' : ' ';
+      arr.style.cssText = 'font-size:1vw;width:1.2vw;flex-shrink:0';
+      // avatar circle
+      var avWrap = document.createElement('span');
+      avWrap.style.cssText = 'position:relative;display:inline-flex;align-items:center;justify-content:center;width:2.2vw;height:2.2vw;flex-shrink:0;border-radius:50%;background:var(--bg3);overflow:hidden;font-size:1.2vw';
+      var avEm = document.createElement('span');
+      avEm.textContent = p.emoji || '🎳';
+      var avImg = document.createElement('img');
+      avImg.src = '/uploads/profiles/' + (p.id|0) + '.jpg';
+      avImg.alt = '';
+      avImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover';
+      avImg.onerror = function(){ this.style.display='none'; };
+      avWrap.appendChild(avEm);
+      avWrap.appendChild(avImg);
+      // name
+      var nameEl = document.createElement('span');
+      nameEl.textContent = p.name;
+      row.appendChild(arr);
+      row.appendChild(avWrap);
+      row.appendChild(nameEl);
       roster.appendChild(row);
     });
     div.appendChild(roster);
@@ -1912,7 +1946,7 @@ function renderHTTV(state) {
     var arr = team === 'A' ? s.tA : s.tB;
     var roster = arr.map(function(p, i) {
       var isC = isAkt && i === (s.chainIdx % arr.length);
-      return '<div style="font-size:1.8vw;padding:.15vw 0;'+(isC?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.6)')+'">'+(isC?'▶ ':'   ')+p.emoji+' '+p.name+'</div>';
+      return '<div style="font-size:1.8vw;padding:.15vw 0;display:flex;align-items:center;gap:.5vw;'+(isC?'color:'+col+';font-weight:800':'color:rgba(255,255,255,0.6)')+'">'+tvAvHtml(p,2.2)+(isC?'▶ ':'')+p.name+'</div>';
     }).join('');
     return '<div style="flex:1;text-align:center;border:3px solid '+(isAkt?col:'rgba(255,255,255,0.15)')+';border-radius:1vw;padding:1.2vw 1vw;background:'+(isAkt?col+'22':'rgba(255,255,255,0.05)')+';">'
       + '<div style="font-size:1.7vw;color:'+col+';font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3vw">Team '+team+(isAkt?' 🎳':'')+'</div>'
@@ -2009,7 +2043,7 @@ function renderSKRTV(state) {
     var arr = team === 'A' ? state.tA : state.tB;
     var idx = team === 'A' ? state.iA : state.iB;
     var players = arr.map(function(p,i){
-      return '<span style="color:'+(i===idx&&!state.done?col:'rgba(255,255,255,0.7)')+(i===idx&&!state.done?';font-weight:800':'')+'">'+p.emoji+' '+p.name+'</span>';
+      return '<span style="display:inline-flex;align-items:center;gap:.4vw;color:'+(i===idx&&!state.done?col:'rgba(255,255,255,0.7)')+(i===idx&&!state.done?';font-weight:800':'')+'">'+(i===idx&&!state.done?'▶ ':'')+tvAvHtml(p,1.8)+p.name+'</span>';
     }).join('  ');
     var needsLine = next
       ? '<div style="font-size:20px;margin-top:6px">Braucht: <strong style="color:'+col+'">'+next+'</strong></div>'
@@ -2058,7 +2092,7 @@ function renderSteigrohrTV(state) {
     var farbe = FARBEN[paar.paarNr - 1] || '#fff';
     var isAkt = !s.done && paar.idx === s.aktPaarIdx;
     var isOut = !paar.aktiv;
-    var names = paar.spieler.map(function(p){ return p.emoji+' '+p.name; }).join('<br>');
+    var names = paar.spieler.map(function(p){ return '<div style="display:flex;align-items:center;gap:.4vw;justify-content:center">'+tvAvHtml(p,1.8)+p.name+'</div>'; }).join('');
     hRow += '<th style="text-align:center;padding:.7vw 1vw;font-size:1.3vw;color:'+farbe+';font-weight:700;border-bottom:4px solid '+(isOut?'rgba(255,255,255,.1)':farbe)+';opacity:'+(isOut?.45:1)+';background:'+(isAkt?farbe+'15':'transparent')+'">'
       + 'Paar '+paar.paarNr+(isAkt?' 🎳':isOut?' ❌':'')
       + '<div style="font-size:1.15vw;font-weight:600;color:'+(isOut?'var(--mut)':farbe)+';margin-top:.3vw;line-height:1.4">'+names+'</div>'
@@ -2112,7 +2146,7 @@ function renderSteigrohrTV(state) {
       var thrower = aktPaar.spieler[tIdx];
       var wurfNr = (s.wuerfe ? s.wuerfe.length : 0) + 1;
       throwerHtml = '<div style="margin-top:.8vw;padding:.7vw 1.5vw;border-radius:.6vw;border:2px solid '+tFarbe+';background:'+tFarbe+'15;display:flex;align-items:center;gap:1.2vw">'
-        +'<div style="font-size:2.8vw">'+thrower.emoji+'</div>'
+        +tvAvHtml(thrower,3.5)
         +'<div><div style="font-size:1.8vw;font-weight:800;color:'+tFarbe+';font-family:var(--fh)">'+thrower.name+'</div>'
         +'<div style="font-size:1.1vw;color:var(--mut);margin-top:.2vw">Paar '+aktPaar.paarNr+' · Runde '+s.runde+' · Wurf '+wurfNr+'/2</div></div>'
         +'</div>';
@@ -2187,7 +2221,7 @@ function renderMPTV(state) {
         : state.runde===2 ? 'Wurf '+(state.throwBuf.length+1)+'/4 — Stehend: '+state.remaining
         : (state.runde===3?'Große Hausnummer':'Kleine Hausnummer')+': '+slotNames[state.hnSlot];
       aktPlayer = '<div style="margin-top:.8vw;padding:.7vw 1.2vw;border-radius:.6vw;border:2px solid '+col+';background:'+col+'15;display:flex;align-items:center;gap:1vw">'
-        +'<div style="font-size:2.4vw">'+aktP.emoji+'</div>'
+        +tvAvHtml(aktP,3.2)
         +'<div><div style="font-size:1.6vw;font-family:var(--fh);color:'+col+'">'+aktP.name+'</div>'
         +'<div style="font-size:1vw;color:var(--mut);margin-top:.2vw">'+throwInfo+'</div></div>'
         +'</div>';
@@ -2225,8 +2259,16 @@ function renderGenericScoreTV(state) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;gap:20px;padding:14px 20px;border-radius:10px;margin-bottom:8px;background:' + (i === state.aktSpIdx && !state.done ? 'var(--ac)22' : 'var(--bg2)');
     var emo = document.createElement('div');
-    emo.style.cssText = 'font-size:40px;width:56px;text-align:center';
-    emo.textContent = p.emoji;
+    emo.style.cssText = 'position:relative;width:56px;height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bg3);overflow:hidden;font-size:30px';
+    var emoTxt = document.createElement('span');
+    emoTxt.textContent = p.emoji || '🎳';
+    var emoImg = document.createElement('img');
+    emoImg.src = '/uploads/profiles/' + (p.id|0) + '.jpg';
+    emoImg.alt = '';
+    emoImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover';
+    emoImg.onerror = function(){ this.style.display='none'; };
+    emo.appendChild(emoTxt);
+    emo.appendChild(emoImg);
     var name = document.createElement('div');
     name.style.cssText = 'flex:1;font-size:28px;font-family:var(--fh)';
     name.textContent = p.name;
