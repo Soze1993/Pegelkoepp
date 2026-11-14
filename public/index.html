@@ -483,6 +483,8 @@ async function init() {
     p.siege = st.wins || 0;
     p.niederlagen = st.losses || 0;
     p.pudel = st.pudel_count || 0;
+    p.pudel_paid = st.pudel_paid || 0;
+    p.pudel_offen = st.pudel_offen || 0;
     p.wuerfe = st.total_throws || 0;
     p.avg_score = st.avg_score || 0;
     p.neun = st.neun_count || 0;
@@ -1302,12 +1304,13 @@ async function spArchivieren(id) {
 
 async function pudelBezahlt(id) {
   var s = S.spieler.find(function(x){return x.id===id;});
-  if (!s || !s.pudel_offen) return;
-  if (!confirm(s.name + ': ' + s.pudel_offen + ' offene Pudel als bezahlt markieren?')) return;
+  var offen = s ? Math.max(0, (s.pudel||0) - (s.pudel_paid||0)) : 0;
+  if (!offen) return;
+  if (!confirm(s.name + ': ' + offen + ' offene Pudel als bezahlt markieren?')) return;
   var res = await fetch('/api/players/' + id + '/pudel-bezahlt', {method:'POST'});
   if (!res.ok) { notify('Fehler', 'var(--red)'); return; }
   closeM('m-sp-detail');
-  await refreshStats();
+  await refreshPlayerStats();
   notify('Pudel bezahlt!', 'var(--grn)');
 }
 
